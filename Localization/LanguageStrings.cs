@@ -373,4 +373,11 @@ public class LanguageStrings : INotifyPropertyChanged
     public string RecommendedConcurrencyLabel { get; set; } = "推荐 {0}";
     public string ApplyRecommendedConcurrency { get; set; } = "应用推荐";
     public string TooltipRecommendedConcurrency { get; set; } = "依据处理器核心数与可用内存计算的安全并发度，点击可直接应用。";
+
+    // WorkBuddy, 2026-11-15：批次 20（P4-3）——批处理结果报告导出。
+    public string ExportBatchReport { get; set; } = "导出本次结果";
+    public string TooltipExportBatchReport { get; set; } = "把本次批处理的逐项结果导出为 CSV 表格（默认不含密码与命令行）";
+    public string BatchReportNoData { get; set; } = "本次没有可导出的任务结果";
+    public string BatchReportSaved { get; set; } = "结果报告已保存：{0}";
+    public string BatchReportFailed { get; set; } = "结果报告导出失败：{0}";
 }

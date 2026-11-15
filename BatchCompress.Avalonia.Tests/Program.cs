@@ -62,6 +62,8 @@ internal static partial class Program
             ("自动并发参数解析", TestAutoConcurrencyArgument),
             // WorkBuddy, 2026-11-15：批次 19（P4-1）——归档坏块提前终止。
             ("归档致命输出解析", TestFatalOutputParsing),
+            // WorkBuddy, 2026-11-15：批次 20（P4-3）——逐项结果报告。
+            ("批处理结果报告服务", TestBatchReportService),
             ("日志权限与轮转", TestLogFilePermissionsAndRotation),
             ("日志多代轮转", TestLogMultiGenerationRotation),
             ("日志旧代Gzip压缩", TestLogGzipCompressionRotation),

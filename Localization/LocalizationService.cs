@@ -400,6 +400,12 @@ public class LocalizationService : INotifyPropertyChanged
             CliErrorLanguageChoices = "--language 仅支持 zh-CN、zh-TW、en、ja、de（接受 en-US、ja-JP、de-DE 等区域变体）: {0}",
             CliErrorOutputFormatChoices = "--output-format 仅支持 text、json: {0}",
             CliErrorPrefix = "参数错误: {0}",
+            // WorkBuddy, 2026-11-15：批次 20（P4-3）——结果报告导出。
+            ExportBatchReport = "导出本次结果",
+            TooltipExportBatchReport = "把本次批处理的逐项结果导出为 CSV 表格（默认不含密码与命令行）",
+            BatchReportNoData = "本次没有可导出的任务结果",
+            BatchReportSaved = "结果报告已保存：{0}",
+            BatchReportFailed = "结果报告导出失败：{0}",
             // WorkBuddy, 2026-11-15：批次 18（P4-2）——硬件感知自适应并发推荐。
             CliAutoConcurrency = "自动并发度：{0}（处理器 {1} 核，可用内存 {2} GB）",
             RecommendedConcurrencyLabel = "推荐 {0}",
@@ -724,6 +730,12 @@ public class LocalizationService : INotifyPropertyChanged
             CliErrorLanguageChoices = "--language 僅支援 zh-CN、zh-TW、en、ja、de（接受 en-US、ja-JP、de-DE 等區域變體）: {0}",
             CliErrorOutputFormatChoices = "--output-format 僅支援 text、json: {0}",
             CliErrorPrefix = "參數錯誤: {0}",
+            // WorkBuddy, 2026-11-15：批次 20（P4-3）——結果報告匯出。
+            ExportBatchReport = "匯出本次結果",
+            TooltipExportBatchReport = "把本次批處理的逐項結果匯出為 CSV 表格（預設不含密碼與命令列）",
+            BatchReportNoData = "本次沒有可匯出的任務結果",
+            BatchReportSaved = "結果報告已儲存：{0}",
+            BatchReportFailed = "結果報告匯出失敗：{0}",
             // WorkBuddy, 2026-11-15：批次 18（P4-2）——硬體感知自適應並行推薦。
             CliAutoConcurrency = "自動並行度：{0}（處理器 {1} 核，可用記憶體 {2} GB）",
             RecommendedConcurrencyLabel = "推薦 {0}",
@@ -1048,6 +1060,12 @@ public class LocalizationService : INotifyPropertyChanged
             CliErrorLanguageChoices = "--language only supports zh-CN, zh-TW, en, ja and de (regional variants such as en-US, ja-JP and de-DE are accepted): {0}",
             CliErrorOutputFormatChoices = "--output-format only supports text and json: {0}",
             CliErrorPrefix = "Argument error: {0}",
+            // WorkBuddy, 2026-11-15: batch 20 (P4-3) - batch result report export.
+            ExportBatchReport = "Export results",
+            TooltipExportBatchReport = "Export per-item results as CSV (no passwords or command lines)",
+            BatchReportNoData = "No batch results available to export",
+            BatchReportSaved = "Result report saved: {0}",
+            BatchReportFailed = "Failed to export result report: {0}",
             // WorkBuddy, 2026-11-15: batch 18 (P4-2) - hardware-aware concurrency recommendation.
             CliAutoConcurrency = "Auto concurrency: {0} (cores: {1}, available memory: {2} GB)",
             RecommendedConcurrencyLabel = "Recommended: {0}",
@@ -1372,6 +1390,12 @@ public class LocalizationService : INotifyPropertyChanged
             CliErrorLanguageChoices = "--language は zh-CN、zh-TW、en、ja、de のみ対応（en-US、ja-JP、de-DE などの地域変体は受け付けます）: {0}",
             CliErrorOutputFormatChoices = "--output-format は text と json のみ対応です: {0}",
             CliErrorPrefix = "引数エラー: {0}",
+            // WorkBuddy, 2026-11-15：批次 20（P4-3）——結果レポートのエクスポート。
+            ExportBatchReport = "今回の結果をエクスポート",
+            TooltipExportBatchReport = "項目別の結果を CSV でエクスポート（パスワード・コマンド不含）",
+            BatchReportNoData = "エクスポートできる結果がありません",
+            BatchReportSaved = "結果レポートを保存しました：{0}",
+            BatchReportFailed = "結果レポートのエクスポートに失敗しました：{0}",
             // WorkBuddy, 2026-11-15：批次 18（P4-2）——ハードウェアに応じた並行度推奨。
             CliAutoConcurrency = "自動並行度：{0}（CPU {1} コア、利用可能メモリ {2} GB）",
             RecommendedConcurrencyLabel = "推奨 {0}",
@@ -1697,6 +1721,12 @@ public class LocalizationService : INotifyPropertyChanged
             CliErrorLanguageChoices = "--language unterstützt nur zh-CN, zh-TW, en, ja und de (regionale Varianten wie en-US, ja-JP und de-DE sind zulässig): {0}",
             CliErrorOutputFormatChoices = "--output-format unterstützt nur text und json: {0}",
             CliErrorPrefix = "Argumentfehler: {0}",
+            // WorkBuddy, 2026-11-15: Batch 20 (P4-3) - Ergebnisbericht exportieren.
+            ExportBatchReport = "Ergebnisse exportieren",
+            TooltipExportBatchReport = "Ergebnisse pro Eintrag als CSV exportieren (ohne Passwoerter)",
+            BatchReportNoData = "Keine Ergebnisse zum Exportieren vorhanden",
+            BatchReportSaved = "Ergebnisbericht gespeichert: {0}",
+            BatchReportFailed = "Ergebnisbericht konnte nicht exportiert werden: {0}",
             // WorkBuddy, 2026-11-15: Batch 18 (P4-2) - hardwarebewusste Parallelitaetsempfehlung.
             CliAutoConcurrency = "Automatische Parallelitaet: {0} (Kerne: {1}, freier Speicher: {2} GB)",
             RecommendedConcurrencyLabel = "Empfohlen: {0}",

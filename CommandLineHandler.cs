@@ -50,6 +50,9 @@ public sealed class CommandLineOptions
     public int LogRetentionDays { get; set; } = FileLoggerService.DefaultRetentionDays;
     // Antigravity, 2026-11-08：批次 16（P3-13）——安全诊断包导出路径（.zip）。
     public string? ExportDiagnosticsPath { get; set; }
+    // WorkBuddy, 2026-11-15：批次 20（P4-3）——逐项结果报告路径（.csv / .md）。
+    // 与诊断包不同：报告只从结构化字段生成，默认不含密码与原始命令行。
+    public string? ReportPath { get; set; }
     public bool Verbose { get; set; }
     public bool Quiet { get; set; }
     public bool DryRun { get; set; }
@@ -555,6 +558,8 @@ public static partial class CommandLineHandler
         Add(definitions, "--concurrency", ValueKind.Single, "--concurrency", "-j");
         // Antigravity, 2026-11-08：批次 16（P3-13）——脱敏诊断报告导出选项。
         Add(definitions, "--export-diagnostics", ValueKind.Single, "--export-diagnostics");
+        // WorkBuddy, 2026-11-15：批次 20（P4-3）——批处理结果报告导出。
+        Add(definitions, "--report", ValueKind.Single, "--report");
 
         return definitions;
     }
@@ -862,6 +867,9 @@ public static partial class CommandLineHandler
                 break;
             case "--export-diagnostics":
                 state.Options.ExportDiagnosticsPath = value;
+                break;
+            case "--report":
+                state.Options.ReportPath = value;
                 break;
         }
     }

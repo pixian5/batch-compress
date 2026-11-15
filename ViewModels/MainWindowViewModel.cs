@@ -24,6 +24,9 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly IArchiveEngine _archiveEngine;
     private readonly ISystemIntegration _systemIntegration;
+
+    // WorkBuddy, 2026-11-15：批次 20（P4-3）——最近一次批处理的逐项结果收集器。
+    internal BatchReportCollector? LastReportCollector;
     private readonly BatchOperationService _batchOperationService;
     // GPT-5, 2026-09-30：GUI 的文件日志器（设计器模式下为 null），把服务层诊断写入用户数据目录 logs。
     private readonly FileLoggerService? _fileLogger;

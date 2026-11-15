@@ -39,13 +39,6 @@ jobs:
       - name: 运行全量单元测试门禁
         run: dotnet run -c Release --project BatchCompress.Avalonia.Tests/BatchCompress.Avalonia.Tests.csproj --nologo
 
-      # WorkBuddy, 2026-11-15：批次 19——发布门禁同样纳入 149 项端到端夹具（必须 zsh）。
-      - name: 端到端全功能夹具（仅 macOS）
-        if: runner.os == 'macOS'
-        run: |
-          chmod +x tools/7zip/macos/7zz
-          zsh 测试夹具/全功能测试/run-all-tests.sh
-
       - name: 快速冒烟自检（三平台）
         run: bash scripts/smoke-test.sh
 

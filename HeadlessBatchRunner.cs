@@ -31,6 +31,10 @@ public class HeadlessBatchRunner
     // 使试运行与真实执行共用同一个推荐值，且提示只输出一次。
     private int? _resolvedConcurrency;
 
+    // WorkBuddy, 2026-11-15：批次 20（P4-3）——逐项结果报告收集器。
+    // 只在结构化进度字段上累积，绝不与命令日志文本发生关系。
+    private readonly BatchReportCollector _reportCollector = new();
+
     public HeadlessBatchRunner(CommandLineOptions options, FileLoggerService logger)
     {
         _options = options;
@@ -40,6 +44,7 @@ public class HeadlessBatchRunner
         // GPT-5, 2026-09-30：把 CLI 的日志器同时注入批处理服务，使后处理失败原因等诊断进入日志文件，而不是无处可查。
         _batchOperationService = new BatchOperationService(_archiveEngine, new HeadlessSystemIntegration(_logger), _logger);
         _structuredOutput = options.OutputFormat == "json" ? new NdjsonOutputWriter(Console.Out) : null;
+        _reportCollector.SetOperation(options.Compress ? "压缩" : "解压");
     }
 
     /// <summary>
@@ -148,6 +153,8 @@ public class HeadlessBatchRunner
         var progress = new InlineProgress<OperationProgressInfo>(info =>
         {
             progressInfo = info;
+            // WorkBuddy, 2026-11-15：批次 20（P4-3）——与 NDJSON 用同一份进度快照收集逐项结果。
+            _reportCollector.Report(info);
             var status = info.IsError ? "ERROR" : "INFO";
             _logger.LogOperation(status, info.Message);
 
@@ -200,6 +207,25 @@ public class HeadlessBatchRunner
             _logger.LogOperation("COMPLETE", summary);
             WriteLine(summary);
             WriteLine($"Log file: {_logger.LogFilePath}");
+
+            // WorkBuddy, 2026-11-15：批次 20（P4-3）——写出逐项结果报告。
+            // 报告是附加产物：写失败只记录错误与告警，不改变本批次自身的成败退出码。
+            if (!string.IsNullOrWhiteSpace(_options.ReportPath))
+            {
+                try
+                {
+                    var reportPath = BatchReportWriter.Write(_options.ReportPath!, _reportCollector.Entries);
+                    _logger.LogOperation("REPORT",
+                        $"Wrote batch report: {reportPath} ({_reportCollector.Entries.Count} items)");
+                    Console.Error.WriteLine(
+                        $"Batch report: {reportPath} ({_reportCollector.Entries.Count} items)");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Failed to write batch report: {_options.ReportPath}", ex);
+                    Console.Error.WriteLine($"Error: Failed to write batch report: {ex.Message}");
+                }
+            }
 
             return progressInfo.FailCount > 0 ||
                    progressInfo.PostProcessFailCount > 0 ||

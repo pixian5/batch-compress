@@ -37,6 +37,8 @@ public partial class MainWindowViewModel
 
         // GLM-5.3, 2026-11-04：批次 2 阶段 3——进度回调与生命周期收敛到 OperationSession。
         var session = new OperationSession(this, _systemIntegration);
+        // WorkBuddy, 2026-11-15：批次 20（P4-3）——保留本批次收集器供「导出本次结果」使用。
+        LastReportCollector = session.ReportCollector;
         await session.RunAsync(
             () => L.Compress,
             () => L.CompressionComplete,
@@ -88,6 +90,8 @@ public partial class MainWindowViewModel
 
         // GLM-5.3, 2026-11-04：批次 2 阶段 3——进度回调与生命周期收敛到 OperationSession。
         var session = new OperationSession(this, _systemIntegration);
+        // WorkBuddy, 2026-11-15：批次 20（P4-3）——保留本批次收集器供「导出本次结果」使用。
+        LastReportCollector = session.ReportCollector;
         await session.RunAsync(
             () => L.Decompress,
             () => L.DecompressionComplete,

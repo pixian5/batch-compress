@@ -241,6 +241,33 @@ if [[ "$corrupt_rc" -eq 1 ]] && grep -q "归档损坏，已提前终止" "$work/
 report "损坏分卷提前终止、终端可见原因、零残片（退出码 $corrupt_rc，残留 $leftover）" "$r"
 
 echo ""
+echo "=== 16. 批处理结果报告导出（批次 20 / P4-3）==="
+# 带明文密码压缩两个文件，导出 CSV（逗号分隔值）与 Markdown，
+# 断言逐项记录齐全、报告里搜不到密码、单独使用 --report 会被拒绝。
+printf 'verify-report-secret\n' > "$work/report-pass.txt"
+mkdir -p "$work/out-report"
+"$dotnet_bin" "$app" compress \
+  --input "$work/来源/普通文本.txt" --input "$work/来源/正常文件.txt" \
+  --output "$work/out-report" --format 7z --password-file "$work/report-pass.txt" \
+  --report "$work/result.csv" --log-file "$work/report.log" \
+  > "$work/report.out" 2> "$work/report.err"
+report_rc=$?
+if [[ $report_rc -eq 0 ]] && grep -q "普通文本.txt" "$work/result.csv" \
+   && grep -q "正常文件.txt" "$work/result.csv" \
+   && ! grep -q "verify-report-secret" "$work/result.csv"; then r=0; else r=1; fi
+report "结果报告含逐项记录且不含明文密码（退出码 $report_rc）" "$r"
+
+"$dotnet_bin" "$app" compress --input "$work/来源/普通文本.txt" \
+  --output "$work/out-report-md" --format 7z --report "$work/result.md" \
+  --log-file "$work/report-md.log" > /dev/null 2>&1
+md_rc=$?
+"$dotnet_bin" "$app" --report "$work/only.csv" > /dev/null 2>&1
+only_rc=$?
+if [[ $md_rc -eq 0 ]] && grep -q "^# 批处理结果报告" "$work/result.md" \
+   && [[ $only_rc -eq 2 ]]; then r=0; else r=1; fi
+report "Markdown 报告可用、单独 --report 被拒绝（md=$md_rc, 单用=$only_rc）" "$r"
+
+echo ""
 echo "=== 汇总 ==="
 echo "PASS=$pass FAIL=$fail"
 echo "临时目录：$work（退出时自动清理）"

@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using BatchCompress.Avalonia.Core.Interfaces;
 using BatchCompress.Avalonia.Core.Models;
+// WorkBuddy, 2026-11-15：批次 20（P4-3）——结果报告收集器所在命名空间。
+using BatchCompress.Avalonia.Core.Services;
 using BatchCompress.Avalonia.Localization;
 
 namespace BatchCompress.Avalonia.ViewModels;
@@ -30,6 +32,10 @@ internal sealed class OperationSession
     private int _totalItems;
 
     private static LanguageStrings L => LocalizationService.Instance.Strings;
+
+    // WorkBuddy, 2026-11-15：批次 20（P4-3）——界面侧逐项结果收集器。
+    // 与命令行共用同一个 BatchReportCollector，报告内容只来自结构化进度字段。
+    public BatchReportCollector ReportCollector { get; } = new();
 
     public OperationSession(MainWindowViewModel owner, ISystemIntegration systemIntegration)
     {
@@ -113,6 +119,8 @@ internal sealed class OperationSession
     // 统一进度回调：统计映射、耗时/速度/剩余时间估算、通知节流与三分类日志。
     private void HandleProgress(string operationLabel, OperationProgressInfo info)
     {
+        // WorkBuddy, 2026-11-15：批次 20（P4-3）——在任何界面状态更新前先收集原始快照。
+        ReportCollector.Report(info);
         _owner.CurrentFile = info.CurrentFile;
         _owner.CurrentSourcePath = info.CurrentSourcePath;
         _owner.SuccessCount = info.SuccessCount;
