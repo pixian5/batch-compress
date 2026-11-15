@@ -34,9 +34,9 @@
     <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.6" />
     <!-- GPT-5, 2026-08-06：Avalonia 12 未发布匹配的 Avalonia.Diagnostics 包，调试工具不作为运行依赖保留。 -->
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.14" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.14" />
-    <PackageReference Include="System.Resources.Extensions" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="11.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="11.0.0" />
+    <PackageReference Include="System.Resources.Extensions" Version="11.0.0" />
     <PackageReference Include="Tmds.DBus.Protocol" Version="0.95.2" />
   </ItemGroup>
 
