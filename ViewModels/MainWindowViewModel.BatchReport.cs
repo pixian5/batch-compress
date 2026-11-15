@@ -30,7 +30,8 @@ public partial class MainWindowViewModel
                 desktopDir = Path.GetTempPath();
             }
 
-            var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            // 毫秒后缀：同一秒内连点两次导出也不会覆盖前一份报告。
+            var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss-fff");
             var targetPath = Path.Combine(desktopDir, $"batchcompress-results-{timestamp}.csv");
             var writtenPath = BatchReportWriter.Write(
                 targetPath, entries, LastReportCollector?.OmittedEntries ?? 0);

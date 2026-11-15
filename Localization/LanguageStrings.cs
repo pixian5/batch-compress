@@ -380,4 +380,25 @@ public class LanguageStrings : INotifyPropertyChanged
     public string BatchReportNoData { get; set; } = "本次没有可导出的任务结果";
     public string BatchReportSaved { get; set; } = "结果报告已保存：{0}";
     public string BatchReportFailed { get; set; } = "结果报告导出失败：{0}";
+
+    // WorkBuddy, 2026-11-16：审查修复——结果报告的全部表头、状态、汇总与提示改为词条，
+    // 让五种语言导出的 CSV / Markdown 不再出现中文骨架配英文消息的混排。
+    public string ReportTitle { get; set; } = "批处理结果报告";
+    public string ReportColumnIndex { get; set; } = "序号";
+    public string ReportColumnOperation { get; set; } = "操作";
+    public string ReportColumnSource { get; set; } = "来源";
+    public string ReportColumnStatus { get; set; } = "结果";
+    public string ReportColumnMessage { get; set; } = "说明";
+    public string ReportColumnProcessedMB { get; set; } = "处理量(MB)";
+    public string ReportColumnElapsedSeconds { get; set; } = "耗时(秒)";
+    public string ReportStatusSuccess { get; set; } = "成功";
+    public string ReportStatusFailed { get; set; } = "失败";
+    public string ReportStatusSkipped { get; set; } = "跳过";
+    public string ReportOperationCompress { get; set; } = "压缩";
+    public string ReportOperationExtract { get; set; } = "解压";
+    public string ReportNoteRow { get; set; } = "说明";
+    public string ReportSummary { get; set; } = "共 {0} 项；成功 {1}，失败 {2}，跳过 {3}。";
+    public string ReportOmittedNote { get; set; } = "另有 {0} 条因超出上限未列出，请缩小批次或分批执行";
+    public string ReportCredentialRedacted { get; set; } = "（已省略含凭据的文本）";
+    public string CliReportModeSkipped { get; set; } = "当前模式（{0}）不产生逐项结果，未生成报告：{1}";
 }

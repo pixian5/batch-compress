@@ -44,16 +44,34 @@ public class HeadlessBatchRunner
         // GPT-5, 2026-09-30：把 CLI 的日志器同时注入批处理服务，使后处理失败原因等诊断进入日志文件，而不是无处可查。
         _batchOperationService = new BatchOperationService(_archiveEngine, new HeadlessSystemIntegration(_logger), _logger);
         _structuredOutput = options.OutputFormat == "json" ? new NdjsonOutputWriter(Console.Out) : null;
-        _reportCollector.SetOperation(options.Compress ? "压缩" : "解压");
+        // WorkBuddy, 2026-11-16：审查修复——改存语言无关标记，不再在此处硬编码中文，
+        // 也不再受「语言之后才设置」的时序影响。
+        _reportCollector.SetOperation(options.Compress);
     }
 
     /// <summary>
     /// 根据命令行选项执行批处理。
+    /// WorkBuddy, 2026-11-16：审查修复——报告写入放在最外层 finally，
+    /// 正常结束、取消、运行中异常、试运行、诊断导出与参数校验失败都会走到，
+    /// 不会再出现「指定了 --report 却静默拿不到文件」。
     /// </summary>
     public async Task<int> RunAsync()
     {
+        try
+        {
+            return await RunBatchAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            WriteBatchReportIfRequested();
+        }
+    }
+
+    private async Task<int> RunBatchAsync()
+    {
         if (!string.IsNullOrWhiteSpace(_options.ExportDiagnosticsPath))
         {
+            NotifyReportModeSkipped("diagnostics");
             var exporter = new DiagnosticsExportService(
                 Path.GetDirectoryName(_logger.LogFilePath),
                 new RarArchiveEngine(),
@@ -102,6 +120,7 @@ public class HeadlessBatchRunner
 
         if (_options.DryRun)
         {
+            NotifyReportModeSkipped("dry-run");
             return RunDryRun();
         }
 
@@ -208,26 +227,6 @@ public class HeadlessBatchRunner
             WriteLine(summary);
             WriteLine($"Log file: {_logger.LogFilePath}");
 
-            // WorkBuddy, 2026-11-15：批次 20（P4-3）——写出逐项结果报告。
-            // 报告是附加产物：写失败只记录错误与告警，不改变本批次自身的成败退出码。
-            if (!string.IsNullOrWhiteSpace(_options.ReportPath))
-            {
-                try
-                {
-                    var reportPath = BatchReportWriter.Write(
-                        _options.ReportPath!, _reportCollector.Entries, _reportCollector.OmittedEntries);
-                    _logger.LogOperation("REPORT",
-                        $"Wrote batch report: {reportPath} ({_reportCollector.Entries.Count} items)");
-                    Console.Error.WriteLine(
-                        $"Batch report: {reportPath} ({_reportCollector.Entries.Count} items)");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"Failed to write batch report: {_options.ReportPath}", ex);
-                    Console.Error.WriteLine($"Error: Failed to write batch report: {ex.Message}");
-                }
-            }
-
             return progressInfo.FailCount > 0 ||
                    progressInfo.PostProcessFailCount > 0 ||
                    progressInfo.IncompleteVolumeCount > 0 ||
@@ -247,6 +246,45 @@ public class HeadlessBatchRunner
             Console.Error.WriteLine($"\nError: {ex.Message}");
             return 1;
         }
+    }
+
+    /// <summary>
+    /// 写出逐项结果报告。由最外层 finally 调用，因此取消与异常路径也会留下部分结果。
+    /// 报告是附加产物：写失败只记录错误与告警，绝不改变本批次自身的退出码。
+    /// </summary>
+    private void WriteBatchReportIfRequested()
+    {
+        if (string.IsNullOrWhiteSpace(_options.ReportPath))
+        {
+            return;
+        }
+
+        try
+        {
+            var reportPath = BatchReportWriter.Write(
+                _options.ReportPath!, _reportCollector.Entries, _reportCollector.OmittedEntries);
+            _logger.LogOperation("REPORT",
+                $"Wrote batch report: {reportPath} ({_reportCollector.Entries.Count} items)");
+            Console.Error.WriteLine(
+                $"Batch report: {reportPath} ({_reportCollector.Entries.Count} items)");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Failed to write batch report: {_options.ReportPath}", ex);
+            Console.Error.WriteLine($"Error: Failed to write batch report: {ex.Message}");
+        }
+    }
+
+    /// <summary>试运行与诊断导出不产生逐项结果，明确告知用户报告为何只有表头。</summary>
+    private void NotifyReportModeSkipped(string mode)
+    {
+        if (string.IsNullOrWhiteSpace(_options.ReportPath))
+        {
+            return;
+        }
+
+        Console.Error.WriteLine(string.Format(
+            LocalizationService.Instance.Strings.CliReportModeSkipped, mode, _options.ReportPath));
     }
 
     private async Task RunCompressAsync(BatchOperationOptions options, IProgress<OperationProgressInfo> progress, CancellationToken cancellationToken)

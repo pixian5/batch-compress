@@ -14,6 +14,8 @@ namespace BatchCompress.Avalonia.Core.Services;
 /// 崩溃兜底日志：全局未处理异常发生时，留下版本、运行时、线程与完整堆栈。
 /// WorkBuddy, 2026-11-16：批次 21（P0）——与常规 FileLoggerService 分开，
 /// 因为它必须在任何服务初始化之前就可用，而且自身绝不能再抛异常。
+/// WorkBuddy, 2026-11-16：审查修复——去重只用于可恢复异常；进程级致命异常强制落盘，
+/// 进程退出时把被抑制的重复次数补写进最近的崩溃文件，避免诊断线索凭空消失。
 /// </summary>
 public static class CrashLogService
 {
@@ -28,6 +30,7 @@ public static class CrashLogService
     private static DateTime _lastWriteUtc = DateTime.MinValue;
     private static string _lastSignature = string.Empty;
     private static int _suppressed;
+    private static string? _lastWrittenPath;
 
     /// <summary>崩溃日志目录，默认与常规日志同级的 logs/。</summary>
     public static string LogDirectory =>
@@ -49,8 +52,10 @@ public static class CrashLogService
 
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
         {
+            // 进程即将终止，这次记录绝不能被 2 秒去重吃掉。
             Write("appdomain", e.ExceptionObject as Exception
-                ?? new Exception($"非异常终止对象：{e.ExceptionObject}"), "进程级未处理异常");
+                ?? new Exception($"非异常终止对象：{e.ExceptionObject}"),
+                "进程级未处理异常", force: true);
         };
 
         TaskScheduler.UnobservedTaskException += (_, e) =>
@@ -59,10 +64,17 @@ public static class CrashLogService
             // 记录后标记为已观察，避免未观察异常在回收时把进程带走。
             e.SetObserved();
         };
+
+        // 正常退出时若还有被抑制的重复次数，补写到最近的崩溃文件，
+        // 否则「同一错误重复了 N 次」这条诊断信息会随进程一起消失。
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => FlushPendingSuppressed();
     }
 
-    /// <summary>写一条崩溃记录。任何失败都只退回标准错误，绝不向外抛。</summary>
-    public static void Write(string stage, Exception exception, string? context = null)
+    /// <summary>
+    /// 写一条崩溃记录。任何失败都只退回标准错误，绝不向外抛。
+    /// force=true 时绕过 2 秒去重，用于进程级致命异常与启动期致命异常。
+    /// </summary>
+    public static void Write(string stage, Exception exception, string? context = null, bool force = false)
     {
         ArgumentNullException.ThrowIfNull(exception);
 
@@ -73,13 +85,15 @@ public static class CrashLogService
             lock (Gate)
             {
                 var now = DateTime.UtcNow;
-                if (signature == _lastSignature &&
+                if (!force &&
+                    signature == _lastSignature &&
                     now - _lastWriteUtc < TimeSpan.FromSeconds(SuppressWindowSeconds))
                 {
                     _suppressed++;
                     return;
                 }
 
+                // 强制写入同样带走累计的抑制次数，不让它留在内存里。
                 suppressed = _suppressed;
                 _suppressed = 0;
                 _lastSignature = signature;
@@ -168,12 +182,20 @@ public static class CrashLogService
         builder.AppendLine("detail:");
         builder.AppendLine(detail);
 
-        // 先写临时文件再移动，避免崩溃瞬间留下半截日志。
+        // 先创建空临时文件并立刻收紧权限，再写入内容：归档命令原文可能含明文密码，
+        // 绝不能让它在默认权限（通常 0644）下短暂可读。覆盖写已存在文件不会重置权限位。
         var tempPath = path + ".tmp";
+        using (File.Create(tempPath)) { }
+        TryRestrictPermissions(tempPath);
         File.WriteAllText(tempPath, builder.ToString(), new UTF8Encoding(false));
         File.Move(tempPath, path, overwrite: true);
-
         TryRestrictPermissions(path);
+
+        lock (Gate)
+        {
+            _lastWrittenPath = path;
+        }
+
         // 写入之后再裁剪：先删到 20 再写会让总数变成 21。
         PruneOldFiles(directory);
     }
@@ -186,6 +208,39 @@ public static class CrashLogService
             _lastWriteUtc = DateTime.MinValue;
             _lastSignature = string.Empty;
             _suppressed = 0;
+            _lastWrittenPath = null;
+        }
+    }
+
+    /// <summary>
+    /// 进程退出前把被抑制的重复次数追加到最近的崩溃文件。
+    /// 只在确有抑制且文件仍存在时追加，任何失败都静默放弃（退出阶段不能再抛）。
+    /// </summary>
+    private static void FlushPendingSuppressed()
+    {
+        try
+        {
+            int count;
+            string? path;
+            lock (Gate)
+            {
+                count = _suppressed;
+                path = _lastWrittenPath;
+                _suppressed = 0;
+            }
+
+            if (count <= 0 || string.IsNullOrEmpty(path) || !File.Exists(path))
+            {
+                return;
+            }
+
+            File.AppendAllText(path,
+                $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] " +
+                $"suppressed={count} (flushed on process exit){Environment.NewLine}");
+        }
+        catch
+        {
+            // 进程退出阶段无处可写，彻底放弃。
         }
     }
 
@@ -203,6 +258,18 @@ public static class CrashLogService
             {
                 try { file.Delete(); }
                 catch { /* 清理失败不影响本次写入 */ }
+            }
+
+            // 写入过程被强杀会留下 .tmp；只清一小时以上的陈旧文件，
+            // 避免删掉另一个正在写入的进程的临时文件。
+            var staleTemps = new DirectoryInfo(directory)
+                .GetFiles("batchcompress-crash_*.tmp")
+                .Where(file => DateTime.UtcNow - file.LastWriteTimeUtc > TimeSpan.FromHours(1))
+                .ToArray();
+            foreach (var file in staleTemps)
+            {
+                try { file.Delete(); }
+                catch { /* 同上 */ }
             }
         }
         catch

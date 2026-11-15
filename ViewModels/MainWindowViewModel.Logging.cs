@@ -1,3 +1,5 @@
+using Avalonia.Threading;
+
 namespace BatchCompress.Avalonia.ViewModels;
 
 /// <summary>
@@ -39,6 +41,16 @@ public partial class MainWindowViewModel
         CommandLog = _commandLogBuffer.Flush();
         SuccessLog = _successLogBuffer.Flush();
         FailLog = _failLogBuffer.Flush();
+    }
+
+    /// <summary>
+    /// 批次结束后在界面消息队列里再排一次低优先级刷新。
+    /// 进度回调通过 Progress&lt;T&gt; 异步投递，强制刷新时队列里可能仍有未执行的回调；
+    /// 它们随后追加的内容需要这一次兜底才能显示出来。
+    /// </summary>
+    internal void ScheduleTailLogFlush()
+    {
+        Dispatcher.UIThread.Post(ForceFlushLogs, DispatcherPriority.Background);
     }
 
     internal void ResetCommandLog()

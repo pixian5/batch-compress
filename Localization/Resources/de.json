@@ -295,6 +295,24 @@
     "TooltipExportBatchReport": "Ergebnisse pro Eintrag als CSV exportieren (ohne Passwoerter)",
     "BatchReportNoData": "Keine Ergebnisse zum Exportieren vorhanden",
     "BatchReportSaved": "Ergebnisbericht gespeichert: {0}",
-    "BatchReportFailed": "Ergebnisbericht konnte nicht exportiert werden: {0}"
+    "BatchReportFailed": "Ergebnisbericht konnte nicht exportiert werden: {0}",
+    "ReportTitle": "Bericht zur Stapelverarbeitung",
+    "ReportColumnIndex": "Nr.",
+    "ReportColumnOperation": "Vorgang",
+    "ReportColumnSource": "Quelle",
+    "ReportColumnStatus": "Ergebnis",
+    "ReportColumnMessage": "Details",
+    "ReportColumnProcessedMB": "Verarbeitet (MB)",
+    "ReportColumnElapsedSeconds": "Dauer (s)",
+    "ReportStatusSuccess": "Erfolgreich",
+    "ReportStatusFailed": "Fehlgeschlagen",
+    "ReportStatusSkipped": "Übersprungen",
+    "ReportOperationCompress": "Komprimieren",
+    "ReportOperationExtract": "Entpacken",
+    "ReportNoteRow": "Hinweis",
+    "ReportSummary": "{0} Einträge gesamt; {1} erfolgreich, {2} fehlgeschlagen, {3} übersprungen.",
+    "ReportOmittedNote": "{0} weitere Einträge wurden wegen der Obergrenze nicht aufgeführt; Batch verkleinern oder aufteilen",
+    "ReportCredentialRedacted": "(Text mit Zugangsdaten ausgelassen)",
+    "CliReportModeSkipped": "Modus {0} erzeugt keine Einzelergebnisse; kein Bericht geschrieben: {1}"
   }
 }

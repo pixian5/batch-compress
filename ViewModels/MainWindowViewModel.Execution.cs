@@ -39,6 +39,9 @@ public partial class MainWindowViewModel
         var session = new OperationSession(this, _systemIntegration);
         // WorkBuddy, 2026-11-15：批次 20（P4-3）——保留本批次收集器供「导出本次结果」使用。
         LastReportCollector = session.ReportCollector;
+        // WorkBuddy, 2026-11-16：审查修复——界面侧此前从未设置操作类型，
+        // 解压批次导出的报告「操作」列会全部误标成压缩。
+        session.ReportCollector.SetOperation(true);
         await session.RunAsync(
             () => L.Compress,
             () => L.CompressionComplete,
@@ -92,6 +95,7 @@ public partial class MainWindowViewModel
         var session = new OperationSession(this, _systemIntegration);
         // WorkBuddy, 2026-11-15：批次 20（P4-3）——保留本批次收集器供「导出本次结果」使用。
         LastReportCollector = session.ReportCollector;
+        session.ReportCollector.SetOperation(false);
         await session.RunAsync(
             () => L.Decompress,
             () => L.DecompressionComplete,

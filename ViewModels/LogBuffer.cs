@@ -59,10 +59,13 @@ public sealed class LogBuffer
 
         lock (_gate)
         {
-            foreach (var segment in segments)
+            for (var i = 0; i < segments.Length; i++)
             {
-                // 末尾换行会产生一个空段，跳过；中间的空行保留（用于分隔区块）。
-                if (segment.Length == 0 && ReferenceEquals(segment, segments[^1]))
+                var segment = segments[i];
+                // 只跳过「末尾换行产生的最后一个空段」，必须用索引判断：
+                // 字符串拆分产生的所有空段都是同一个 string.Empty 引用，
+                // 用引用相等会把中间的分隔空行一并误删。
+                if (segment.Length == 0 && i == segments.Length - 1)
                 {
                     continue;
                 }

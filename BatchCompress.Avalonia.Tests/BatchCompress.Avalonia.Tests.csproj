@@ -25,6 +25,8 @@
     <Compile Include="Program.LogBufferTests.cs" />
     <!-- WorkBuddy, 2026-11-16：批次 24（P2）——本地化资源一致性守护测试。 -->
     <Compile Include="Program.LocalizationResourceTests.cs" />
+    <!-- WorkBuddy, 2026-11-16：审查修复回归测试（报告本地化、CSV 防护、崩溃日志强制写入、日志空行）。 -->
+    <Compile Include="Program.ReviewFixTests.cs" />
     <!-- WorkBuddy, 2026-11-16：批次 25（P2）——窗口状态持久化回归测试。 -->
     <Compile Include="Program.WindowStateTests.cs" />
     <Compile Include="..\Core\Services\WindowStateService.cs" Link="Core\Services\WindowStateService.cs" />

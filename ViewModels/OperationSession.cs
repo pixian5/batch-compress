@@ -111,6 +111,9 @@ internal sealed class OperationSession
         {
             // WorkBuddy, 2026-11-16：批次 22——批处理结束强制刷新，避免节流窗口内的最后几行没显示。
             _owner.ForceFlushLogs();
+            // WorkBuddy, 2026-11-16：审查修复——进度回调是异步投递的，这里同步刷新之后
+            // 队列里可能仍有迟到的回调，再排一次低优先级刷新兜底。
+            _owner.ScheduleTailLogFlush();
             _owner.IsOperating = false;
             _owner.CurrentSourcePath = string.Empty;
             _owner.SubProgressPercent = 0;

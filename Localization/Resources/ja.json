@@ -295,6 +295,24 @@
     "TooltipExportBatchReport": "項目別の結果を CSV でエクスポート（パスワード・コマンド不含）",
     "BatchReportNoData": "エクスポートできる結果がありません",
     "BatchReportSaved": "結果レポートを保存しました：{0}",
-    "BatchReportFailed": "結果レポートのエクスポートに失敗しました：{0}"
+    "BatchReportFailed": "結果レポートのエクスポートに失敗しました：{0}",
+    "ReportTitle": "バッチ処理結果レポート",
+    "ReportColumnIndex": "番号",
+    "ReportColumnOperation": "操作",
+    "ReportColumnSource": "対象",
+    "ReportColumnStatus": "結果",
+    "ReportColumnMessage": "詳細",
+    "ReportColumnProcessedMB": "処理量(MB)",
+    "ReportColumnElapsedSeconds": "経過時間(秒)",
+    "ReportStatusSuccess": "成功",
+    "ReportStatusFailed": "失敗",
+    "ReportStatusSkipped": "スキップ",
+    "ReportOperationCompress": "圧縮",
+    "ReportOperationExtract": "展開",
+    "ReportNoteRow": "備考",
+    "ReportSummary": "全 {0} 件；成功 {1}、失敗 {2}、スキップ {3}。",
+    "ReportOmittedNote": "上限を超えたため他 {0} 件は記載していません。バッチを分割して実行してください",
+    "ReportCredentialRedacted": "（認証情報を含むテキストを省略しました）",
+    "CliReportModeSkipped": "モード {0} では項目別の結果を生成しないため、レポートは出力されません: {1}"
   }
 }

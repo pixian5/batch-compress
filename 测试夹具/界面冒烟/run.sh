@@ -1,5 +1,5 @@
 #!/bin/zsh
-# 界面冒烟：3 条本机用例，验证交付的 .app 能启动、版本一致、能完成一次最小压缩。
+# 界面冒烟：4 条本机用例，验证交付的 .app 能启动、二进制版本一致、运行中窗口版本一致、能完成一次最小压缩。
 # WorkBuddy, 2026-11-16：批次 25（P2）。
 # 说明：真正的按钮点击需要 macOS 辅助功能授权，且受窗口位置影响，本脚本不做点击，
 # 只做「进程 + 版本 + 真实归档任务」三件可稳定复跑的事。
@@ -67,6 +67,20 @@ else
     r=1
 fi
 report "应用版本与 VERSION 一致（$actual / $expected）" "$r"
+
+# WorkBuddy, 2026-11-16：审查修复——只比二进制版本会被「上一批留下的旧实例」骗过：
+# open 复用旧窗口时，exe 已是新版本，但界面仍在跑旧代码。补一条运行中窗口标题核对。
+window_title="$(osascript -e 'tell application "System Events" to get name of every window of process "BatchCompress.Avalonia"' 2>/dev/null | tr -d '\r')"
+if [[ -z "$window_title" ]]; then
+    print -r -- "SKIP 运行中窗口版本（读不到窗口标题，可能缺少辅助功能授权）"
+elif [[ "$window_title" == *"v$expected"* ]]; then
+    r=0
+else
+    r=1
+fi
+if [[ -n "$window_title" ]]; then
+    report "运行中窗口版本与 VERSION 一致（$window_title / v$expected）" "$r"
+fi
 
 # 3. 用交付产物跑一次真实最小压缩。
 mkdir -p "$work/src" "$work/out"

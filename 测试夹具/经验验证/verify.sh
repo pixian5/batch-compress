@@ -268,6 +268,46 @@ if [[ $md_rc -eq 0 ]] && grep -q "^# 批处理结果报告" "$work/result.md" \
 report "Markdown 报告可用、单独 --report 被拒绝（md=$md_rc, 单用=$only_rc）" "$r"
 
 echo ""
+echo "=== 17. 审查修复实测（0.8.9）：报告全路径、英文文案、CSV 防护 ==="
+# 试运行也必须产出报告文件，并明确说明为何没有逐项结果。
+"$dotnet_bin" "$app" compress --input "$work/来源/普通文本.txt" \
+  --output "$work/out-dry" --format 7z --dry-run \
+  --report "$work/dryrun.csv" --log-file "$work/dryrun.log" \
+  > "$work/dryrun.out" 2> "$work/dryrun.err"
+dry_rc=$?
+if [[ $dry_rc -eq 0 && -f "$work/dryrun.csv" ]] \
+   && grep -q "dry-run" "$work/dryrun.err"; then r=0; else r=1; fi
+report "试运行也产出报告并说明原因（退出码 $dry_rc）" "$r"
+
+# 参数校验失败同样产出报告，不再静默丢失。
+"$dotnet_bin" "$app" compress --input "$work/不存在的文件.txt" \
+  --output "$work/out-invalid" --format 7z --report "$work/invalid.csv" \
+  > "$work/invalid.out" 2> "$work/invalid.err"
+invalid_rc=$?
+if [[ -f "$work/invalid.csv" ]]; then r=0; else r=1; fi
+report "参数校验失败路径也产出报告（退出码 $invalid_rc）" "$r"
+
+# 英文模式的报告必须全英文，不再出现中文表头配英文消息。
+"$dotnet_bin" "$app" compress --input "$work/来源/普通文本.txt" \
+  --output "$work/out-en" --format 7z --lang en --report "$work/en.csv" \
+  --log-file "$work/en.log" > /dev/null 2>&1
+en_rc=$?
+if [[ $en_rc -eq 0 ]] && grep -q '"Operation"' "$work/en.csv" \
+   && grep -q '"Success"' "$work/en.csv" \
+   && ! grep -q '序号' "$work/en.csv"; then r=0; else r=1; fi
+report "英文报告表头与状态不残留中文（退出码 $en_rc）" "$r"
+
+# 特殊文件名不得被表格软件当成公式。
+printf 'formula-probe' > "$work/来源/=1+1.txt"
+"$dotnet_bin" "$app" compress --input "$work/来源/=1+1.txt" \
+  --output "$work/out-formula" --format 7z --report "$work/formula.csv" \
+  --log-file "$work/formula.log" > /dev/null 2>&1
+formula_rc=$?
+if [[ $formula_rc -eq 0 ]] && grep -q "\"'=1+1.txt\"" "$work/formula.csv" \
+   && ! grep -q '"=1+1.txt"' "$work/formula.csv"; then r=0; else r=1; fi
+report "CSV 中和以等号开头的来源名（退出码 $formula_rc）" "$r"
+
+echo ""
 echo "=== 汇总 ==="
 echo "PASS=$pass FAIL=$fail"
 echo "临时目录：$work（退出时自动清理）"

@@ -295,6 +295,24 @@
     "TooltipExportBatchReport": "Export per-item results as CSV (no passwords or command lines)",
     "BatchReportNoData": "No batch results available to export",
     "BatchReportSaved": "Result report saved: {0}",
-    "BatchReportFailed": "Failed to export result report: {0}"
+    "BatchReportFailed": "Failed to export result report: {0}",
+    "ReportTitle": "Batch Results Report",
+    "ReportColumnIndex": "No.",
+    "ReportColumnOperation": "Operation",
+    "ReportColumnSource": "Source",
+    "ReportColumnStatus": "Result",
+    "ReportColumnMessage": "Details",
+    "ReportColumnProcessedMB": "Processed (MB)",
+    "ReportColumnElapsedSeconds": "Elapsed (s)",
+    "ReportStatusSuccess": "Success",
+    "ReportStatusFailed": "Failed",
+    "ReportStatusSkipped": "Skipped",
+    "ReportOperationCompress": "Compress",
+    "ReportOperationExtract": "Extract",
+    "ReportNoteRow": "Note",
+    "ReportSummary": "Total {0} items; {1} succeeded, {2} failed, {3} skipped.",
+    "ReportOmittedNote": "{0} more items were omitted due to the entry limit; split the batch or run it in parts",
+    "ReportCredentialRedacted": "(text containing credentials omitted)",
+    "CliReportModeSkipped": "Mode {0} does not produce per-item results; no report written: {1}"
   }
 }

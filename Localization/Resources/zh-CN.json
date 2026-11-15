@@ -295,6 +295,24 @@
     "TooltipExportBatchReport": "把本次批处理的逐项结果导出为 CSV 表格（默认不含密码与命令行）",
     "BatchReportNoData": "本次没有可导出的任务结果",
     "BatchReportSaved": "结果报告已保存：{0}",
-    "BatchReportFailed": "结果报告导出失败：{0}"
+    "BatchReportFailed": "结果报告导出失败：{0}",
+    "ReportTitle": "批处理结果报告",
+    "ReportColumnIndex": "序号",
+    "ReportColumnOperation": "操作",
+    "ReportColumnSource": "来源",
+    "ReportColumnStatus": "结果",
+    "ReportColumnMessage": "说明",
+    "ReportColumnProcessedMB": "处理量(MB)",
+    "ReportColumnElapsedSeconds": "耗时(秒)",
+    "ReportStatusSuccess": "成功",
+    "ReportStatusFailed": "失败",
+    "ReportStatusSkipped": "跳过",
+    "ReportOperationCompress": "压缩",
+    "ReportOperationExtract": "解压",
+    "ReportNoteRow": "说明",
+    "ReportSummary": "共 {0} 项；成功 {1}，失败 {2}，跳过 {3}。",
+    "ReportOmittedNote": "另有 {0} 条因超出上限未列出，请缩小批次或分批执行",
+    "ReportCredentialRedacted": "（已省略含凭据的文本）",
+    "CliReportModeSkipped": "当前模式（{0}）不产生逐项结果，未生成报告：{1}"
   }
 }

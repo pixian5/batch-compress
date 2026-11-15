@@ -8,7 +8,7 @@ internal static partial class Program
     private static Task TestBatchReportService()
     {
         var collector = new BatchReportCollector();
-        collector.SetOperation("压缩");
+        collector.SetOperation(true);
 
         // 成功项：计数增量触发一条记录。
         collector.Report(new OperationProgressInfo
@@ -21,9 +21,9 @@ internal static partial class Program
             Elapsed = TimeSpan.FromSeconds(1.25)
         });
         AssertEqual(1, collector.Entries.Count);
-        AssertEqual("成功", collector.Entries[0].Status);
+        AssertEqual("success", collector.Entries[0].Status);
         AssertEqual("a.txt", collector.Entries[0].Source);
-        AssertEqual("压缩", collector.Entries[0].Operation);
+        AssertEqual("compress", collector.Entries[0].Operation);
 
         // 命令与进程原始输出整条排除：那是唯一可能带明文密码的地方。
         collector.Report(new OperationProgressInfo
@@ -44,7 +44,7 @@ internal static partial class Program
             Elapsed = TimeSpan.FromSeconds(0.5)
         });
         AssertEqual(2, collector.Entries.Count);
-        AssertEqual("失败", collector.Entries[1].Status);
+        AssertEqual("failed", collector.Entries[1].Status);
 
         var csv = BatchReportWriter.ToCsv(collector.Entries);
         Assert(csv.Contains("序号", StringComparison.Ordinal) &&
@@ -67,8 +67,7 @@ internal static partial class Program
             CurrentFile = "c.txt",
             Message = "7zz a -pplaintext-secret c.7z c.txt"
         });
-        Assert(guarded.Entries[0].Message.Contains("已省略", StringComparison.Ordinal),
-            "含密码开关的消息必须被省略");
+        AssertEqual(BatchReportCollector.RedactedMarker, guarded.Entries[0].Message);
 
         // 按扩展名选格式，并自动创建父目录。
         var tempDir = Path.Combine(Path.GetTempPath(), "bc-report-" + Guid.NewGuid().ToString("N"));
@@ -89,7 +88,7 @@ internal static partial class Program
 
         // 上限：超出 MaxEntries 的条目只累计计数，报告必须注明省略数量。
         var capped = new BatchReportCollector();
-        capped.SetOperation("压缩");
+        capped.SetOperation(true);
         for (var i = 0; i < BatchReportCollector.MaxEntries + 1; i++)
         {
             capped.Report(new OperationProgressInfo

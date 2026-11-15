@@ -102,7 +102,11 @@ internal static partial class Program
             ("CLI诊断包导出参数", TestCliDiagnosticsOption),
             ("安全诊断日志脱敏导出", TestDiagnosticsExportRedaction),
             ("进程输出流式回调", TestArchiveProcessRunnerStreaming),
-            ("管线子进度实时流式上报", TestPipelineSubProgressStreaming)
+            ("管线子进度实时流式上报", TestPipelineSubProgressStreaming),
+            // WorkBuddy, 2026-11-16：审查修复的三组回归测试。
+            ("报告本地化与CSV公式防护", TestReviewReportLocalizationAndSafety),
+            ("崩溃日志强制写入与抑制补记", TestReviewCrashLogForceAndSuppression),
+            ("日志缓冲中间空行保留", TestReviewLogBufferBlankLines)
         };
 
         // GLM-5.3, 2026-11-03：跑完全部测试后统一输出失败汇总，CI 中一次可见所有失败项；
