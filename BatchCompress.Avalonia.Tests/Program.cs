@@ -64,6 +64,8 @@ internal static partial class Program
             ("归档致命输出解析", TestFatalOutputParsing),
             // WorkBuddy, 2026-11-15：批次 20（P4-3）——逐项结果报告。
             ("批处理结果报告服务", TestBatchReportService),
+            // WorkBuddy, 2026-11-16：批次 21（P0）——崩溃兜底日志。
+            ("崩溃兜底日志", TestCrashLogService),
             ("日志权限与轮转", TestLogFilePermissionsAndRotation),
             ("日志多代轮转", TestLogMultiGenerationRotation),
             ("日志旧代Gzip压缩", TestLogGzipCompressionRotation),

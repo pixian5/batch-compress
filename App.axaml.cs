@@ -8,6 +8,8 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform;
+using Avalonia.Threading;
+using BatchCompress.Avalonia.Core.Services;
 using BatchCompress.Avalonia.Localization;
 using BatchCompress.Avalonia.ViewModels;
 using BatchCompress.Avalonia.Views;
@@ -35,6 +37,15 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            // WorkBuddy, 2026-11-16：批次 21（P0）——界面线程兜底：记录完整堆栈后标记已处理，
+            // 尽量让窗口存活，用户可从日志或诊断导出里拿到证据。
+            Dispatcher.UIThread.UnhandledException += (_, e) =>
+            {
+                // 崩溃日志的上下文属内部诊断，用英文短语，避免界面层硬编码中文扫描报错。
+                CrashLogService.Write("gui-dispatcher", e.Exception, "unhandled exception on UI thread");
+                e.Handled = true;
+            };
+
             desktop.ShutdownMode = ShutdownMode.OnLastWindowClose;
             // GPT-5, 2026-09-30：先创建 ViewModel 完成语言检测，再生成托盘/状态栏菜单，
             // 这样菜单文案才能跟随界面语言而非默认语言。

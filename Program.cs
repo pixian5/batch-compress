@@ -17,6 +17,24 @@ sealed class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        // WorkBuddy, 2026-11-16：批次 21（P0）——先注册全局兜底，
+        // 再进入任何可能抛异常的初始化与界面生命周期。
+        CrashLogService.RegisterGlobalHandlers();
+
+        try
+        {
+            return RunCore(args);
+        }
+        catch (Exception ex)
+        {
+            CrashLogService.Write("main", ex, "启动或运行期未处理异常");
+            Console.Error.WriteLine($"Fatal error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    private static int RunCore(string[] args)
+    {
         // GPT-5, 2026-08-05：Finder 和 LaunchServices 打开 macOS .app 时会附加 -psn_* 进程序列参数。
         // 它不是应用选项，必须在 System.CommandLine 解析前移除。
         var applicationArgs = args
@@ -100,6 +118,8 @@ sealed class Program
         catch (Exception ex)
         {
             logger.LogError("Fatal error in headless mode", ex);
+            // WorkBuddy, 2026-11-16：批次 21——命令行失败同样留一份崩溃记录，便于事后定位。
+            CrashLogService.Write("headless", ex, "无界面批处理致命异常");
             Console.Error.WriteLine($"Fatal error: {ex.Message}");
             return 1;
         }

@@ -19,6 +19,8 @@
     <Compile Include="Program.FatalErrorTests.cs" />
     <!-- WorkBuddy, 2026-11-15：批次 20（P4-3）——批处理结果报告回归测试。 -->
     <Compile Include="Program.BatchReportTests.cs" />
+    <!-- WorkBuddy, 2026-11-16：批次 21（P0）——崩溃兜底日志回归测试。 -->
+    <Compile Include="Program.CrashLogTests.cs" />
     <Compile Include="Program.EngineTests.cs" />
     <Compile Include="Program.PipelineTests.cs" />
     <Compile Include="Program.LoggingAndConfigTests.cs" />
@@ -49,6 +51,8 @@
     <Compile Include="..\Core\Services\ArchiveSubProgressParser.cs" Link="Core\Services\ArchiveSubProgressParser.cs" />
     <!-- WorkBuddy, 2026-11-15：批次 20（P4-3）——测试工程显式链接结果报告服务。 -->
     <Compile Include="..\Core\Services\BatchReportService.cs" Link="Core\Services\BatchReportService.cs" />
+    <!-- WorkBuddy, 2026-11-16：批次 21（P0）——测试工程显式链接崩溃日志服务。 -->
+    <Compile Include="..\Core\Services\CrashLogService.cs" Link="Core\Services\CrashLogService.cs" />
     <!-- WorkBuddy, 2026-11-15：批次 18（P4-2）——测试工程显式链接并发推荐服务。 -->
     <Compile Include="..\Core\Services\ConcurrencyAdvisor.cs" Link="Core\Services\ConcurrencyAdvisor.cs" />
     <Compile Include="..\Core\Services\Pipeline\IBatchItemAdapter.cs" Link="Core\Services\Pipeline\IBatchItemAdapter.cs" />
