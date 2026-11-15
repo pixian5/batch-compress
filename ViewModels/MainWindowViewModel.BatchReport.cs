@@ -18,7 +18,7 @@ public partial class MainWindowViewModel
         var entries = LastReportCollector?.Entries ?? [];
         if (entries.Count == 0)
         {
-            CommandLog += $"[{L.ExportBatchReport}] {L.BatchReportNoData}\n";
+            AppendCommandLog($"[{L.ExportBatchReport}] {L.BatchReportNoData}\n");
             return;
         }
 
@@ -32,15 +32,16 @@ public partial class MainWindowViewModel
 
             var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
             var targetPath = Path.Combine(desktopDir, $"batchcompress-results-{timestamp}.csv");
-            var writtenPath = BatchReportWriter.Write(targetPath, entries);
+            var writtenPath = BatchReportWriter.Write(
+                targetPath, entries, LastReportCollector?.OmittedEntries ?? 0);
             var message = string.Format(L.BatchReportSaved, writtenPath);
-            CommandLog += $"[{L.ExportBatchReport}] {message}\n";
+            AppendCommandLog($"[{L.ExportBatchReport}] {message}\n");
             _systemIntegration.ShowNotification(L.ExportBatchReport, message);
         }
         catch (Exception ex)
         {
             var error = string.Format(L.BatchReportFailed, ex.Message);
-            CommandLog += $"[{L.ExportBatchReport}] {error}\n";
+            AppendCommandLog($"[{L.ExportBatchReport}] {error}\n");
             _systemIntegration.ShowNotification(L.ExportBatchReport, error);
         }
     }

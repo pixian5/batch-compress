@@ -26,9 +26,13 @@ public sealed record BatchReportEntry(
 /// </summary>
 public sealed class BatchReportCollector
 {
+    /// <summary>单个批次最多保留的条目数；超出只累计计数，避免超大任务把内存吃光。</summary>
+    public const int MaxEntries = 20_000;
+
     private readonly List<BatchReportEntry> _entries = [];
     private readonly object _gate = new();
     private readonly DateTime _startedAt = DateTime.Now;
+    private int _omittedEntries;
 
     private int _successCount;
     private int _failCount;
@@ -57,6 +61,15 @@ public sealed class BatchReportCollector
 
     /// <summary>本次收集器的起始时间，用于报告标题。</summary>
     public DateTime StartedAt => _startedAt;
+
+    /// <summary>因超出上限而未列入报告的条目数。</summary>
+    public int OmittedEntries
+    {
+        get
+        {
+            lock (_gate) return _omittedEntries;
+        }
+    }
 
     /// <summary>
     /// 处理一条进度报告。命令与进程原始输出（IsCommandOutput）整条排除，
@@ -92,6 +105,13 @@ public sealed class BatchReportCollector
             var currentMB = info.ProcessedSizeGB * 1024.0;
             var deltaMB = Math.Max(0, currentMB - _lastProcessedMB);
             _lastProcessedMB = currentMB;
+
+            // 上限只控制报告明细的容量，计数快照仍照常推进，后续条目只累计省略数。
+            if (_entries.Count >= MaxEntries)
+            {
+                _omittedEntries++;
+                return;
+            }
 
             var source = string.IsNullOrWhiteSpace(info.CurrentSourcePath)
                 ? info.CurrentFile
@@ -132,7 +152,7 @@ public static class BatchReportWriter
     private static readonly string[] Headers =
         ["序号", "操作", "来源", "结果", "说明", "处理量(MB)", "耗时(秒)"];
 
-    public static string ToCsv(IReadOnlyList<BatchReportEntry> entries)
+    public static string ToCsv(IReadOnlyList<BatchReportEntry> entries, int omittedEntries = 0)
     {
         var sb = new StringBuilder();
         sb.AppendLine(string.Join(",", Headers.Select(CsvCell)));
@@ -148,10 +168,21 @@ public static class BatchReportWriter
                 CsvCell(e.ProcessedMB.ToString("F3", CultureInfo.InvariantCulture)),
                 CsvCell(e.ElapsedSeconds.ToString("F3", CultureInfo.InvariantCulture))));
         }
+
+        if (omittedEntries > 0)
+        {
+            // 保持列数一致，用一条说明行标注被省略的条目，不破坏表格结构。
+            sb.AppendLine(string.Join(",",
+                CsvCell("说明"),
+                CsvCell($"另有 {omittedEntries} 条因超出上限未列出，请缩小批次或分批执行"),
+                CsvCell(string.Empty), CsvCell(string.Empty), CsvCell(string.Empty),
+                CsvCell(string.Empty), CsvCell(string.Empty)));
+        }
+
         return sb.ToString();
     }
 
-    public static string ToMarkdown(IReadOnlyList<BatchReportEntry> entries)
+    public static string ToMarkdown(IReadOnlyList<BatchReportEntry> entries, int omittedEntries = 0)
     {
         var sb = new StringBuilder();
         sb.AppendLine("# 批处理结果报告");
@@ -171,6 +202,12 @@ public static class BatchReportWriter
         sb.AppendLine($"共 {entries.Count} 项；成功 {entries.Count(e => e.Status == "成功")}，" +
                       $"失败 {entries.Count(e => e.Status == "失败")}，" +
                       $"跳过 {entries.Count(e => e.Status == "跳过")}。");
+        if (omittedEntries > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine($"> 另有 {omittedEntries} 条因超出上限未列出，请缩小批次或分批执行。");
+        }
+
         return sb.ToString();
     }
 
@@ -178,13 +215,18 @@ public static class BatchReportWriter
     /// 按扩展名选择格式（.md / .markdown 为 Markdown，其余为 CSV），写入 UTF-8 文件并返回路径。
     /// CSV 带 BOM（字节顺序标记），方便直接用表格软件打开中文表头。
     /// </summary>
-    public static string Write(string path, IReadOnlyList<BatchReportEntry> entries)
+    public static string Write(
+        string path,
+        IReadOnlyList<BatchReportEntry> entries,
+        int omittedEntries = 0)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         var extension = Path.GetExtension(path);
         var isMarkdown = extension.Equals(".md", StringComparison.OrdinalIgnoreCase) ||
                          extension.Equals(".markdown", StringComparison.OrdinalIgnoreCase);
-        var content = isMarkdown ? ToMarkdown(entries) : ToCsv(entries);
+        var content = isMarkdown
+            ? ToMarkdown(entries, omittedEntries)
+            : ToCsv(entries, omittedEntries);
 
         var fullPath = Path.GetFullPath(path);
         var directory = Path.GetDirectoryName(fullPath);

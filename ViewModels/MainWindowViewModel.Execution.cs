@@ -22,7 +22,7 @@ public partial class MainWindowViewModel
 
         if (!IsCompressionActionVisible)
         {
-            CommandLog += L.CompressionPageOnly + "\n";
+            AppendCommandLog(L.CompressionPageOnly + "\n");
             return;
         }
         ActivateOperationStateForStart(0);
@@ -30,7 +30,7 @@ public partial class MainWindowViewModel
         if (ExistingFileMode == 1 && LockArchive)
         {
             var message = L.UpdateConflictsLockArchive;
-            CommandLog += $"[{L.OptionConflict}] {message}\n";
+            AppendCommandLog($"[{L.OptionConflict}] {message}\n");
             _systemIntegration.ShowNotification(L.OptionConflict, message);
             return;
         }
@@ -52,7 +52,7 @@ public partial class MainWindowViewModel
                 // 列表为空时先尝试自动加载。
                 if (sourcePaths.Count == 0)
                 {
-                    CommandLog += L.TryingToLoadAutomatically + "\n";
+                    AppendCommandLog(L.TryingToLoadAutomatically + "\n");
                     await RefreshFileListAsync();
 
                     // 自动加载后再次检查列表。
@@ -60,7 +60,7 @@ public partial class MainWindowViewModel
 
                     if (sourcePaths.Count == 0)
                     {
-                        CommandLog += L.StillNoFiles + "\n";
+                        AppendCommandLog(L.StillNoFiles + "\n");
                         return null;
                     }
                 }
@@ -83,7 +83,7 @@ public partial class MainWindowViewModel
 
         if (!IsDecompressionActionVisible)
         {
-            CommandLog += L.DecompressionPageOnly + "\n";
+            AppendCommandLog(L.DecompressionPageOnly + "\n");
             return;
         }
         ActivateOperationStateForStart(1);
@@ -101,13 +101,13 @@ public partial class MainWindowViewModel
                 // 列表为空时先尝试自动加载。
                 if (string.IsNullOrEmpty(SourceFileList.Trim()))
                 {
-                    CommandLog += L.TryingToLoadAutomatically + "\n";
+                    AppendCommandLog(L.TryingToLoadAutomatically + "\n");
                     await RefreshFileListAsync();
 
                     // 自动加载后仍为空时记录错误并返回。
                     if (string.IsNullOrEmpty(SourceFileList.Trim()))
                     {
-                        CommandLog += L.StillNoFiles + "\n";
+                        AppendCommandLog(L.StillNoFiles + "\n");
                         return null;
                     }
                 }
@@ -120,7 +120,7 @@ public partial class MainWindowViewModel
 
                 if (entries.Count == 0)
                 {
-                    CommandLog += L.NoFilesToProcess + "\n";
+                    AppendCommandLog(L.NoFilesToProcess + "\n");
                     return null;
                 }
 
@@ -138,7 +138,7 @@ public partial class MainWindowViewModel
     private void CancelOperation()
     {
         _cancellationTokenSource?.Cancel();
-        CommandLog += L.CancellingOperation + "\n";
+        AppendCommandLog(L.CancellingOperation + "\n");
     }
 
     // GLM-5.3, 2026-11-04：批次 2 阶段 3——取消令牌生命周期托管给 OperationSession；取消命令经 VM 字段访问在途令牌。
@@ -164,7 +164,7 @@ public partial class MainWindowViewModel
         }
 
         IsShutdownScheduled = true;
-        CommandLog += L.ShutdownScheduledLog + "\n";
+        AppendCommandLog(L.ShutdownScheduledLog + "\n");
         _systemIntegration.ShowNotification(L.ShutdownScheduledTitle, L.ShutdownScheduledBody);
 
         if (ConfirmShutdownCancellationRequested != null && await ConfirmShutdownCancellationRequested())
@@ -183,7 +183,7 @@ public partial class MainWindowViewModel
 
         await _systemIntegration.CancelShutdownAsync();
         IsShutdownScheduled = false;
-        CommandLog += L.ShutdownCancelledLog + "\n";
+        AppendCommandLog(L.ShutdownCancelledLog + "\n");
         _systemIntegration.ShowNotification(L.ShutdownCancelledTitle, L.ShutdownCancelledBody);
     }
 
@@ -208,13 +208,14 @@ public partial class MainWindowViewModel
     }
 
     [RelayCommand]
-    private void ClearSuccessLog() => SuccessLog = string.Empty;
+    // WorkBuddy, 2026-11-16：批次 22——清空必须同时清掉缓冲，否则下一次刷新会把旧内容带回来。
+    private void ClearSuccessLog() => ResetSuccessLog();
 
     [RelayCommand]
-    private void ClearFailLog() => FailLog = string.Empty;
+    private void ClearFailLog() => ResetFailLog();
 
     [RelayCommand]
-    private void ClearCommandLog() => CommandLog = string.Empty;
+    private void ClearCommandLog() => ResetCommandLog();
 
     [RelayCommand]
     private void ClearAllLogs()
@@ -274,7 +275,7 @@ public partial class MainWindowViewModel
             : PasswordUtility.GenerateDecompressionPassword(passwordName);
         PasswordQueryResult = finalPassword;
 
-        CommandLog += string.Join("\n", results) + "\n";
+        AppendCommandLog(string.Join("\n", results) + "\n");
 
         // 将最终候选密码复制到剪贴板。
         await _systemIntegration.WriteClipboardTextAsync(finalPassword);
@@ -377,13 +378,13 @@ public partial class MainWindowViewModel
 
             var exportedPath = await exporter.ExportAsync(zipPath);
             var message = string.Format(L.DiagnosticsExportSuccess, exportedPath);
-            CommandLog += $"[{L.ExportDiagnostics}] {message}\n";
+            AppendCommandLog($"[{L.ExportDiagnostics}] {message}\n");
             _systemIntegration.ShowNotification(L.ExportDiagnostics, message);
         }
         catch (Exception ex)
         {
             var error = string.Format(L.DiagnosticsExportFailed, ex.Message);
-            CommandLog += $"[{L.ExportDiagnostics}] {error}\n";
+            AppendCommandLog($"[{L.ExportDiagnostics}] {error}\n");
             _systemIntegration.ShowNotification(L.ExportDiagnostics, error);
         }
     }

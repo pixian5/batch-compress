@@ -40,7 +40,7 @@ public partial class MainWindowViewModel
     private void ApplyRecommendedConcurrency()
     {
         MaxConcurrency = RecommendedConcurrency;
-        CommandLog += $"{RecommendedConcurrencyText} → {L.ApplyRecommendedConcurrency}\n";
+        AppendCommandLog($"{RecommendedConcurrencyText} → {L.ApplyRecommendedConcurrency}\n");
         OnPropertyChanged(nameof(RecommendedConcurrencyText));
     }
 }

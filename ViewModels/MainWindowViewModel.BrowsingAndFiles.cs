@@ -136,27 +136,27 @@ public partial class MainWindowViewModel
         var count = passwordBook ? result.Entries.Count : result.Paths.Count;
         var sizeGB = result.MatchedBytes / (1024.0 * 1024.0 * 1024.0);
         var estimatedSeconds = result.MatchedBytes / (1024.0 * 1024.0) / 40.0;
-        CommandLog += string.Format(
+        AppendCommandLog(string.Format(
             L.TextImportSummary, type, result.RequestedCount, count,
-            sizeGB.ToString("F3"), estimatedSeconds.ToString("F1")) + "\n";
+            sizeGB.ToString("F3"), estimatedSeconds.ToString("F1")) + "\n");
 
         if (result.MissingEntries.Count > 0)
         {
-            CommandLog += string.Format(L.TextImportMissing, type, result.MissingEntries.Count) + "\n" +
-                          string.Join(Environment.NewLine, result.MissingEntries) + Environment.NewLine;
+            AppendCommandLog(string.Format(L.TextImportMissing, type, result.MissingEntries.Count) + "\n" +
+                             string.Join(Environment.NewLine, result.MissingEntries) + Environment.NewLine);
         }
 
         if (result.IncompleteVolumes.Count > 0)
         {
-            CommandLog += string.Format(L.TextImportIncompleteVolumes, type, result.IncompleteVolumes.Count) + "\n" +
-                          string.Join(Environment.NewLine, result.IncompleteVolumes) + Environment.NewLine;
+            AppendCommandLog(string.Format(L.TextImportIncompleteVolumes, type, result.IncompleteVolumes.Count) + "\n" +
+                             string.Join(Environment.NewLine, result.IncompleteVolumes) + Environment.NewLine);
         }
 
         if (result.AmbiguousEntries.Count > 0 || result.DuplicateVolumeEntries.Count > 0)
         {
             var ambiguous = result.AmbiguousEntries.Concat(result.DuplicateVolumeEntries);
-            CommandLog += string.Format(L.TextImportAmbiguous, type, ambiguous.Count()) + "\n" +
-                          string.Join(Environment.NewLine, ambiguous) + Environment.NewLine;
+            AppendCommandLog(string.Format(L.TextImportAmbiguous, type, ambiguous.Count()) + "\n" +
+                             string.Join(Environment.NewLine, ambiguous) + Environment.NewLine);
         }
 
         if (!passwordBook)
@@ -166,14 +166,14 @@ public partial class MainWindowViewModel
 
         if (result.UnmatchedArchives.Count > 0)
         {
-            CommandLog += string.Format(L.PasswordBookUnmatched, result.UnmatchedArchives.Count) + "\n" +
-                          string.Join(Environment.NewLine, result.UnmatchedArchives) + Environment.NewLine;
+            AppendCommandLog(string.Format(L.PasswordBookUnmatched, result.UnmatchedArchives.Count) + "\n" +
+                             string.Join(Environment.NewLine, result.UnmatchedArchives) + Environment.NewLine);
         }
 
         if (result.VolumeCandidates.Count > 0)
         {
-            CommandLog += string.Format(L.PasswordBookVolumeCandidates, result.VolumeCandidates.Count) + "\n" +
-                          string.Join(Environment.NewLine, result.VolumeCandidates) + Environment.NewLine;
+            AppendCommandLog(string.Format(L.PasswordBookVolumeCandidates, result.VolumeCandidates.Count) + "\n" +
+                             string.Join(Environment.NewLine, result.VolumeCandidates) + Environment.NewLine);
         }
     }
 
@@ -245,7 +245,7 @@ public partial class MainWindowViewModel
         TotalSizeGB = calculation.Size / (1024.0 * 1024.0 * 1024.0);
         foreach (var error in calculation.Errors)
         {
-            CommandLog += error + "\n";
+            AppendCommandLog(error + "\n");
         }
     }
 

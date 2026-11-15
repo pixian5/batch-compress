@@ -66,6 +66,8 @@ internal static partial class Program
             ("批处理结果报告服务", TestBatchReportService),
             // WorkBuddy, 2026-11-16：批次 21（P0）——崩溃兜底日志。
             ("崩溃兜底日志", TestCrashLogService),
+            // WorkBuddy, 2026-11-16：批次 22（P1）——界面日志有界缓冲。
+            ("界面日志缓冲", TestLogBuffer),
             ("日志权限与轮转", TestLogFilePermissionsAndRotation),
             ("日志多代轮转", TestLogMultiGenerationRotation),
             ("日志旧代Gzip压缩", TestLogGzipCompressionRotation),

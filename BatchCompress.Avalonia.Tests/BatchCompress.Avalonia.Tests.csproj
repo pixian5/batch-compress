@@ -21,6 +21,9 @@
     <Compile Include="Program.BatchReportTests.cs" />
     <!-- WorkBuddy, 2026-11-16：批次 21（P0）——崩溃兜底日志回归测试。 -->
     <Compile Include="Program.CrashLogTests.cs" />
+    <!-- WorkBuddy, 2026-11-16：批次 22（P1）——界面日志缓冲回归测试。 -->
+    <Compile Include="Program.LogBufferTests.cs" />
+    <Compile Include="..\ViewModels\LogBuffer.cs" Link="ViewModels\LogBuffer.cs" />
     <Compile Include="Program.EngineTests.cs" />
     <Compile Include="Program.PipelineTests.cs" />
     <Compile Include="Program.LoggingAndConfigTests.cs" />

@@ -214,7 +214,8 @@ public class HeadlessBatchRunner
             {
                 try
                 {
-                    var reportPath = BatchReportWriter.Write(_options.ReportPath!, _reportCollector.Entries);
+                    var reportPath = BatchReportWriter.Write(
+                        _options.ReportPath!, _reportCollector.Entries, _reportCollector.OmittedEntries);
                     _logger.LogOperation("REPORT",
                         $"Wrote batch report: {reportPath} ({_reportCollector.Entries.Count} items)");
                     Console.Error.WriteLine(

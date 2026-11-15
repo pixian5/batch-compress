@@ -794,7 +794,7 @@ public partial class MainWindowViewModel : ViewModelBase
         // GPT-5, 2026-08-06：7z 已由官方 7zz 完整支持；这里只提示该格式不具备 RAR 专属恢复记录和快速打开能力。
         if (value.Trim().TrimStart('.').Equals("7z", StringComparison.OrdinalIgnoreCase))
         {
-            CommandLog += L.Warning7zFormat + "\n";
+            AppendCommandLog(L.Warning7zFormat + "\n");
         }
     }
 
@@ -804,7 +804,7 @@ public partial class MainWindowViewModel : ViewModelBase
         if (value == 0 && SolidArchive)
         {
             SolidArchive = false;
-            CommandLog += L.SolidDisabledForStore + "\n";
+            AppendCommandLog(L.SolidDisabledForStore + "\n");
         }
     }
 

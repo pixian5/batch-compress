@@ -87,6 +87,28 @@ internal static partial class Program
             if (Directory.Exists(tempDir)) Directory.Delete(tempDir, recursive: true);
         }
 
+        // 上限：超出 MaxEntries 的条目只累计计数，报告必须注明省略数量。
+        var capped = new BatchReportCollector();
+        capped.SetOperation("压缩");
+        for (var i = 0; i < BatchReportCollector.MaxEntries + 1; i++)
+        {
+            capped.Report(new OperationProgressInfo
+            {
+                CurrentFile = $"item-{i}",
+                SuccessCount = i + 1
+            });
+        }
+
+        AssertEqual(BatchReportCollector.MaxEntries, capped.Entries.Count);
+        AssertEqual(1, capped.OmittedEntries);
+
+        var cappedMarkdown = BatchReportWriter.ToMarkdown(capped.Entries, capped.OmittedEntries);
+        Assert(cappedMarkdown.Contains("另有 1 条因超出上限未列出", StringComparison.Ordinal),
+            "Markdown 报告必须注明省略数量");
+        var cappedCsv = BatchReportWriter.ToCsv(capped.Entries, capped.OmittedEntries);
+        Assert(cappedCsv.Contains("另有 1 条因超出上限未列出", StringComparison.Ordinal),
+            "CSV 报告必须注明省略数量");
+
         return Task.CompletedTask;
     }
 }

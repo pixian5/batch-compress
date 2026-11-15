@@ -88,9 +88,10 @@ internal sealed class OperationSession
 
             await _owner.OfferShutdownCancellationAsync(options);
 
-            _owner.CommandLog += string.Format(L.OperationCompletionSummary,
+            // WorkBuddy, 2026-11-16：批次 22——日志统一走有界缓冲，不再直接拼字符串。
+            _owner.AppendCommandLog(string.Format(L.OperationCompletionSummary,
                 _owner.SuccessCount, _owner.FailCount, _owner.PostProcessFailCount, _owner.IgnoreCount,
-                _owner.NonExistCount, _owner.IncompleteVolumeCount, _owner.AmbiguousArchiveCount) + "\n";
+                _owner.NonExistCount, _owner.IncompleteVolumeCount, _owner.AmbiguousArchiveCount) + "\n");
 
             _systemIntegration.ShowNotification(completeTitle(),
                 string.Format(L.OperationResultSummary, _owner.SuccessCount, _owner.FailCount, _owner.PostProcessFailCount));
@@ -98,16 +99,18 @@ internal sealed class OperationSession
         catch (OperationCanceledException)
         {
             var cancelledTitle = string.Format(L.OperationCancelled, operationLabel());
-            _owner.CommandLog += cancelledTitle + "\n";
+            _owner.AppendCommandLog(cancelledTitle + "\n");
             _systemIntegration.ShowNotification(cancelledTitle,
                 string.Format(L.SuccessFailMessage, _owner.SuccessCount, _owner.FailCount));
         }
         catch (Exception ex)
         {
-            _owner.CommandLog += string.Format(L.OperationError, ex.Message) + "\n";
+            _owner.AppendCommandLog(string.Format(L.OperationError, ex.Message) + "\n");
         }
         finally
         {
+            // WorkBuddy, 2026-11-16：批次 22——批处理结束强制刷新，避免节流窗口内的最后几行没显示。
+            _owner.ForceFlushLogs();
             _owner.IsOperating = false;
             _owner.CurrentSourcePath = string.Empty;
             _owner.SubProgressPercent = 0;
@@ -188,15 +191,15 @@ internal sealed class OperationSession
         // GPT-5, 2026-09-29：命令输出分类改用进度对象上的标记，不再匹配本地化后的消息前缀。
         if (info.IsCommandOutput)
         {
-            _owner.CommandLog += info.Message + "\n";
+            _owner.AppendCommandLog(info.Message + "\n");
         }
         else if (info.IsError)
         {
-            _owner.FailLog += info.Message + "\n";
+            _owner.AppendFailLog(info.Message + "\n");
         }
         else
         {
-            _owner.SuccessLog += info.Message + "\n";
+            _owner.AppendSuccessLog(info.Message + "\n");
         }
     }
 
