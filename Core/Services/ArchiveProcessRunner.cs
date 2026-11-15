@@ -33,7 +33,8 @@ public sealed class ArchiveProcessRunner
     public async Task<ArchiveProcessResult> RunAsync(
         IReadOnlyList<string> arguments,
         CancellationToken cancellationToken,
-        Action<string>? onOutputLine = null)
+        Action<string>? onOutputLine = null,
+        Func<string, ArchiveFatalError?>? onFatalLine = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -61,27 +62,95 @@ public sealed class ArchiveProcessRunner
             throw new InvalidOperationException($"无法启动 {_toolName}: {_executablePath}");
         }
 
-        var standardOutputTask = ReadStreamWithCallbackAsync(process.StandardOutput, onOutputLine);
-        var standardErrorTask = process.StandardError.ReadToEndAsync();
+        // WorkBuddy, 2026-11-15：批次 19（P4-1）——致命输出错误走独立的联动令牌。
+        // 只有传入 onFatalLine 的解压路径才启用；压缩路径与旧行为逐字节一致。
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var fatalState = new FatalState();
+
+        void CheckFatal(string line)
+        {
+            if (onFatalLine is null || linkedCts.IsCancellationRequested) return;
+
+            ArchiveFatalError? fatal;
+            try
+            {
+                fatal = onFatalLine(line);
+            }
+            catch
+            {
+                // 解析器异常绝不能影响归档进程本身，降级为「不提前终止」。
+                return;
+            }
+
+            if (fatal is null) return;
+            lock (fatalState.Gate)
+            {
+                fatalState.Error ??= fatal;
+            }
+
+            try { linkedCts.Cancel(); }
+            catch (ObjectDisposedException) { }
+        }
+
+        Action<string>? stdoutHandler = null;
+        if (onOutputLine is not null || onFatalLine is not null)
+        {
+            stdoutHandler = line =>
+            {
+                try { onOutputLine?.Invoke(line); }
+                finally { CheckFatal(line); }
+            };
+        }
+
+        // 实测 7-Zip 的 "ERROR: CRC Failed" 写的是 stderr，必须同样逐行流式读取，
+        // 否则等进程结束才拿到整段输出，就做不到「提前终止、减少无效磁盘读取」。
+        var standardOutputTask = ReadStreamWithCallbackAsync(process.StandardOutput, stdoutHandler);
+        var standardErrorTask = onFatalLine is null
+            ? process.StandardError.ReadToEndAsync()
+            : ReadStreamWithCallbackAsync(process.StandardError, line => CheckFatal(line));
 
         try
         {
-            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+            await process.WaitForExitAsync(linkedCts.Token).ConfigureAwait(false);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (linkedCts.IsCancellationRequested)
         {
             TryKill(process);
             await WaitForExitAfterKillAsync(process).ConfigureAwait(false);
             await Task.WhenAll(standardOutputTask, standardErrorTask).ConfigureAwait(false);
+            ThrowFatalIfNeeded(fatalState, cancellationToken);
             throw;
         }
 
         await Task.WhenAll(standardOutputTask, standardErrorTask).ConfigureAwait(false);
+        // 进程恰好与取消同时自然退出时，仍要把致命错误转换成失败结果，避免竞态漏判。
+        ThrowFatalIfNeeded(fatalState, cancellationToken);
         return new ArchiveProcessResult(
             process.ExitCode,
             await standardOutputTask.ConfigureAwait(false),
             await standardErrorTask.ConfigureAwait(false),
             commandLine);
+    }
+
+    private static void ThrowFatalIfNeeded(FatalState state, CancellationToken externalToken)
+    {
+        ArchiveFatalError? fatal;
+        lock (state.Gate)
+        {
+            fatal = state.Error;
+        }
+
+        // 外部用户取消优先：它必须继续按取消语义向上传播，不能被误判成归档损坏。
+        if (fatal is not null && !externalToken.IsCancellationRequested)
+        {
+            throw new ArchiveFatalOutputException(fatal);
+        }
+    }
+
+    private sealed class FatalState
+    {
+        public readonly object Gate = new();
+        public ArchiveFatalError? Error;
     }
 
     private static async Task<string> ReadStreamWithCallbackAsync(

@@ -60,6 +60,8 @@ internal static partial class Program
             // WorkBuddy, 2026-11-15：批次 18（P4-2）——硬件感知并发推荐。
             ("硬件感知并发推荐", TestConcurrencyAdvisor),
             ("自动并发参数解析", TestAutoConcurrencyArgument),
+            // WorkBuddy, 2026-11-15：批次 19（P4-1）——归档坏块提前终止。
+            ("归档致命输出解析", TestFatalOutputParsing),
             ("日志权限与轮转", TestLogFilePermissionsAndRotation),
             ("日志多代轮转", TestLogMultiGenerationRotation),
             ("日志旧代Gzip压缩", TestLogGzipCompressionRotation),

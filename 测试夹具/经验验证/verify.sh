@@ -223,6 +223,24 @@ if [[ $json_auto_rc -eq 0 && "$non_json" == "0" ]] \
 report "auto 叠加结构化输出时 stdout 仍为纯 NDJSON、日志含推荐依据" "$r"
 
 echo ""
+echo "=== 15. 多卷坏块提前终止（批次 19 / P4-1）==="
+# 造 3 MiB 随机数据切成 1 MiB 分卷，篡改第二个分卷中间字节，再用本项目命令行解压。
+# 断言：任务失败、终端能看到损坏原因、日志有原始错误行、输出目录零残片。
+dd if=/dev/urandom of="$work/vol.bin" bs=1m count=3 2>/dev/null
+z7="$repo_root/tools/7zip/macos/7zz"
+"$z7" a -v1m -mx=1 "$work/vol.7z" "$work/vol.bin" > /dev/null 2>&1
+first="$(ls -1 "$work"/vol.7z.* | sed -n '1p')"
+second="$(ls -1 "$work"/vol.7z.* | sed -n '2p')"
+printf '\x00\x00\x00\x00' | dd of="$second" bs=1 seek=200 count=4 conv=notrunc 2>/dev/null
+"$dotnet_bin" "$app" extract --input "$first" --output "$work/out-corrupt" --format 7z \
+  --log-file "$work/corrupt.log" > "$work/corrupt.out" 2> "$work/corrupt.err"
+corrupt_rc=$?
+leftover="$(find "$work/out-corrupt" -type f 2>/dev/null | wc -l | tr -d ' ')"
+if [[ "$corrupt_rc" -eq 1 ]] && grep -q "归档损坏，已提前终止" "$work/corrupt.err" \
+   && grep -q "CRC Failed" "$work/corrupt.log" && [[ "$leftover" == "0" ]]; then r=0; else r=1; fi
+report "损坏分卷提前终止、终端可见原因、零残片（退出码 $corrupt_rc，残留 $leftover）" "$r"
+
+echo ""
 echo "=== 汇总 ==="
 echo "PASS=$pass FAIL=$fail"
 echo "临时目录：$work（退出时自动清理）"

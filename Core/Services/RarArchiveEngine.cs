@@ -537,11 +537,23 @@ public class RarArchiveEngine : IArchiveEngine
         try
         {
             var arguments = WinRarCommandBuilder.BuildExtractionArguments(archivePath, outputDir, options);
-            return await ExecuteRarCommand(arguments, cancellationToken, options.OutputLineHandler).ConfigureAwait(false);
+            return await ExecuteRarCommand(
+                arguments, cancellationToken, options.OutputLineHandler,
+                ArchiveSubProgressParser.TryParseFatalError).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             throw;
+        }
+        // WorkBuddy, 2026-11-15：批次 19（P4-1）——与 7zz 引擎保持一致的失败语义。
+        catch (ArchiveFatalOutputException ex)
+        {
+            return new ArchiveResult
+            {
+                Success = false,
+                ExitCode = -4,
+                ErrorMessage = $"归档损坏，已提前终止：{ex.Error.Kind} — {ex.Error.Detail}（{ex.Error.SourceLine}）"
+            };
         }
         catch (Exception ex)
         {
@@ -557,10 +569,12 @@ public class RarArchiveEngine : IArchiveEngine
     private async Task<ArchiveResult> ExecuteRarCommand(
         IReadOnlyList<string> arguments,
         CancellationToken cancellationToken,
-        Action<string>? onOutputLine = null)
+        Action<string>? onOutputLine = null,
+        // WorkBuddy, 2026-11-15：批次 19（P4-1）——仅解压路径传入，启用坏块提前终止。
+        Func<string, ArchiveFatalError?>? onFatalLine = null)
     {
         var result = await new WinRarProcessRunner(_rarExecutablePath!)
-            .RunAsync(arguments, cancellationToken, onOutputLine)
+            .RunAsync(arguments, cancellationToken, onOutputLine, onFatalLine)
             .ConfigureAwait(false);
 
         var success = WinRarExitCodes.IsSuccess(result.ExitCode);

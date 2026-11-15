@@ -25,10 +25,12 @@ public sealed class WinRarProcessRunner
     public async Task<WinRarProcessResult> RunAsync(
         IReadOnlyList<string> arguments,
         CancellationToken cancellationToken,
-        Action<string>? onOutputLine = null)
+        Action<string>? onOutputLine = null,
+        // WorkBuddy, 2026-11-15：批次 19（P4-1）——解压路径透传致命错误解析器。
+        Func<string, ArchiveFatalError?>? onFatalLine = null)
     {
         var result = await new ArchiveProcessRunner(_executablePath, "WinRAR/RAR")
-            .RunAsync(arguments, cancellationToken, onOutputLine)
+            .RunAsync(arguments, cancellationToken, onOutputLine, onFatalLine)
             .ConfigureAwait(false);
 
         return new WinRarProcessResult(

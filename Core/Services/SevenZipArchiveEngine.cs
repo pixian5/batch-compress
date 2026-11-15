@@ -91,11 +91,25 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
         try
         {
             var arguments = SevenZipCommandBuilder.BuildExtractionArguments(archivePath, outputDir, options);
-            return await ExecuteAsync(arguments, cancellationToken, options.OutputLineHandler).ConfigureAwait(false);
+            return await ExecuteAsync(
+                arguments, cancellationToken, options.OutputLineHandler,
+                ArchiveSubProgressParser.TryParseFatalError).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             throw;
+        }
+        // WorkBuddy, 2026-11-15：批次 19（P4-1）——坏块提前终止转成明确的失败结果，
+        // 由执行管线走既有的失败回滚与计数，不会被误当成用户取消。
+        catch (ArchiveFatalOutputException ex)
+        {
+            // ErrorMessage 会由上层服务写入日志文件并展示给用户，携带 Kind / 短语 / 原始行便于精确定位。
+            return new ArchiveResult
+            {
+                Success = false,
+                ExitCode = -4,
+                ErrorMessage = $"归档损坏，已提前终止：{ex.Error.Kind} — {ex.Error.Detail}（{ex.Error.SourceLine}）"
+            };
         }
         catch (Exception ex)
         {
@@ -210,10 +224,12 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
     private async Task<ArchiveResult> ExecuteAsync(
         IReadOnlyList<string> arguments,
         CancellationToken cancellationToken,
-        Action<string>? onOutputLine = null)
+        Action<string>? onOutputLine = null,
+        // WorkBuddy, 2026-11-15：批次 19（P4-1）——仅解压路径传入，启用坏块提前终止。
+        Func<string, ArchiveFatalError?>? onFatalLine = null)
     {
         var result = await new ArchiveProcessRunner(_executablePath!, "7-Zip")
-            .RunAsync(arguments, cancellationToken, onOutputLine)
+            .RunAsync(arguments, cancellationToken, onOutputLine, onFatalLine)
             .ConfigureAwait(false);
         var success = SevenZipExitCodes.IsSuccess(result.ExitCode);
 

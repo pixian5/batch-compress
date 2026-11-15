@@ -159,6 +159,13 @@ public class HeadlessBatchRunner
                 return;
             }
 
+            // WorkBuddy, 2026-11-15：批次 19（P4-1）——默认模式也要让用户看到失败原因，
+            // 否则终端只有「1 failed」、损坏定位只能翻日志。写 stderr 不污染 stdout 的进度与计数。
+            if (info.IsError && !_options.Verbose)
+            {
+                Console.Error.WriteLine(info.Message);
+            }
+
             if (_options.Verbose)
             {
                 WriteLine($"[{status}] {info.Message}");
