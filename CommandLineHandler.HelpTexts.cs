@@ -56,7 +56,7 @@ public static partial class CommandLineHandler
           --move-source                  成功后移动源文件
           --max-size, --max-size-gb <GB> 最大处理总量，0 表示不限
           --shutdown                     全部完成后请求关机
-          --concurrency, -j <1..16>     并发执行任务数（默认 1 串行）
+          --concurrency, -j <1..16|auto>  并发任务数；auto 按处理器与可用内存自动推荐（默认 1 串行）
           --add-enclosures / --no-add-enclosures
                                         启用或关闭附件目录
           --enclosure-list <文件>        旧版兼容：换行分隔的附件目录
@@ -139,7 +139,7 @@ public static partial class CommandLineHandler
           --move-source                  成功後移動來源檔案
           --max-size, --max-size-gb <GB> 最大處理總量，0 表示不限
           --shutdown                     全部完成後請求關機
-          --concurrency, -j <1..16>     並行執行任務數（預設 1 串列）
+          --concurrency, -j <1..16|auto>  並行任務數；auto 依處理器與可用記憶體自動推薦（預設 1 串列）
           --add-enclosures / --no-add-enclosures
                                         啟用或關閉附件目錄
           --enclosure-list <檔案>        舊版相容：換行分隔的附件目錄
@@ -226,7 +226,7 @@ public static partial class CommandLineHandler
           --move-source                  Move sources after success
           --max-size, --max-size-gb <GB> Total size cap, 0 means unlimited
           --shutdown                     Request shutdown after completion
-          --concurrency, -j <1..16>     Concurrent tasks to run (default 1, serial)
+          --concurrency, -j <1..16|auto>  Tasks to run; auto recommends from CPU cores and available memory (default 1, serial)
           --add-enclosures / --no-add-enclosures
                                         Enable or disable enclosure directories
           --enclosure-list <file>        Legacy: newline separated enclosure list
@@ -315,7 +315,7 @@ public static partial class CommandLineHandler
           --max-size, --max-size-gb <GB>
                                         最大処理合計サイズ（0 は無制限）
           --shutdown                    すべての処理完了後にシャットダウンを要求
-          --concurrency, -j <1..16>     並行タスク実行数（デフォルト 1、順次実行）
+          --concurrency, -j <1..16|auto>  並行タスク数；auto は CPU と利用可能メモリから自動推奨（既定 1、順次）
           --add-enclosures / --no-add-enclosures
                                         添付ディレクトリの有効化または無効化
           --enclosure-list <ファイル>   下位互換：改行区切りの添付ディレクトリ一覧
@@ -402,7 +402,7 @@ public static partial class CommandLineHandler
           --max-size, --max-size-gb <GB>
                                         Gesamtobergroesse in GB (0 bedeutet unbegrenzt)
           --shutdown                    Nach Abschluss aller Aufgaben Herunterfahren anfordern
-          --concurrency, -j <1..16>     Gleichzeitig auszufuehrende Aufgaben (Standard 1, seriell)
+          --concurrency, -j <1..16|auto>  Aufgaben; auto empfiehlt nach CPU-Kernen und freiem Speicher (Standard 1, seriell)
           --add-enclosures / --no-add-enclosures
                                         Anhangsverzeichnisse aktivieren oder deaktivieren
           --enclosure-list <Datei>      Abwaertskompatibel: Zeilengetrennte Anhangsverzeichnisliste

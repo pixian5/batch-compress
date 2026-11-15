@@ -367,4 +367,10 @@ public class LanguageStrings : INotifyPropertyChanged
     public string EnclosuresConfigSaved { get; set; } = "附件默认配置已保存";
     public string EnclosuresConfigReset { get; set; } = "已恢复默认联系文案模版";
     public string EnclosuresConfigSaveFailed { get; set; } = "附件默认配置保存失败，详见控制台警告";
+
+    // WorkBuddy, 2026-11-15：批次 18（P4-2）——硬件感知自适应并发推荐相关文案。
+    public string CliAutoConcurrency { get; set; } = "自动并发度：{0}（处理器 {1} 核，可用内存 {2} GB）";
+    public string RecommendedConcurrencyLabel { get; set; } = "推荐 {0}";
+    public string ApplyRecommendedConcurrency { get; set; } = "应用推荐";
+    public string TooltipRecommendedConcurrency { get; set; } = "依据处理器核心数与可用内存计算的安全并发度，点击可直接应用。";
 }

@@ -57,6 +57,9 @@ internal static partial class Program
             ("CLI语言默认GUI启动", TestCliLanguageDefaultGui),
             ("CLI输出格式参数", TestCliOutputFormatOptions),
             ("CLI错误文案本地化", TestCliErrorLocalization),
+            // WorkBuddy, 2026-11-15：批次 18（P4-2）——硬件感知并发推荐。
+            ("硬件感知并发推荐", TestConcurrencyAdvisor),
+            ("自动并发参数解析", TestAutoConcurrencyArgument),
             ("日志权限与轮转", TestLogFilePermissionsAndRotation),
             ("日志多代轮转", TestLogMultiGenerationRotation),
             ("日志旧代Gzip压缩", TestLogGzipCompressionRotation),

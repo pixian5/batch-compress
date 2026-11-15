@@ -200,6 +200,29 @@ else
 fi
 
 echo ""
+echo "=== 14. 硬件感知并发 --concurrency auto（批次 18 / P4-2）==="
+# 试运行预检同样要显示推荐值；提示走 stderr，不污染 stdout 的任务清单。
+"$dotnet_bin" "$app" compress --source "$work/来源" --output "$work/out-auto" --format 7z \
+  --concurrency auto --dry-run --log-file "$work/auto.log" \
+  > "$work/auto.out" 2> "$work/auto.err"
+auto_rc=$?
+if [[ $auto_rc -eq 0 ]] && grep -q "DRY-RUN" "$work/auto.out" \
+   && grep -Eq "自动并发度|Auto concurrency" "$work/auto.err" \
+   && [[ ! -d "$work/out-auto" ]]; then r=0; else r=1; fi
+report "auto 预检显示推荐值且不创建输出目录（退出码 $auto_rc）" "$r"
+
+# 结构化输出叠加 auto 时，stdout 必须仍是纯 NDJSON（逐行 JSON），日志要留下判断依据。
+mkdir -p "$work/out-auto-json"
+"$dotnet_bin" "$app" compress --input "$work/来源/普通文本.txt" --output "$work/out-auto-json" \
+  --format 7z --concurrency auto --output-format json --log-file "$work/auto-json.log" \
+  > "$work/auto-json.out" 2> "$work/auto-json.err"
+json_auto_rc=$?
+non_json="$(grep -vc '^{' "$work/auto-json.out" 2>/dev/null || true)"
+if [[ $json_auto_rc -eq 0 && "$non_json" == "0" ]] \
+   && grep -q "CONCURRENCY" "$work/auto-json.log"; then r=0; else r=1; fi
+report "auto 叠加结构化输出时 stdout 仍为纯 NDJSON、日志含推荐依据" "$r"
+
+echo ""
 echo "=== 汇总 ==="
 echo "PASS=$pass FAIL=$fail"
 echo "临时目录：$work（退出时自动清理）"

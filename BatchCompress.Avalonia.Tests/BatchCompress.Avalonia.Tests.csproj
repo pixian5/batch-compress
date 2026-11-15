@@ -13,6 +13,8 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Program.CliTests.cs" />
+    <!-- WorkBuddy, 2026-11-15：批次 18（P4-2）——并发推荐与 auto 参数回归测试。 -->
+    <Compile Include="Program.ConcurrencyTests.cs" />
     <Compile Include="Program.EngineTests.cs" />
     <Compile Include="Program.PipelineTests.cs" />
     <Compile Include="Program.LoggingAndConfigTests.cs" />
@@ -41,6 +43,8 @@
     <Compile Include="..\Core\Services\EnclosureConfigService.cs" Link="Core\Services\EnclosureConfigService.cs" />
     <Compile Include="..\Core\Services\DiagnosticsExportService.cs" Link="Core\Services\DiagnosticsExportService.cs" />
     <Compile Include="..\Core\Services\ArchiveSubProgressParser.cs" Link="Core\Services\ArchiveSubProgressParser.cs" />
+    <!-- WorkBuddy, 2026-11-15：批次 18（P4-2）——测试工程显式链接并发推荐服务。 -->
+    <Compile Include="..\Core\Services\ConcurrencyAdvisor.cs" Link="Core\Services\ConcurrencyAdvisor.cs" />
     <Compile Include="..\Core\Services\Pipeline\IBatchItemAdapter.cs" Link="Core\Services\Pipeline\IBatchItemAdapter.cs" />
     <Compile Include="..\Core\Services\Pipeline\PreparedBatchItem.cs" Link="Core\Services\Pipeline\PreparedBatchItem.cs" />
     <Compile Include="..\Core\Services\Pipeline\BatchExecutionPipeline.cs" Link="Core\Services\Pipeline\BatchExecutionPipeline.cs" />

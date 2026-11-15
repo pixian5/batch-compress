@@ -27,6 +27,10 @@ public class HeadlessBatchRunner
     private readonly NdjsonOutputWriter? _structuredOutput;
     private readonly DateTime _startedAt = DateTime.Now;
 
+    // WorkBuddy, 2026-11-15：批次 18（P4-2）——缓存 auto 解析结果，
+    // 使试运行与真实执行共用同一个推荐值，且提示只输出一次。
+    private int? _resolvedConcurrency;
+
     public HeadlessBatchRunner(CommandLineOptions options, FileLoggerService logger)
     {
         _options = options;
@@ -82,6 +86,13 @@ public class HeadlessBatchRunner
             _logger.LogError(sourceError);
             Console.Error.WriteLine($"Error: {sourceError}");
             return 2;
+        }
+
+        // WorkBuddy, 2026-11-15：批次 18（P4-2）——auto 在试运行前先解析并提示，
+        // 让 --dry-run 预检也能看到推荐并发度；真实执行复用同一份缓存值。
+        if (_options.AutoConcurrency)
+        {
+            ResolveConcurrency();
         }
 
         if (_options.DryRun)
@@ -399,6 +410,42 @@ public class HeadlessBatchRunner
         public void Report(T value) => _handler(value);
     }
 
+    /// <summary>
+    /// 解析本批次实际使用的并发度。
+    /// WorkBuddy, 2026-11-15：批次 18（P4-2）——auto 模式依据处理器数与可用内存推荐，
+    /// 并把判断依据写进日志与标准错误（stderr）；走 stderr 是为了不污染
+    /// --output-format json 的标准输出（stdout）事件流。
+    /// </summary>
+    private int ResolveConcurrency()
+    {
+        if (!_options.AutoConcurrency)
+        {
+            return _options.MaxConcurrency;
+        }
+
+        // 试运行路径会先调用一次；真实执行再调用时直接复用，不重复读硬件也不重复打印。
+        if (_resolvedConcurrency.HasValue)
+        {
+            return _resolvedConcurrency.Value;
+        }
+
+        var recommendation = ConcurrencyAdvisor.Recommend();
+        var memoryGB = ConcurrencyAdvisor.ToGigabytes(recommendation.AvailableMemoryBytes);
+        _logger.LogOperation("CONCURRENCY",
+            $"auto concurrency={recommendation.Recommended}, cores={recommendation.CoreCount}, " +
+            $"availableMemoryGB={memoryGB:F1}, coreLimit={recommendation.CoreLimit}, " +
+            $"memoryLimit={recommendation.MemoryLimit}");
+
+        Console.Error.WriteLine(string.Format(
+            LocalizationService.Instance.Strings.CliAutoConcurrency,
+            recommendation.Recommended,
+            recommendation.CoreCount,
+            memoryGB.ToString("F1")));
+
+        _resolvedConcurrency = recommendation.Recommended;
+        return recommendation.Recommended;
+    }
+
     private BatchOperationOptions BuildBatchOperationOptions()
     {
         var existingMode = _options.ExistingFileMode.ToLowerInvariant() switch
@@ -431,7 +478,8 @@ public class HeadlessBatchRunner
             SkipAlreadyProcessed = _options.SkipProcessed,
             MaxSizeGB = _options.MaxSizeGB,
             // GLM-5.3, 2026-11-04：批次 5——CLI --concurrency/-j 透传到批处理管线。
-            MaxConcurrency = _options.MaxConcurrency,
+            // WorkBuddy, 2026-11-15：批次 18（P4-2）——auto 时由硬件推荐值替代显式数值。
+            MaxConcurrency = ResolveConcurrency(),
             ShutdownAfterComplete = _options.ShutdownAfter,
             PasswordNameMode = _options.PasswordName == "base"
                 ? PasswordNameMode.BaseName

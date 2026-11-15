@@ -57,6 +57,10 @@ public sealed class CommandLineOptions
     // GLM-5.3, 2026-11-04：批次 5——受控并发度（默认 1 串行，1-16）。
     public int MaxConcurrency { get; set; } = 1;
 
+    // WorkBuddy, 2026-11-15：批次 18（P4-2）——--concurrency auto 时按硬件资源自动定值，
+    // 与显式数值互斥；auto 不改动 MaxConcurrency 的默认值，实际值在构建批次选项时解析。
+    public bool AutoConcurrency { get; set; }
+
     // GLM-5.3, 2026-11-04：批次 3——CLI 界面语言与结构化输出格式。
     // Language 为 LocalizationService 的语言键（en-US 等区域变体在解析时归一为 en 等）；
     // OutputFormat 仅 text（人类可读）与 json（NDJSON 逐行事件流）。
@@ -842,7 +846,16 @@ public static partial class CommandLineHandler
                 state.Options.OutputFormat = NormalizeOutputFormat(value, state.Errors);
                 break;
             case "--concurrency":
-                state.Options.MaxConcurrency = ParseInt(value, "--concurrency", state.Errors, 1);
+                // WorkBuddy, 2026-11-15：批次 18（P4-2）——接受 auto 关键字，
+                // 大小写不敏感；其余值仍按原有整数解析与 1-16 范围校验处理。
+                if (string.Equals(value, "auto", StringComparison.OrdinalIgnoreCase))
+                {
+                    state.Options.AutoConcurrency = true;
+                }
+                else
+                {
+                    state.Options.MaxConcurrency = ParseInt(value, "--concurrency", state.Errors, 1);
+                }
                 break;
             case "--log-retention-days":
                 state.Options.LogRetentionDays = ParseInt(value, "--log-retention-days", state.Errors, FileLoggerService.DefaultRetentionDays);
