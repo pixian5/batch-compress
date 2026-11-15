@@ -1,0 +1,59 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:BatchCompress.Avalonia.ViewModels"
+        x:Class="BatchCompress.Avalonia.Views.AboutWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding L.About}"
+        Width="660" Height="430"
+        MinWidth="560" MinHeight="380"
+        WindowStartupLocation="CenterOwner">
+
+    <!-- WorkBuddy, 2026-11-16：批次 27（P4-4）——只读环境信息与路径；所有用户可见文案均走本地化绑定，界面文件不留硬编码中文。 -->
+    <Window.Styles>
+        <Style Selector="TextBlock.aboutLabel">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,14,12"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+        </Style>
+        <Style Selector="SelectableTextBlock.aboutValue">
+            <Setter Property="Margin" Value="0,0,0,12"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid Margin="24" RowDefinitions="Auto,*,Auto,Auto">
+        <TextBlock Grid.Row="0" Text="{Binding L.About}" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,18"/>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                <TextBlock Grid.Row="0" Grid.Column="0" Classes="aboutLabel" Text="{Binding L.AboutVersion}"/>
+                <SelectableTextBlock Grid.Row="0" Grid.Column="1" Classes="aboutValue" Text="{Binding AboutInfo.Version}"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Classes="aboutLabel" Text="{Binding L.AboutRuntime}"/>
+                <SelectableTextBlock Grid.Row="1" Grid.Column="1" Classes="aboutValue" Text="{Binding AboutInfo.Runtime}"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Classes="aboutLabel" Text="{Binding L.AboutOperatingSystem}"/>
+                <SelectableTextBlock Grid.Row="2" Grid.Column="1" Classes="aboutValue" Text="{Binding AboutInfo.OperatingSystem}"/>
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Classes="aboutLabel" Text="{Binding L.AboutLogDirectory}"/>
+                <SelectableTextBlock Grid.Row="3" Grid.Column="1" Classes="aboutValue" Text="{Binding AboutInfo.GuiLogDirectory}"/>
+
+                <TextBlock Grid.Row="4" Grid.Column="0" Classes="aboutLabel" Text="{Binding L.AboutCrashLogDirectory}"/>
+                <SelectableTextBlock Grid.Row="4" Grid.Column="1" Classes="aboutValue" Text="{Binding AboutInfo.CrashLogDirectory}"/>
+
+                <TextBlock Grid.Row="5" Grid.Column="0" Classes="aboutLabel" Text="{Binding L.AboutReportDirectory}"/>
+                <SelectableTextBlock Grid.Row="5" Grid.Column="1" Classes="aboutValue" Text="{Binding AboutInfo.ReportDirectory}"/>
+            </Grid>
+        </ScrollViewer>
+
+        <TextBlock Grid.Row="2" Text="{Binding L.AboutDirectoryNote}" TextWrapping="Wrap" Opacity="0.7" Margin="0,14,0,0"/>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,20,0,0">
+            <Button Content="{Binding L.AboutOpenLogDirectory}" Command="{Binding OpenAboutLogDirectoryCommand}" MinWidth="140" MinHeight="32"
+                    ToolTip.Tip="{Binding AboutInfo.GuiLogDirectory}"/>
+            <Button Content="{Binding L.ExportDiagnostics}" Command="{Binding ExportDiagnosticsCommand}" MinWidth="140" MinHeight="32"/>
+            <Button Content="{Binding L.AboutClose}" Click="CloseButton_Click" MinWidth="90" MinHeight="32"/>
+        </StackPanel>
+    </Grid>
+</Window>

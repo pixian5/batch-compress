@@ -366,17 +366,15 @@ public partial class MainWindowViewModel
     {
         try
         {
-            var desktopDir = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-            if (string.IsNullOrWhiteSpace(desktopDir) || !Directory.Exists(desktopDir))
-            {
-                desktopDir = Path.GetTempPath();
-            }
+            // WorkBuddy, 2026-11-16：批次 27——导出目录与「关于」弹窗同源；
+            // 扫描范围改为界面日志目录、崩溃日志目录、命令行日志目录三者的并集。
+            var exportDirectory = ApplicationInfoService.ResolveReportDirectory();
 
             var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
-            var zipPath = Path.Combine(desktopDir, $"batchcompress-diagnostics-{timestamp}.zip");
+            var zipPath = Path.Combine(exportDirectory, $"batchcompress-diagnostics-{timestamp}.zip");
 
             var exporter = new DiagnosticsExportService(
-                Path.Combine(AppContext.BaseDirectory, "logs"),
+                ApplicationInfoService.ResolveDiagnosticsLogDirectories(),
                 new RarArchiveEngine(),
                 new SevenZipArchiveEngine());
 

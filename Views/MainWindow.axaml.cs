@@ -423,6 +423,8 @@ public partial class MainWindow : Window
             viewModel.BrowseSaveFileRequested = BrowseSaveFileAsync;
             viewModel.BrowseAttachmentRequested = BrowseAttachmentAsync;
             viewModel.ShowHelpRequested = ShowHelpAsync;
+            // WorkBuddy, 2026-11-16：批次 27——「关于」弹窗复用同一个 ViewModel 作为数据源。
+            viewModel.ShowAboutRequested = ShowAboutAsync;
             viewModel.HideWindowRequested = HideWindowFromViewModel;
             viewModel.ConfirmShutdownCancellationRequested = ConfirmShutdownCancellationAsync;
         }
@@ -473,6 +475,18 @@ public partial class MainWindow : Window
     {
         // GPT-5, 2026-09-30：帮助对话框标题与正文改用本地化词条。
         await ShowMessageBoxAsync(L.Help, L.HelpBody);
+    }
+
+    // WorkBuddy, 2026-11-16：批次 27——模态展示只读的「关于」窗口；
+    // 与主窗口共用 DataContext，语言切换时弹窗内的绑定同步刷新。
+    private async Task ShowAboutAsync()
+    {
+        var dialog = new AboutWindow
+        {
+            DataContext = DataContext,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+        await dialog.ShowDialog(this);
     }
 
     private Task<bool> ConfirmShutdownCancellationAsync() =>

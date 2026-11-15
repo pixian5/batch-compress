@@ -313,6 +313,18 @@
     "ReportSummary": "共 {0} 项；成功 {1}，失败 {2}，跳过 {3}。",
     "ReportOmittedNote": "另有 {0} 条因超出上限未列出，请缩小批次或分批执行",
     "ReportCredentialRedacted": "（已省略含凭据的文本）",
-    "CliReportModeSkipped": "当前模式（{0}）不产生逐项结果，未生成报告：{1}"
+    "CliReportModeSkipped": "当前模式（{0}）不产生逐项结果，未生成报告：{1}",
+    "About": "关于",
+    "TooltipAbout": "查看版本、运行时与各类日志目录",
+    "AboutVersion": "版本",
+    "AboutRuntime": ".NET 运行时",
+    "AboutOperatingSystem": "操作系统",
+    "AboutLogDirectory": "运行日志目录",
+    "AboutCrashLogDirectory": "崩溃日志目录",
+    "AboutReportDirectory": "结果报告默认目录",
+    "AboutOpenLogDirectory": "打开日志目录",
+    "AboutClose": "关闭",
+    "AboutOpenFolderFailed": "打开日志目录失败：{0}",
+    "AboutDirectoryNote": "命令行可通过 --report、--log-file、--export-diagnostics 指定其它路径；此处显示的是界面默认值。"
   }
 }

@@ -313,6 +313,18 @@
     "ReportSummary": "Total {0} items; {1} succeeded, {2} failed, {3} skipped.",
     "ReportOmittedNote": "{0} more items were omitted due to the entry limit; split the batch or run it in parts",
     "ReportCredentialRedacted": "(text containing credentials omitted)",
-    "CliReportModeSkipped": "Mode {0} does not produce per-item results; no report written: {1}"
+    "CliReportModeSkipped": "Mode {0} does not produce per-item results; no report written: {1}",
+    "About": "About",
+    "TooltipAbout": "View version, runtime and log directory paths",
+    "AboutVersion": "Version",
+    "AboutRuntime": ".NET runtime",
+    "AboutOperatingSystem": "Operating system",
+    "AboutLogDirectory": "Application log directory",
+    "AboutCrashLogDirectory": "Crash log directory",
+    "AboutReportDirectory": "Default result report directory",
+    "AboutOpenLogDirectory": "Open log directory",
+    "AboutClose": "Close",
+    "AboutOpenFolderFailed": "Failed to open log directory: {0}",
+    "AboutDirectoryNote": "The command line can override these with --report, --log-file and --export-diagnostics; values shown here are the GUI defaults."
   }
 }

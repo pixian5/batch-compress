@@ -313,6 +313,18 @@
     "ReportSummary": "全 {0} 件；成功 {1}、失敗 {2}、スキップ {3}。",
     "ReportOmittedNote": "上限を超えたため他 {0} 件は記載していません。バッチを分割して実行してください",
     "ReportCredentialRedacted": "（認証情報を含むテキストを省略しました）",
-    "CliReportModeSkipped": "モード {0} では項目別の結果を生成しないため、レポートは出力されません: {1}"
+    "CliReportModeSkipped": "モード {0} では項目別の結果を生成しないため、レポートは出力されません: {1}",
+    "About": "このアプリについて",
+    "TooltipAbout": "バージョン、ランタイム、ログディレクトリを表示",
+    "AboutVersion": "バージョン",
+    "AboutRuntime": ".NET ランタイム",
+    "AboutOperatingSystem": "オペレーティングシステム",
+    "AboutLogDirectory": "アプリケーションログディレクトリ",
+    "AboutCrashLogDirectory": "クラッシュログディレクトリ",
+    "AboutReportDirectory": "結果レポートの既定ディレクトリ",
+    "AboutOpenLogDirectory": "ログディレクトリを開く",
+    "AboutClose": "閉じる",
+    "AboutOpenFolderFailed": "ログディレクトリを開けませんでした: {0}",
+    "AboutDirectoryNote": "コマンドラインでは --report、--log-file、--export-diagnostics で別のパスを指定できます。ここでは画面の既定値を表示しています。"
   }
 }

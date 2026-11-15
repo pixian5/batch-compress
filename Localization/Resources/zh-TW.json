@@ -313,6 +313,18 @@
     "ReportSummary": "共 {0} 項；成功 {1}，失敗 {2}，略過 {3}。",
     "ReportOmittedNote": "另有 {0} 條因超出上限未列出，請縮小批次或分批執行",
     "ReportCredentialRedacted": "（已省略含憑據的文字）",
-    "CliReportModeSkipped": "目前模式（{0}）不產生逐項結果，未產生報告：{1}"
+    "CliReportModeSkipped": "目前模式（{0}）不產生逐項結果，未產生報告：{1}",
+    "About": "關於",
+    "TooltipAbout": "檢視版本、執行階段與各類紀錄目錄",
+    "AboutVersion": "版本",
+    "AboutRuntime": ".NET 執行階段",
+    "AboutOperatingSystem": "作業系統",
+    "AboutLogDirectory": "執行紀錄目錄",
+    "AboutCrashLogDirectory": "崩潰紀錄目錄",
+    "AboutReportDirectory": "結果報告預設目錄",
+    "AboutOpenLogDirectory": "開啟紀錄目錄",
+    "AboutClose": "關閉",
+    "AboutOpenFolderFailed": "開啟紀錄目錄失敗：{0}",
+    "AboutDirectoryNote": "命令列可透過 --report、--log-file、--export-diagnostics 指定其它路徑；此處顯示的是介面預設值。"
   }
 }

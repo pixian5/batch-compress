@@ -20,16 +20,36 @@ namespace BatchCompress.Avalonia.Core.Services;
 /// </summary>
 public sealed class DiagnosticsExportService
 {
-    private readonly string _logsDirectory;
+    private const int MaxLogFiles = 10;
+
+    private readonly IReadOnlyList<string> _logsDirectories;
     private readonly IArchiveEngine? _rarEngine;
     private readonly IArchiveEngine? _sevenZipEngine;
 
+    /// <summary>单目录入口，保留给旧调用与测试；默认仍是应用包内的 logs。</summary>
     public DiagnosticsExportService(
         string? logsDirectory = null,
         IArchiveEngine? rarEngine = null,
         IArchiveEngine? sevenZipEngine = null)
+        : this(new[] { logsDirectory ?? Path.Combine(AppContext.BaseDirectory, "logs") },
+               rarEngine, sevenZipEngine)
     {
-        _logsDirectory = logsDirectory ?? Path.Combine(AppContext.BaseDirectory, "logs");
+    }
+
+    /// <summary>
+    /// 多目录入口。WorkBuddy, 2026-11-16：批次 27——界面日志在用户数据目录、
+    /// 崩溃日志与命令行日志在应用目录，只扫一个目录会漏掉绝大部分日志。
+    /// </summary>
+    public DiagnosticsExportService(
+        IEnumerable<string> logsDirectories,
+        IArchiveEngine? rarEngine = null,
+        IArchiveEngine? sevenZipEngine = null)
+    {
+        ArgumentNullException.ThrowIfNull(logsDirectories);
+        _logsDirectories = logsDirectories
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Distinct(OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase)
+            .ToArray();
         _rarEngine = rarEngine;
         _sevenZipEngine = sevenZipEngine;
     }
@@ -86,46 +106,84 @@ public sealed class DiagnosticsExportService
                 JsonSerializer.Serialize(writer, summary);
             }
 
-            // 2. 收集并脱敏最近日志（最多 10 份）
-            if (Directory.Exists(_logsDirectory))
+            // 2. 收集并脱敏最近日志（跨全部日志目录，合计最多 10 份）
+            // WorkBuddy, 2026-11-16：批次 27——文件名前缀从 batchcompress_* 放宽到 batchcompress*，
+            // 使 batchcompress-crash_*.log 这类崩溃日志也能进入诊断包。
+            var logFiles = new List<string>();
+            foreach (var directory in _logsDirectories)
             {
-                var logFiles = Directory.EnumerateFiles(_logsDirectory, "batchcompress_*.log*")
-                    .Where(f => Regex.IsMatch(Path.GetFileName(f), @"\.log(\.\d+)?(\.gz)?$", RegexOptions.CultureInvariant))
-                    .OrderByDescending(File.GetLastWriteTimeUtc)
-                    .Take(10)
-                    .ToList();
-
-                foreach (var logFile in logFiles)
+                if (!Directory.Exists(directory))
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var fileName = Path.GetFileName(logFile);
-                    var entryName = fileName.EndsWith(".gz", StringComparison.OrdinalIgnoreCase)
-                        ? fileName[..^3] // 解包还原为纯文本存入 zip
-                        : fileName;
-
-                    string rawText;
-                    if (logFile.EndsWith(".gz", StringComparison.OrdinalIgnoreCase))
-                    {
-                        using var fileStream = File.OpenRead(logFile);
-                        using var gzip = new GZipStream(fileStream, CompressionMode.Decompress);
-                        using var reader = new StreamReader(gzip, Encoding.UTF8);
-                        rawText = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        rawText = await File.ReadAllTextAsync(logFile, Encoding.UTF8, cancellationToken).ConfigureAwait(false);
-                    }
-
-                    var redactedText = RedactSensitiveText(rawText);
-                    var logEntry = archive.CreateEntry($"logs/{entryName}", System.IO.Compression.CompressionLevel.Optimal);
-                    using var entryStream = logEntry.Open();
-                    using var textWriter = new StreamWriter(entryStream, Encoding.UTF8);
-                    await textWriter.WriteAsync(redactedText).ConfigureAwait(false);
+                    continue;
                 }
+
+                logFiles.AddRange(
+                    Directory.EnumerateFiles(directory, "batchcompress*.log*")
+                        .Where(f => Regex.IsMatch(Path.GetFileName(f),
+                            @"\.log(\.\d+)?(\.gz)?$", RegexOptions.CultureInvariant)));
+            }
+
+            var pathComparer = OperatingSystem.IsLinux()
+                ? StringComparer.Ordinal
+                : StringComparer.OrdinalIgnoreCase;
+            var recentLogs = logFiles
+                .Distinct(pathComparer)
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .Take(MaxLogFiles)
+                .ToList();
+
+            var usedEntryNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var logFile in recentLogs)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var fileName = Path.GetFileName(logFile);
+                var entryName = fileName.EndsWith(".gz", StringComparison.OrdinalIgnoreCase)
+                    ? fileName[..^3] // 解包还原为纯文本存入 zip
+                    : fileName;
+                // 不同目录可能有同名文件，必须先消歧，否则 ZipArchive.CreateEntry 会抛重复项异常。
+                entryName = MakeUniqueEntryName(entryName, usedEntryNames);
+
+                string rawText;
+                if (logFile.EndsWith(".gz", StringComparison.OrdinalIgnoreCase))
+                {
+                    using var fileStream = File.OpenRead(logFile);
+                    using var gzip = new GZipStream(fileStream, CompressionMode.Decompress);
+                    using var reader = new StreamReader(gzip, Encoding.UTF8);
+                    rawText = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    rawText = await File.ReadAllTextAsync(logFile, Encoding.UTF8, cancellationToken).ConfigureAwait(false);
+                }
+
+                var redactedText = RedactSensitiveText(rawText);
+                var logEntry = archive.CreateEntry($"logs/{entryName}", System.IO.Compression.CompressionLevel.Optimal);
+                using var entryStream = logEntry.Open();
+                using var textWriter = new StreamWriter(entryStream, Encoding.UTF8);
+                await textWriter.WriteAsync(redactedText).ConfigureAwait(false);
             }
         }
 
         return targetZipPath;
+    }
+
+    private static string MakeUniqueEntryName(string fileName, HashSet<string> usedNames)
+    {
+        if (usedNames.Add(fileName))
+        {
+            return fileName;
+        }
+
+        var stem = Path.GetFileNameWithoutExtension(fileName);
+        var extension = Path.GetExtension(fileName);
+        for (var index = 2; ; index++)
+        {
+            var candidate = $"{stem}_{index}{extension}";
+            if (usedNames.Add(candidate))
+            {
+                return candidate;
+            }
+        }
     }
 
     private object CreateDiagnosticSummary()
@@ -152,6 +210,7 @@ public sealed class DiagnosticsExportService
         {
             ExportedAtUtc = DateTime.UtcNow.ToString("o"),
             AppVersion = appVersion,
+            LogDirectories = _logsDirectories.ToArray(),
             DotNetRuntime = Environment.Version.ToString(),
             OSDescription = RuntimeInformation.OSDescription,
             OSArchitecture = RuntimeInformation.OSArchitecture.ToString(),

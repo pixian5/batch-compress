@@ -106,7 +106,12 @@ internal static partial class Program
             // WorkBuddy, 2026-11-16：审查修复的三组回归测试。
             ("报告本地化与CSV公式防护", TestReviewReportLocalizationAndSafety),
             ("崩溃日志强制写入与抑制补记", TestReviewCrashLogForceAndSuppression),
-            ("日志缓冲中间空行保留", TestReviewLogBufferBlankLines)
+            ("日志缓冲中间空行保留", TestReviewLogBufferBlankLines),
+            // WorkBuddy, 2026-11-16：批次 27（P4-4）——「关于」弹窗与诊断导出路径口径。
+            ("关于弹窗环境与路径口径", TestAboutInfoAndPaths),
+            ("诊断包收集界面日志与崩溃日志", TestDiagnosticsCollectsCrashAndGuiLogs),
+            ("关于弹窗五语言词条", TestAboutLocalizationKeys),
+            ("关于弹窗入口接线", TestAboutWindowWiring)
         };
 
         // GLM-5.3, 2026-11-03：跑完全部测试后统一输出失败汇总，CI 中一次可见所有失败项；

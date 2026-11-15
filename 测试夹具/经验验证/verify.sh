@@ -307,6 +307,40 @@ if [[ $formula_rc -eq 0 ]] && grep -q "\"'=1+1.txt\"" "$work/formula.csv" \
    && ! grep -q '"=1+1.txt"' "$work/formula.csv"; then r=0; else r=1; fi
 report "CSV 中和以等号开头的来源名（退出码 $formula_rc）" "$r"
 
+echo "=== 18. 关于弹窗（0.8.10）：路径口径与诊断包覆盖 ==="
+# 在应用目录的 logs 下造一份「崩溃日志」命名风格的探针，验证诊断包不再只认 batchcompress_ 前缀。
+app_logs="$repo_root/bin/Debug/net10.0/logs"
+mkdir -p "$app_logs"
+crash_probe="$app_logs/batchcompress-crash_verify_$$.log"
+printf '[FATAL] --password "VerifyPlainSecret" unhandled\n' > "$crash_probe"
+
+"$dotnet_bin" "$app" --export-diagnostics "$work/about-diag.zip" \
+  --log-file "$work/batchcompress_about-cli.log" \
+  > "$work/about.out" 2> "$work/about.err"
+about_rc=$?
+# 先取整份清单再判断：pipefail 下 grep -q 提前关管道会把 unzip 的 SIGPIPE 误判成失败。
+diag_entries="$(unzip -Z1 "$work/about-diag.zip" 2>/dev/null)"
+if [[ $about_rc -eq 0 && -f "$work/about-diag.zip" ]] \
+   && [[ "$diag_entries" == *"batchcompress-crash_verify_"* ]] \
+   && [[ "$diag_entries" == *"batchcompress_about-cli.log"* ]]; then r=0; else r=1; fi
+report "诊断包同时收集崩溃日志与本次命令行日志（退出码 $about_rc）" "$r"
+
+crash_text="$(unzip -p "$work/about-diag.zip" 'logs/batchcompress-crash_verify_*' 2>/dev/null)"
+if [[ "$crash_text" == *'***'* && "$crash_text" != *'VerifyPlainSecret'* ]]; then r=0; else r=1; fi
+report "诊断包中的崩溃日志明文口令已脱敏" "$r"
+
+summary_text="$(unzip -p "$work/about-diag.zip" diagnostics_summary.json 2>/dev/null)"
+if [[ "$summary_text" == *'LogDirectories'* ]]; then r=0; else r=1; fi
+report "诊断摘要列出扫描过的多个日志目录" "$r"
+
+expected_version="$(tr -d '[:space:]' < "$repo_root/VERSION")"
+actual_version="$("$dotnet_bin" "$app" --version 2>/dev/null | awk '{print $2}')"
+if [[ "$actual_version" == "$expected_version" ]] \
+   && grep -q 'Binding AboutInfo.Version' "$repo_root/Views/AboutWindow.axaml"; then r=0; else r=1; fi
+report "关于窗口绑定版本字段且命令行版本一致（$actual_version / $expected_version）" "$r"
+
+rm -f "$crash_probe"
+
 echo ""
 echo "=== 汇总 ==="
 echo "PASS=$pass FAIL=$fail"

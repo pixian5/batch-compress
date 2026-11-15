@@ -467,22 +467,15 @@ public partial class MainWindowViewModel : ViewModelBase
 
     // GPT-5, 2026-09-30：GUI 日志写到与窗口设置相同的用户数据目录（macOS 由 ApplicationData 映射），
     // 不写入应用包内部；日志是辅助能力，创建失败不能阻止窗口启动。
+    // WorkBuddy, 2026-11-16：批次 27——目录改由 ApplicationInfoService 统一提供，
+    // 保证「关于」弹窗显示的路径就是这里实际写入的路径。
     private static FileLoggerService? CreateGuiFileLogger()
     {
         try
         {
-            var applicationData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            if (string.IsNullOrWhiteSpace(applicationData))
-            {
-                applicationData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            }
-
-            var baseDirectory = string.IsNullOrWhiteSpace(applicationData) ? AppContext.BaseDirectory : applicationData;
             var logPath = Path.Combine(
-                baseDirectory,
-                "BatchCompress.Avalonia",
-                "logs",
-                $"batchcompress_gui_{DateTime.Now.ToString("yyyyMMdd_HHmmss")}.log");
+                ApplicationInfoService.ResolveGuiLogDirectory(),
+                $"batchcompress_gui_{DateTime.Now:yyyyMMdd_HHmmss}.log");
             return new FileLoggerService(logPath);
         }
         catch
@@ -618,6 +611,8 @@ public partial class MainWindowViewModel : ViewModelBase
     public Func<Task>? BrowseSaveFileRequested { get; set; }
     public Func<Task>? BrowseAttachmentRequested { get; set; }
     public Func<Task>? ShowHelpRequested { get; set; }
+    // WorkBuddy, 2026-11-16：批次 27——「关于」窗口由视图创建，ViewModel 只发出请求。
+    public Func<Task>? ShowAboutRequested { get; set; }
     public Action? HideWindowRequested { get; set; }
     public Func<Task<bool>>? ConfirmShutdownCancellationRequested { get; set; }
 

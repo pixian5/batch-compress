@@ -72,8 +72,17 @@ public class HeadlessBatchRunner
         if (!string.IsNullOrWhiteSpace(_options.ExportDiagnosticsPath))
         {
             NotifyReportModeSkipped("diagnostics");
+            // WorkBuddy, 2026-11-16：批次 27——命令行诊断包也覆盖界面日志与崩溃日志，
+            // 同时保留本次命令行日志文件所在目录（可能由 --log-file 指定到任意位置）。
+            var diagnosticsDirectories = new List<string>(ApplicationInfoService.ResolveDiagnosticsLogDirectories());
+            var currentLogDirectory = Path.GetDirectoryName(_logger.LogFilePath);
+            if (!string.IsNullOrWhiteSpace(currentLogDirectory))
+            {
+                diagnosticsDirectories.Add(currentLogDirectory);
+            }
+
             var exporter = new DiagnosticsExportService(
-                Path.GetDirectoryName(_logger.LogFilePath),
+                diagnosticsDirectories,
                 new RarArchiveEngine(),
                 new SevenZipArchiveEngine());
             try

@@ -27,6 +27,8 @@
     <Compile Include="Program.LocalizationResourceTests.cs" />
     <!-- WorkBuddy, 2026-11-16：审查修复回归测试（报告本地化、CSV 防护、崩溃日志强制写入、日志空行）。 -->
     <Compile Include="Program.ReviewFixTests.cs" />
+    <!-- WorkBuddy, 2026-11-16：批次 27（P4-4）——「关于」弹窗与路径口径回归测试。 -->
+    <Compile Include="Program.AboutInfoTests.cs" />
     <!-- WorkBuddy, 2026-11-16：批次 25（P2）——窗口状态持久化回归测试。 -->
     <Compile Include="Program.WindowStateTests.cs" />
     <Compile Include="..\Core\Services\WindowStateService.cs" Link="Core\Services\WindowStateService.cs" />
@@ -63,6 +65,8 @@
     <Compile Include="..\Core\Services\BatchReportService.cs" Link="Core\Services\BatchReportService.cs" />
     <!-- WorkBuddy, 2026-11-16：批次 21（P0）——测试工程显式链接崩溃日志服务。 -->
     <Compile Include="..\Core\Services\CrashLogService.cs" Link="Core\Services\CrashLogService.cs" />
+    <!-- WorkBuddy, 2026-11-16：批次 27（P4-4）——测试工程链接同一套路径与版本计算服务。 -->
+    <Compile Include="..\Core\Services\ApplicationInfoService.cs" Link="Core\Services\ApplicationInfoService.cs" />
     <!-- WorkBuddy, 2026-11-15：批次 18（P4-2）——测试工程显式链接并发推荐服务。 -->
     <Compile Include="..\Core\Services\ConcurrencyAdvisor.cs" Link="Core\Services\ConcurrencyAdvisor.cs" />
     <Compile Include="..\Core\Services\Pipeline\IBatchItemAdapter.cs" Link="Core\Services\Pipeline\IBatchItemAdapter.cs" />

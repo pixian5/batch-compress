@@ -283,6 +283,8 @@
                             <Button Content="{Binding L.OpenOutput}" Command="{Binding OpenOutputFolderCommand}" Width="90" Height="32" ToolTip.Tip="{Binding L.TooltipOpenOutput}" Margin="0,2,10,8"/>
                             <Button Content="{Binding L.OpenSource}" Command="{Binding OpenSourceFolderCommand}" Width="90" Height="32" ToolTip.Tip="{Binding L.TooltipOpenSource}" Margin="0,2,10,8"/>
                             <Button Content="{Binding L.Help}" Command="{Binding ShowHelpCommand}" Width="70" Height="32" ToolTip.Tip="{Binding L.TooltipHelp}" Margin="0,2,10,8"/>
+                            <!-- WorkBuddy, 2026-11-16：批次 27（P4-4）——查看版本、运行时与各类产物路径。 -->
+                            <Button Content="{Binding L.About}" Command="{Binding ShowAboutCommand}" Width="70" Height="32" ToolTip.Tip="{Binding L.TooltipAbout}" Margin="0,2,10,8"/>
                             <!-- WorkBuddy, 2026-11-16：批次 25（P2）——按钮文案由 ViewModel 按窗口状态提供。 -->
                             <Button x:Name="ZoomButton" Content="{Binding ZoomButtonText}" Click="ZoomButton_Click" Width="70" Height="32" ToolTip.Tip="{Binding L.TooltipZoom}" Margin="0,2,10,8"/>
                             <Button Content="{Binding L.HideToTray}" Command="{Binding HideWindowCommand}" Width="100" Height="32" ToolTip.Tip="{Binding L.TooltipHideToTray}" Margin="0,2,0,8"/>

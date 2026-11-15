@@ -313,6 +313,18 @@
     "ReportSummary": "{0} Einträge gesamt; {1} erfolgreich, {2} fehlgeschlagen, {3} übersprungen.",
     "ReportOmittedNote": "{0} weitere Einträge wurden wegen der Obergrenze nicht aufgeführt; Batch verkleinern oder aufteilen",
     "ReportCredentialRedacted": "(Text mit Zugangsdaten ausgelassen)",
-    "CliReportModeSkipped": "Modus {0} erzeugt keine Einzelergebnisse; kein Bericht geschrieben: {1}"
+    "CliReportModeSkipped": "Modus {0} erzeugt keine Einzelergebnisse; kein Bericht geschrieben: {1}",
+    "About": "Über",
+    "TooltipAbout": "Version, Laufzeit und Protokollverzeichnisse anzeigen",
+    "AboutVersion": "Version",
+    "AboutRuntime": ".NET-Laufzeit",
+    "AboutOperatingSystem": "Betriebssystem",
+    "AboutLogDirectory": "Anwendungsprotokollverzeichnis",
+    "AboutCrashLogDirectory": "Absturzprotokollverzeichnis",
+    "AboutReportDirectory": "Standardverzeichnis für Ergebnisberichte",
+    "AboutOpenLogDirectory": "Protokollverzeichnis öffnen",
+    "AboutClose": "Schließen",
+    "AboutOpenFolderFailed": "Protokollverzeichnis konnte nicht geöffnet werden: {0}",
+    "AboutDirectoryNote": "Über die Befehlszeile können --report, --log-file und --export-diagnostics andere Pfade festlegen; hier werden die Standardwerte der Oberfläche angezeigt."
   }
 }

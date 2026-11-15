@@ -401,4 +401,19 @@ public class LanguageStrings : INotifyPropertyChanged
     public string ReportOmittedNote { get; set; } = "另有 {0} 条因超出上限未列出，请缩小批次或分批执行";
     public string ReportCredentialRedacted { get; set; } = "（已省略含凭据的文本）";
     public string CliReportModeSkipped { get; set; } = "当前模式（{0}）不产生逐项结果，未生成报告：{1}";
+
+    // WorkBuddy, 2026-11-16：批次 27（P4-4）——「关于」弹窗的标题、六个字段名、
+    // 三个按钮与提示。设计方案估的是 5 个词条，实际字段名与说明文字都要翻译，共 12 个。
+    public string About { get; set; } = "关于";
+    public string TooltipAbout { get; set; } = "查看版本、运行时与各类日志目录";
+    public string AboutVersion { get; set; } = "版本";
+    public string AboutRuntime { get; set; } = ".NET 运行时";
+    public string AboutOperatingSystem { get; set; } = "操作系统";
+    public string AboutLogDirectory { get; set; } = "运行日志目录";
+    public string AboutCrashLogDirectory { get; set; } = "崩溃日志目录";
+    public string AboutReportDirectory { get; set; } = "结果报告默认目录";
+    public string AboutOpenLogDirectory { get; set; } = "打开日志目录";
+    public string AboutClose { get; set; } = "关闭";
+    public string AboutOpenFolderFailed { get; set; } = "打开日志目录失败：{0}";
+    public string AboutDirectoryNote { get; set; } = "命令行可通过 --report、--log-file、--export-diagnostics 指定其它路径；此处显示的是界面默认值。";
 }

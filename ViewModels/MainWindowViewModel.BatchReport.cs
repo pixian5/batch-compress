@@ -24,15 +24,12 @@ public partial class MainWindowViewModel
 
         try
         {
-            var desktopDir = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-            if (string.IsNullOrWhiteSpace(desktopDir) || !Directory.Exists(desktopDir))
-            {
-                desktopDir = Path.GetTempPath();
-            }
+            // WorkBuddy, 2026-11-16：批次 27——默认目录与「关于」弹窗展示的值同源。
+            var reportDirectory = ApplicationInfoService.ResolveReportDirectory();
 
             // 毫秒后缀：同一秒内连点两次导出也不会覆盖前一份报告。
             var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss-fff");
-            var targetPath = Path.Combine(desktopDir, $"batchcompress-results-{timestamp}.csv");
+            var targetPath = Path.Combine(reportDirectory, $"batchcompress-results-{timestamp}.csv");
             var writtenPath = BatchReportWriter.Write(
                 targetPath, entries, LastReportCollector?.OmittedEntries ?? 0);
             var message = string.Format(L.BatchReportSaved, writtenPath);
