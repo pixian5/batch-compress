@@ -451,6 +451,14 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(CommandLogTabHeader))]
     private string _commandLog = string.Empty;
 
+    // WorkBuddy, 2026-11-16：批次 25（P2）——缩放按钮文案由窗口状态驱动，
+    // 视图只负责把 WindowState 同步到这里，不再直接改按钮内容。
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ZoomButtonText))]
+    private bool _isMaximized;
+
+    public string ZoomButtonText => IsMaximized ? L.ZoomOut : L.ZoomIn;
+
     [ObservableProperty]
     private string _passwordQueryFileName = string.Empty;
 
@@ -494,6 +502,15 @@ public partial class MainWindowViewModel : ViewModelBase
         // GPT-5, 2026-09-30：GUI 把文件日志器注入批处理服务，使后处理失败原因等诊断留痕；设计器模式不写日志。
         _fileLogger = Design.IsDesignMode ? null : CreateGuiFileLogger();
         _batchOperationService = new BatchOperationService(_archiveEngine, _systemIntegration, _fileLogger);
+
+        // WorkBuddy, 2026-11-16：批次 25（P2）——缩放按钮文案跟随语言切换刷新。
+        BatchCompress.Avalonia.Localization.LocalizationService.Instance.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(BatchCompress.Avalonia.Localization.LocalizationService.Strings))
+            {
+                OnPropertyChanged(nameof(ZoomButtonText));
+            }
+        };
 
         // GPT-5, 2026-08-05：在绑定渲染前填充可观察选项集合，并在语言变化时刷新。
         RefreshAllDropdownOptions();

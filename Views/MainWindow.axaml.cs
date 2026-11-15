@@ -11,6 +11,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Metadata;
 using Avalonia.Layout;
 using CommunityToolkit.Mvvm.Input;
+using BatchCompress.Avalonia.Core.Services;
 using BatchCompress.Avalonia.ViewModels;
 using BatchCompress.Avalonia.Localization;
 using Avalonia.Input;
@@ -29,9 +30,9 @@ public partial class MainWindow : Window
     private bool _hasLastNormalPosition;
     private WindowState _lastWindowState = WindowState.Normal;
     private bool _isApplyingNormalBounds;
-    private static readonly JsonSerializerOptions WindowSettingsSerializerOptions = new();
-    // GPT-5, 2026-08-05：将用户窗口状态存放在应用包外，确保更新后仍保留、不破坏 macOS 签名，并使用各平台正确的数据目录。
-    private static readonly string WindowSettingsFilePath = GetWindowSettingsFilePath();
+    // WorkBuddy, 2026-11-16：批次 25（P2）——窗口状态读写收敛到 WindowStateService，
+    // 设置文件路径与 JSON 字段保持不变，视图只负责采集当前尺寸与位置。
+    private readonly WindowStateService _windowStateService = new();
     public MainWindow()
     {
         InitializeComponent();
@@ -115,92 +116,61 @@ public partial class MainWindow : Window
 
     private void RestoreWindowSize()
     {
-        try
+        // 读取失败时 Load 返回 null，绝不阻止主窗口打开。
+        var snapshot = _windowStateService.Load();
+        if (snapshot is null)
         {
-            if (!File.Exists(WindowSettingsFilePath))
-            {
-                return;
-            }
-
-            var json = File.ReadAllText(WindowSettingsFilePath);
-            var settings = JsonSerializer.Deserialize<WindowSizeSettings>(json, WindowSettingsSerializerOptions);
-            if (settings is null)
-            {
-                return;
-            }
-
-            if (IsValidWindowDimension(settings.Width) && IsValidWindowDimension(settings.Height))
-            {
-                Width = settings.Width;
-                Height = settings.Height;
-                UpdateLastNormalSize(settings.Width, settings.Height);
-            }
-
-            if (settings.X.HasValue && settings.Y.HasValue)
-            {
-                UpdateLastNormalPosition(settings.X.Value, settings.Y.Value);
-                Position = new PixelPoint(settings.X.Value, settings.Y.Value);
-            }
-
-            if (settings.WindowState == WindowState.Maximized)
-            {
-                WindowState = WindowState.Maximized;
-            }
+            return;
         }
-        catch
+
+        if (IsValidWindowDimension(snapshot.Width) && IsValidWindowDimension(snapshot.Height))
         {
-            // GPT-5, 2026-08-05：无效或过期的用户设置绝不能阻止主窗口打开。
+            Width = snapshot.Width;
+            Height = snapshot.Height;
+            UpdateLastNormalSize(snapshot.Width, snapshot.Height);
+        }
+
+        if (snapshot.X.HasValue && snapshot.Y.HasValue)
+        {
+            UpdateLastNormalPosition(snapshot.X.Value, snapshot.Y.Value);
+            Position = new PixelPoint(snapshot.X.Value, snapshot.Y.Value);
+        }
+
+        if (snapshot.IsMaximized)
+        {
+            WindowState = WindowState.Maximized;
         }
     }
 
     private void SaveWindowSize()
     {
-        try
+        var stateToSave = WindowState == WindowState.Minimized
+            ? WindowState.Normal
+            : WindowState;
+
+        if (stateToSave == WindowState.Normal)
         {
-            var stateToSave = WindowState == WindowState.Minimized
-                ? WindowState.Normal
-                : WindowState;
-
-            if (stateToSave == WindowState.Normal)
+            var width = ClientSize.Width > 0 ? ClientSize.Width : Width;
+            var height = ClientSize.Height > 0 ? ClientSize.Height : Height;
+            if (!IsLikelyMaximizedGeometry(new Size(width, height), Position))
             {
-                var width = ClientSize.Width > 0 ? ClientSize.Width : Width;
-                var height = ClientSize.Height > 0 ? ClientSize.Height : Height;
-                if (!IsLikelyMaximizedGeometry(new Size(width, height), Position))
-                {
-                    UpdateLastNormalSize(width, height);
-                    UpdateLastNormalPosition(Position);
-                }
+                UpdateLastNormalSize(width, height);
+                UpdateLastNormalPosition(Position);
             }
-
-            if (!IsValidWindowDimension(_lastNormalWidth) || !IsValidWindowDimension(_lastNormalHeight))
-            {
-                return;
-            }
-
-            var settings = new WindowSizeSettings
-            {
-                Width = _lastNormalWidth,
-                Height = _lastNormalHeight,
-                X = _hasLastNormalPosition ? _lastNormalX : null,
-                Y = _hasLastNormalPosition ? _lastNormalY : null,
-                WindowState = stateToSave == WindowState.Maximized
-                    ? WindowState.Maximized
-                    : WindowState.Normal
-            };
-
-            var directory = Path.GetDirectoryName(WindowSettingsFilePath);
-            if (!string.IsNullOrEmpty(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            var json = JsonSerializer.Serialize(settings, WindowSettingsSerializerOptions);
-            File.WriteAllText(WindowSettingsFilePath, json);
         }
-        catch
+
+        if (!IsValidWindowDimension(_lastNormalWidth) || !IsValidWindowDimension(_lastNormalHeight))
         {
-            // GPT-5, 2026-08-05：窗口状态持久化是尽力而为的操作，绝不能阻塞应用退出。
+            return;
         }
+
+        // Save 内部兜住所有 IO 异常，持久化失败不会阻塞退出。
+        _windowStateService.Save(new WindowStateSnapshot(
+            _lastNormalWidth,
+            _lastNormalHeight,
+            _hasLastNormalPosition ? _lastNormalX : null,
+            _hasLastNormalPosition ? _lastNormalY : null,
+            stateToSave == WindowState.Maximized));
     }
 
     private void UpdateLastNormalSize(double width, double height)
@@ -212,22 +182,6 @@ public partial class MainWindow : Window
 
         _lastNormalWidth = width;
         _lastNormalHeight = height;
-    }
-
-    private static string GetWindowSettingsFilePath()
-    {
-        // GPT-5, 2026-08-05：ApplicationData 在 Windows 对应 AppData、在 macOS 对应 Application Support、
-        // 在 Linux 对应用户数据目录。LocalApplicationData 用于异常运行时的回退。
-        var applicationData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        if (string.IsNullOrWhiteSpace(applicationData))
-        {
-            applicationData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        }
-
-        return Path.Combine(
-            string.IsNullOrWhiteSpace(applicationData) ? AppContext.BaseDirectory : applicationData,
-            "BatchCompress.Avalonia",
-            "window-settings.json");
     }
 
     private void UpdateLastNormalPosition(PixelPoint point)
@@ -325,9 +279,10 @@ public partial class MainWindow : Window
 
     private void UpdateZoomButtonText()
     {
-        if (ZoomButton != null)
+        // WorkBuddy, 2026-11-16：批次 25（P2）——按钮文案由 ViewModel 提供，视图只同步窗口状态。
+        if (DataContext is MainWindowViewModel viewModel)
         {
-            ZoomButton.Content = WindowState == WindowState.Maximized ? L.ZoomOut : L.ZoomIn;
+            viewModel.IsMaximized = WindowState == WindowState.Maximized;
         }
     }
     
@@ -439,7 +394,7 @@ public partial class MainWindow : Window
                 {
                     viewModel.SourceMode = 1;
                     viewModel.SaveFilePath = firstPath;
-                    viewModel.CommandLog += L.DroppedFolder + firstPath + "\n";
+                    viewModel.AppendCommandLog(L.DroppedFolder + firstPath + "\n");
                     break;
                 }
                 // GPT-5, 2026-08-05：拖入 TXT 文件提供文件列表和可选密码。
@@ -447,7 +402,7 @@ public partial class MainWindow : Window
                 {
                     viewModel.SourceMode = 0;
                     viewModel.SourcePath = firstPath;
-                    viewModel.CommandLog += L.DroppedTxtFile + firstPath + "\n";
+                    viewModel.AppendCommandLog(L.DroppedTxtFile + firstPath + "\n");
                     break;
                 }
             }
@@ -641,7 +596,7 @@ public partial class MainWindow : Window
             if (DataContext is MainWindowViewModel viewModel)
             {
                 // GPT-5, 2026-08-05：记录选择器入口，用于诊断平台特定的存储提供程序失败。
-                viewModel.CommandLog += "BrowseSaveFileAsync called\n";
+                viewModel.AppendCommandLog("BrowseSaveFileAsync called\n");
             }
             
             var options = new FolderPickerOpenOptions
@@ -656,12 +611,12 @@ public partial class MainWindow : Window
             if (DataContext is MainWindowViewModel viewModel2)
             {
                 // GPT-5, 2026-08-05：保留返回数量，因为取消操作以空集合表示。
-                viewModel2.CommandLog += $"Folder picker returned {folders.Count} items\n";
+                viewModel2.AppendCommandLog($"Folder picker returned {folders.Count} items\n");
                 
                 if (folders.Count > 0)
                 {
                     viewModel2.SaveFilePath = folders[0].Path.LocalPath;
-                    viewModel2.CommandLog += $"Selected folder: {viewModel2.SaveFilePath}\n";
+                    viewModel2.AppendCommandLog($"Selected folder: {viewModel2.SaveFilePath}\n");
                 }
             }
         }
@@ -669,7 +624,7 @@ public partial class MainWindow : Window
         {
             if (DataContext is MainWindowViewModel viewModel)
             {
-                viewModel.CommandLog += $"Error in BrowseSaveFileAsync: {ex.Message}\n";
+                viewModel.AppendCommandLog($"Error in BrowseSaveFileAsync: {ex.Message}\n");
             }
         }
     }
@@ -774,16 +729,4 @@ public partial class MainWindow : Window
         return await dialog.ShowDialog<bool>(this);
     }
 
-    private sealed class WindowSizeSettings
-    {
-        public double Width { get; set; }
-
-        public double Height { get; set; }
-
-        public int? X { get; set; }
-
-        public int? Y { get; set; }
-
-        public WindowState WindowState { get; set; } = WindowState.Normal;
-    }
 }

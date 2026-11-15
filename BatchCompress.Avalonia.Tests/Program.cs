@@ -70,6 +70,8 @@ internal static partial class Program
             ("界面日志缓冲", TestLogBuffer),
             // WorkBuddy, 2026-11-16：批次 24（P2）——本地化资源一致性。
             ("本地化资源一致性", TestLocalizationResources),
+            // WorkBuddy, 2026-11-16：批次 25（P2）——窗口状态持久化。
+            ("窗口状态持久化", TestWindowStateService),
             ("日志权限与轮转", TestLogFilePermissionsAndRotation),
             ("日志多代轮转", TestLogMultiGenerationRotation),
             ("日志旧代Gzip压缩", TestLogGzipCompressionRotation),
