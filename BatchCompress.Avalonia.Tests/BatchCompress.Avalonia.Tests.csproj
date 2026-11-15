@@ -23,6 +23,8 @@
     <Compile Include="Program.CrashLogTests.cs" />
     <!-- WorkBuddy, 2026-11-16：批次 22（P1）——界面日志缓冲回归测试。 -->
     <Compile Include="Program.LogBufferTests.cs" />
+    <!-- WorkBuddy, 2026-11-16：批次 24（P2）——本地化资源一致性守护测试。 -->
+    <Compile Include="Program.LocalizationResourceTests.cs" />
     <Compile Include="..\ViewModels\LogBuffer.cs" Link="ViewModels\LogBuffer.cs" />
     <Compile Include="Program.EngineTests.cs" />
     <Compile Include="Program.PipelineTests.cs" />
@@ -69,6 +71,11 @@
     <Compile Include="..\Core\Interfaces\ISystemIntegration.cs" Link="Core\Interfaces\ISystemIntegration.cs" />
     <Compile Include="..\Localization\LanguageStrings.cs" Link="Localization\LanguageStrings.cs" />
     <Compile Include="..\Localization\LocalizationService.cs" Link="Localization\LocalizationService.cs" />
+    <!-- WorkBuddy, 2026-11-16：批次 24（P2）——测试也要走同一套 JSON 资源加载。 -->
+    <Compile Include="..\Localization\LocalizationLoader.cs" Link="Localization\LocalizationLoader.cs" />
+    <EmbeddedResource Include="..\Localization\Resources\*.json">
+      <Link>Localization\Resources\%(Filename)%(Extension)</Link>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>

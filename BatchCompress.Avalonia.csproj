@@ -23,6 +23,8 @@
     <None Remove="old\**\*" />
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
+    <!-- WorkBuddy, 2026-11-16：批次 24（P2）——五种语言的界面词条改为嵌入 JSON 资源。 -->
+    <EmbeddedResource Include="Localization\Resources\*.json" />
   </ItemGroup>
 
   <ItemGroup>
