@@ -21,6 +21,7 @@ namespace BatchCompress.Avalonia.Core.Services;
 public sealed class DiagnosticsExportService
 {
     private const int MaxLogFiles = 10;
+    private const int MaxCrashLogs = 3;
 
     private readonly IReadOnlyList<string> _logsDirectories;
     private readonly IArchiveEngine? _rarEngine;
@@ -64,6 +65,12 @@ public sealed class DiagnosticsExportService
         // 1. 脱敏 --password "..." 与 --password ...
         var result = Regex.Replace(input, @"(--password\s+)""[^""]*""", "$1\"***\"");
         result = Regex.Replace(result, @"(--password\s+)(?!""\*\*\*""|\s)\S+", "$1***");
+
+        // WorkBuddy, 2026-11-16：复查修复——等号/冒号赋值形式此前完全漏网。
+        // 结果报告服务早就把 --password=xxx 列为真实命令形式，诊断包必须同步覆盖，
+        // 否则可对外分享的 zip 会原样带出明文口令。带引号与不带引号合并成一条规则，
+        // 避免二次替换把已脱敏的占位符再改一遍。
+        result = Regex.Replace(result, @"(--password)[=:](?:""[^""]*""|\S+)", "$1=***");
 
         // 2. 脱敏 -p"..." 与 -p...（必须位于行首或空格之后，避免误伤 --password 中的 -p）
         result = Regex.Replace(result, @"(^|\s)(-p)""[^""]*""", "$1$2\"***\"");
@@ -126,11 +133,23 @@ public sealed class DiagnosticsExportService
             var pathComparer = OperatingSystem.IsLinux()
                 ? StringComparer.Ordinal
                 : StringComparer.OrdinalIgnoreCase;
-            var recentLogs = logFiles
-                .Distinct(pathComparer)
+            var allLogs = logFiles.Distinct(pathComparer).ToList();
+
+            // WorkBuddy, 2026-11-16：复查修复——崩溃日志通常比界面运行日志旧，
+            // 统一按时间倒序取 10 份会被大量常规日志完全挤出包外，而它恰是最关键的排障线索。
+            // 先给崩溃日志留固定名额，再用其余日志按时间补足，总数仍不超过上限。
+            var crashLogs = allLogs
+                .Where(path => Path.GetFileName(path)
+                    .StartsWith("batchcompress-crash_", StringComparison.OrdinalIgnoreCase))
                 .OrderByDescending(File.GetLastWriteTimeUtc)
-                .Take(MaxLogFiles)
+                .Take(MaxCrashLogs)
                 .ToList();
+            var selectedCrash = new HashSet<string>(crashLogs, pathComparer);
+            var regularLogs = allLogs
+                .Where(path => !selectedCrash.Contains(path))
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .Take(MaxLogFiles - crashLogs.Count);
+            var recentLogs = crashLogs.Concat(regularLogs).ToList();
 
             var usedEntryNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var logFile in recentLogs)

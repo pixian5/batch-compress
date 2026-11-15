@@ -341,6 +341,42 @@ report "关于窗口绑定版本字段且命令行版本一致（$actual_version
 
 rm -f "$crash_probe"
 
+echo "=== 19. 复查修复（0.8.11）：崩溃日志配额与赋值形式密码脱敏 ==="
+# 用独立的配额目录作为 --log-file 所在目录：它会被加入扫描范围，里面只有本次探针，
+# 其余三类默认目录的日志共同参与竞争，正好复现「常规日志很多」的真实场景。
+quota_dir="$work/quota"
+mkdir -p "$quota_dir"
+old_crash="$quota_dir/batchcompress-crash_verify_old_$$.log"
+printf '[FATAL] old crash --password=OldPlainSecret\n' > "$old_crash"
+touch -t 202611150900 "$old_crash"
+
+for i in {1..12}; do
+  printf '[INFO] routine log line %s\n' "$i" > "$quota_dir/batchcompress_quota_${i}.log"
+done
+printf '[INFO] cmd --password=EqualsPlainSecret\n[INFO] cmd --password:ColonPlainSecret\n' \
+  > "$quota_dir/batchcompress_equals.log"
+
+"$dotnet_bin" "$app" --export-diagnostics "$work/quota-diag.zip" \
+  --log-file "$quota_dir/batchcompress_quota-cli.log" \
+  > "$work/quota.out" 2> "$work/quota.err"
+quota_rc=$?
+quota_entries="$(unzip -Z1 "$work/quota-diag.zip" 2>/dev/null)"
+if [[ $quota_rc -eq 0 ]] \
+   && [[ "$quota_entries" == *"batchcompress-crash_verify_old_"* ]]; then r=0; else r=1; fi
+report "较旧的崩溃日志不被大量常规日志挤出诊断包（退出码 $quota_rc）" "$r"
+
+if [[ "$quota_entries" == *"batchcompress_equals.log"* ]]; then r=0; else r=1; fi
+report "等号形式密码探针确实进入了诊断包（避免漏检）" "$r"
+
+equals_text="$(unzip -p "$work/quota-diag.zip" 'logs/batchcompress_equals.log' 2>/dev/null)"
+if [[ "$equals_text" != *'EqualsPlainSecret'* && "$equals_text" != *'ColonPlainSecret'* ]] \
+   && [[ "$equals_text" == *'***'* ]]; then r=0; else r=1; fi
+report "等号与冒号形式的密码在诊断包中已脱敏" "$r"
+
+quota_log_count="$(print -r -- "$quota_entries" | grep -c '^logs/' || true)"
+if [[ "$quota_log_count" -le 10 ]]; then r=0; else r=1; fi
+report "诊断包日志总数仍不超过 10 份（实际 $quota_log_count）" "$r"
+
 echo ""
 echo "=== 汇总 ==="
 echo "PASS=$pass FAIL=$fail"

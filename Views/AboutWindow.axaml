@@ -10,10 +10,13 @@
 
     <!-- WorkBuddy, 2026-11-16：批次 27（P4-4）——只读环境信息与路径；所有用户可见文案均走本地化绑定，界面文件不留硬编码中文。 -->
     <Window.Styles>
+        <!-- WorkBuddy, 2026-11-16：复查修复——标签列固定宽度，德语/日语/英语的长字段名
+             必须换行，否则会溢出到数值列与路径文字重叠。 -->
         <Style Selector="TextBlock.aboutLabel">
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,0,14,12"/>
             <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
         <Style Selector="SelectableTextBlock.aboutValue">
             <Setter Property="Margin" Value="0,0,0,12"/>

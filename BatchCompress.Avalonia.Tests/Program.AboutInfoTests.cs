@@ -124,6 +124,89 @@ internal static partial class Program
         }
     }
 
+    // WorkBuddy, 2026-11-16：复查——诊断包一共只收 10 份日志，若界面运行日志很多，
+    // 时间较旧的崩溃日志会被挤掉，而崩溃日志恰恰是最关键的排障线索。
+    private static async Task TestDiagnosticsKeepsCrashLogsWhenRegularLogsAreMany()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"diag-quota-{Guid.NewGuid():N}");
+        var logs = Path.Combine(root, "logs");
+        var zipPath = Path.Combine(root, "diagnostics.zip");
+        Directory.CreateDirectory(logs);
+
+        try
+        {
+            var older = DateTime.UtcNow.AddHours(-1);
+            File.WriteAllText(
+                Path.Combine(logs, "batchcompress-crash_20261116_010000_000_123_1.log"),
+                "[FATAL] unhandled exception stack\n");
+            File.SetLastWriteTimeUtc(
+                Path.Combine(logs, "batchcompress-crash_20261116_010000_000_123_1.log"), older);
+
+            for (var index = 0; index < 12; index++)
+            {
+                var path = Path.Combine(logs, $"batchcompress_gui_20261116_0200{index:00}.log");
+                File.WriteAllText(path, $"[INFO] routine log line {index}\n");
+                File.SetLastWriteTimeUtc(path, DateTime.UtcNow.AddMinutes(index));
+            }
+
+            var exporter = new DiagnosticsExportService(logs);
+            await exporter.ExportAsync(zipPath);
+
+            using var archive = ZipFile.OpenRead(zipPath);
+            Assert(archive.Entries.Any(entry => entry.FullName.Contains("batchcompress-crash_", StringComparison.Ordinal)),
+                "常规日志多于上限时，崩溃日志仍必须保留在诊断包内");
+            Assert(archive.Entries.Count(entry => entry.FullName.StartsWith("logs/", StringComparison.Ordinal)) <= 10,
+                "诊断包日志总数仍不得超过 10 份");
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    // WorkBuddy, 2026-11-16：复查——结果报告服务已把 --password=xxx、--password:xxx 视为真实命令形式，
+    // 诊断包的脱敏规则却只认空格分隔，等号/冒号写法会把明文口令带出可分享的诊断包。
+    private static async Task TestDiagnosticsRedactsPasswordAssignmentForms()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"diag-assign-{Guid.NewGuid():N}");
+        var logs = Path.Combine(root, "logs");
+        var zipPath = Path.Combine(root, "diagnostics.zip");
+        Directory.CreateDirectory(logs);
+
+        const string secret = "AssignmentFormSecret";
+        try
+        {
+            File.WriteAllText(
+                Path.Combine(logs, "batchcompress_gui_20261116_030000.log"),
+                $"[INFO] cmd --password={secret}\n" +
+                $"[INFO] cmd --password:{secret}\n" +
+                $"[INFO] cmd --password=\"{secret}\"\n" +
+                $"[INFO] cmd -hp={secret}\n" +
+                $"[INFO] cmd -p={secret}\n");
+
+            var exporter = new DiagnosticsExportService(logs);
+            await exporter.ExportAsync(zipPath);
+
+            using var archive = ZipFile.OpenRead(zipPath);
+            var logEntry = archive.GetEntry("logs/batchcompress_gui_20261116_030000.log");
+            Assert(logEntry != null, "诊断包应包含该日志");
+            using var reader = new StreamReader(logEntry!.Open());
+            var text = await reader.ReadToEndAsync();
+            Assert(!text.Contains(secret, StringComparison.Ordinal),
+                "等号/冒号形式的密码也必须被脱敏");
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
     private static Task TestAboutLocalizationKeys()
     {
         var declared = typeof(LanguageStrings).GetProperties()

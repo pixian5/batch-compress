@@ -111,7 +111,10 @@ internal static partial class Program
             ("关于弹窗环境与路径口径", TestAboutInfoAndPaths),
             ("诊断包收集界面日志与崩溃日志", TestDiagnosticsCollectsCrashAndGuiLogs),
             ("关于弹窗五语言词条", TestAboutLocalizationKeys),
-            ("关于弹窗入口接线", TestAboutWindowWiring)
+            ("关于弹窗入口接线", TestAboutWindowWiring),
+            // WorkBuddy, 2026-11-16：复查发现项——诊断包崩溃日志配额与等号形式密码脱敏。
+            ("诊断包保留崩溃日志不被常规日志挤掉", TestDiagnosticsKeepsCrashLogsWhenRegularLogsAreMany),
+            ("诊断包脱敏等号与冒号形式的密码", TestDiagnosticsRedactsPasswordAssignmentForms)
         };
 
         // GLM-5.3, 2026-11-03：跑完全部测试后统一输出失败汇总，CI 中一次可见所有失败项；
