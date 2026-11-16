@@ -1,6 +1,6 @@
 # 批量压缩解压工具
 
-[![CI](https://github.com/pixian5/batch-compress-master/actions/workflows/ci.yml/badge.svg)](https://github.com/pixian5/batch-compress-master/actions/workflows/ci.yml)
+[![CI](https://github.com/pixian5/batch-compress/actions/workflows/ci.yml/badge.svg)](https://github.com/pixian5/batch-compress/actions/workflows/ci.yml)
 
 跨平台桌面批处理工具，使用 Avalonia UI 和 .NET 10 构建。应用通过 RAR/WinRAR 与官方 7-Zip 命令行程序执行压缩和解压，界面与业务逻辑均可运行于 Windows、macOS 和 Linux。
 
