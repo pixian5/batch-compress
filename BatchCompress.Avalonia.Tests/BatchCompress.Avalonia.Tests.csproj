@@ -2,7 +2,7 @@
   <!-- GPT-5, 2026-08-05：将测试保持为轻依赖可执行程序，使其无需 Avalonia 桌面会话即可运行。 -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
@@ -99,9 +99,8 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="11.0.0" />
-  </ItemGroup>
+  <!-- WorkBuddy, 2026-11-16：0.8.14——.NET 11 已自动提供 Logging.Abstractions，
+       显式 PackageReference 会触发 NU1510；移除后由主工程引用传递编译资产。 -->
 
   <!-- GPT-5, 2026-08-06：macOS 回归测试使用项目内官方 7zz，不依赖机器全局安装。 -->
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">

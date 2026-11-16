@@ -10,7 +10,7 @@
 
 | 项 | 当前值 | 核对来源 |
 | --- | --- | --- |
-| 目标框架 | `net10.0` | `BatchCompress.Avalonia.csproj` |
+| 目标框架 | `net11.0` | `BatchCompress.Avalonia.csproj` |
 | 界面框架（Avalonia） | 12.1.5（Avalonia / Desktop / Themes.Fluent / Fonts.Inter 四包一致） | csproj |
 | MVVM（模型-视图-视图模型）框架 | CommunityToolkit.Mvvm 8.4.2 | csproj |
 | 日志 | Microsoft.Extensions.Logging / .Console 10.0.14 | csproj |

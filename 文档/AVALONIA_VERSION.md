@@ -10,7 +10,7 @@
 | 项目 | 当前值 |
 | --- | --- |
 | 应用版本 | `0.7.6`（根目录 `VERSION`） |
-| 目标框架 | .NET 10（`net10.0`） |
+| 目标框架 | .NET 11（`net11.0`） |
 | 界面框架（Avalonia） | 12.1.5（四个包版本一致） |
 | MVVM（模型-视图-视图模型）框架 | CommunityToolkit.Mvvm 8.4.2 |
 | 日志 / 资源扩展 | Microsoft.Extensions.Logging(.Console) 10.0.14、System.Resources.Extensions 10.0.14 |

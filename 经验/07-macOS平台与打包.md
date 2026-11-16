@@ -26,7 +26,7 @@
 
 `dotnet publish -c Release -r osx-arm64 --self-contained true -p:PublishSingleFile=true`，
 再用 `swiftc` 编译状态栏帮助进程，组装 `.app`（MacOS、Resources、Info.plist、icns、tools/7zip），
-最后 `codesign` 签名。开发机运行才需要 .NET 10 开发工具包（SDK）。
+最后 `codesign` 签名。开发机运行才需要 .NET 11 开发工具包（SDK）。
 
 ## 5. 版本号写进 plist 后要回读校验
 

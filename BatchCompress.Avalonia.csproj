@@ -2,7 +2,7 @@
   <!-- GPT-5, 2026-08-05：Windows、macOS、Linux 共用的桌面目标；macOS 打包流程另行提供原生应用包。 -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <!-- GPT-5, 2026-09-29：版本号唯一来源为仓库根目录 VERSION 文件；csproj、程序集信息、
          CLI 版本查询与 macOS 打包脚本全部读取它，避免多处手写导致版本漂移。 -->
     <Version>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/VERSION').Trim())</Version>

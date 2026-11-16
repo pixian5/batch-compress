@@ -2,15 +2,15 @@
 # 经验库实测验证脚本
 # 用途：把 经验/ 目录里可检验的关键结论，用真实命令行与真实归档往返跑一遍，
 #       避免经验文档只是照抄历史文档。可重复执行，不改动仓库内任何业务文件。
-# 环境：macOS（Apple Silicon）/ .NET 10；其它平台需自行调整 stat 参数。
+# 环境：macOS（Apple Silicon）/ .NET 11；其它平台需自行调整 stat 参数。
 # 输出：每项 PASS/FAIL，最后汇总；所有产物落在系统临时目录并在退出时清理。
 set -uo pipefail
 
 repo_root="${0:A:h:h:h}"
 fixture_dir="${0:A:h}/输入"
 dotnet_bin="${DOTNET_BIN:-$(command -v dotnet)}"
-app="$repo_root/bin/Debug/net10.0/BatchCompress.Avalonia.dll"
-tests_dll="$repo_root/BatchCompress.Avalonia.Tests/bin/Debug/net10.0/BatchCompress.Avalonia.Tests.dll"
+app="$repo_root/bin/Debug/net11.0/BatchCompress.Avalonia.dll"
+tests_dll="$repo_root/BatchCompress.Avalonia.Tests/bin/Debug/net11.0/BatchCompress.Avalonia.Tests.dll"
 work="$(mktemp -d /tmp/bc-exp-verify.XXXXXX)"
 trap 'rm -rf "$work"' EXIT
 
@@ -309,7 +309,7 @@ report "CSV 中和以等号开头的来源名（退出码 $formula_rc）" "$r"
 
 echo "=== 18. 关于弹窗（0.8.10）：路径口径与诊断包覆盖 ==="
 # 在应用目录的 logs 下造一份「崩溃日志」命名风格的探针，验证诊断包不再只认 batchcompress_ 前缀。
-app_logs="$repo_root/bin/Debug/net10.0/logs"
+app_logs="$repo_root/bin/Debug/net11.0/logs"
 mkdir -p "$app_logs"
 crash_probe="$app_logs/batchcompress-crash_verify_$$.log"
 printf '[FATAL] --password "VerifyPlainSecret" unhandled\n' > "$crash_probe"
