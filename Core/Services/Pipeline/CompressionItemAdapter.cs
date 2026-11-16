@@ -28,8 +28,14 @@ internal sealed class PreparedCompressionItem : PreparedBatchItem
     /// <summary>执行前已存在的输出文件集合（失败或取消时避免误删既有文件）。</summary>
     public IReadOnlySet<string>? PreExistingOutputFiles { get; set; }
 
+    // WorkBuddy, 2026-11-17：0.8.15——覆盖模式先把旧卷改名备份，成功后再删除；
+    // 失败或取消时按备份路径恢复，避免新归档失败导致新旧全失。
+    public List<OutputBackup> OutputBackups { get; } = new();
+
     public override string BuildFailedLogMessage(string? errorMessage) =>
         $"Compression failed: {DisplayName} - {errorMessage}";
+
+    internal sealed record OutputBackup(string OriginalPath, string BackupPath);
 }
 
 /// <summary>
@@ -127,11 +133,9 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
             }
             else if (options.ExistingFileMode == ExistingFileMode.Overwrite)
             {
-                foreach (var existingOutputFile in existingOutputFiles)
-                {
-                    Log(LogLevel.Debug, $"Deleting existing output: {existingOutputFile}");
-                    File.Delete(existingOutputFile);
-                }
+                // WorkBuddy, 2026-11-17：0.8.15——不再在准备阶段删除旧归档。
+                // 真正执行时先把旧卷改名备份，成功后再删除，失败则恢复。
+                Log(LogLevel.Debug, $"Overwrite requested for existing output: {outputPath}");
             }
         }
 
@@ -196,6 +200,22 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
         var preExistingFiles = SnapshotOutputFiles(prepared.OutputPath);
         prepared.PreExistingOutputFiles = preExistingFiles;
 
+        if (prepared.Options.ExistingFileMode == ExistingFileMode.Overwrite && preExistingFiles.Count > 0)
+        {
+            if (!TryPrepareOutputReplacement(prepared, out var backupError))
+            {
+                return new ArchiveResult
+                {
+                    Success = false,
+                    ExitCode = -5,
+                    ErrorMessage = backupError ?? "无法备份已有归档"
+                };
+            }
+
+            // 旧文件已移到备份名；失败清理应删除本次写出的最终路径，而不是把它们当成“原有文件”保护。
+            prepared.PreExistingOutputFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        }
+
         try
         {
             var result = await _archiveEngine.CompressAsync(
@@ -204,6 +224,14 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
             if (!result.Success)
             {
                 CleanupFailedCompressionOutput(prepared.OutputPath, prepared.PreExistingOutputFiles);
+                RestoreOutputBackups(prepared);
+                // 恢复后的旧文件要重新纳入“原有文件”保护，避免 Pipeline 随后调用
+                // OnExecutionFailed 时把它们当成本次残片删掉。
+                prepared.PreExistingOutputFiles = preExistingFiles;
+            }
+            else
+            {
+                DeleteOutputBackups(prepared);
             }
 
             return result;
@@ -211,6 +239,8 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
         catch (Exception)
         {
             CleanupFailedCompressionOutput(prepared.OutputPath, prepared.PreExistingOutputFiles);
+            RestoreOutputBackups(prepared);
+            prepared.PreExistingOutputFiles = preExistingFiles;
             throw;
         }
         finally
@@ -256,6 +286,106 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
     {
         var prepared = (PreparedCompressionItem)item;
         CleanupFailedCompressionOutput(prepared.OutputPath, prepared.PreExistingOutputFiles);
+        RestoreOutputBackups(prepared);
+    }
+
+    private const string OutputBackupSuffix = ".batchcompress-backup";
+
+    /// <summary>把已存在的输出卷改名备份；遇到上次残留的备份先按时间恢复或清理。</summary>
+    private bool TryPrepareOutputReplacement(PreparedCompressionItem prepared, out string? error)
+    {
+        error = null;
+        foreach (var originalPath in ArchiveVolumeResolver.ResolveOutputFiles(prepared.OutputPath))
+        {
+            var backupPath = originalPath + OutputBackupSuffix;
+            try
+            {
+                ResolveStaleBackup(originalPath, backupPath);
+
+                File.Move(originalPath, backupPath);
+                prepared.OutputBackups.Add(new PreparedCompressionItem.OutputBackup(originalPath, backupPath));
+            }
+            catch (Exception ex)
+            {
+                RestoreOutputBackups(prepared);
+                error = $"无法备份已有归档 {originalPath}: {ex.Message}";
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>上次成功但删除备份失败时，最终文件比备份新，删备份；否则用备份恢复。</summary>
+    private static void ResolveStaleBackup(string originalPath, string backupPath)
+    {
+        if (!File.Exists(backupPath))
+        {
+            return;
+        }
+
+        if (!File.Exists(originalPath) ||
+            File.GetLastWriteTimeUtc(backupPath) > File.GetLastWriteTimeUtc(originalPath))
+        {
+            if (File.Exists(originalPath))
+            {
+                File.Delete(originalPath);
+            }
+
+            File.Move(backupPath, originalPath);
+            return;
+        }
+
+        File.Delete(backupPath);
+    }
+
+    private void RestoreOutputBackups(PreparedCompressionItem prepared)
+    {
+        for (var index = prepared.OutputBackups.Count - 1; index >= 0; index--)
+        {
+            var backup = prepared.OutputBackups[index];
+            try
+            {
+                if (!File.Exists(backup.BackupPath))
+                {
+                    continue;
+                }
+
+                if (File.Exists(backup.OriginalPath))
+                {
+                    File.Delete(backup.OriginalPath);
+                }
+
+                File.Move(backup.BackupPath, backup.OriginalPath);
+            }
+            catch (Exception ex)
+            {
+                Log(LogLevel.Warning, $"恢复已有归档失败: {backup.OriginalPath}，错误: {ex.Message}");
+            }
+        }
+
+        prepared.OutputBackups.Clear();
+    }
+
+    private void DeleteOutputBackups(PreparedCompressionItem prepared)
+    {
+        foreach (var backup in prepared.OutputBackups)
+        {
+            try
+            {
+                if (File.Exists(backup.BackupPath))
+                {
+                    File.Delete(backup.BackupPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                // 删除失败不影响新归档；下次覆盖前会按时间判断并清理。
+                Log(LogLevel.Warning, $"删除归档备份失败: {backup.BackupPath}，错误: {ex.Message}");
+            }
+        }
+
+        prepared.OutputBackups.Clear();
     }
 
     private static IReadOnlySet<string> SnapshotOutputFiles(string outputPath)

@@ -351,6 +351,13 @@
     "CliFatalError": "致命错误：{0}",
     "CliRunnerDiagnosticsExported": "诊断报告已导出：{0}",
     "CliProgressLine": "已处理：成功 {0}，失败 {1}，后处理失败 {2}，跳过 {3}{4}",
-    "DuplicateArchiveSkipped": "重复的归档任务，已跳过：{0}"
+    "DuplicateArchiveSkipped": "重复的归档任务，已跳过：{0}",
+    "CloseDuringOperationTitle": "任务正在执行",
+    "CloseDuringOperationBody": "当前压缩/解压尚未完成。关闭会取消任务并清理临时文件，确定退出吗？",
+    "CloseDuringOperationExit": "退出",
+    "CloseDuringOperationContinue": "继续",
+    "CloseDuringOperationTimeoutTitle": "清理尚未完成",
+    "CloseDuringOperationTimeoutBody": "任务清理超过 10 秒仍未结束。仍要强制退出吗？",
+    "CloseDuringOperationForceExit": "强制退出"
   }
 }

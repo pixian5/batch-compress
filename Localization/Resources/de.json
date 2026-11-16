@@ -351,6 +351,13 @@
     "CliFatalError": "Schwerwiegender Fehler: {0}",
     "CliRunnerDiagnosticsExported": "Diagnoseprotokoll exportiert nach: {0}",
     "CliProgressLine": "Verarbeitet: {0} erfolgreich, {1} fehlgeschlagen, {2} Nachbearbeitung fehlgeschlagen, {3} übersprungen{4}",
-    "DuplicateArchiveSkipped": "Doppelte Archivaufgabe übersprungen: {0}"
+    "DuplicateArchiveSkipped": "Doppelte Archivaufgabe übersprungen: {0}",
+    "CloseDuringOperationTitle": "Aufgabe läuft",
+    "CloseDuringOperationBody": "Die aktuelle Komprimierung oder Extraktion ist noch nicht abgeschlossen. Beim Schließen wird die Aufgabe abgebrochen und temporäre Dateien werden bereinigt. Trotzdem beenden?",
+    "CloseDuringOperationExit": "Beenden",
+    "CloseDuringOperationContinue": "Weiter",
+    "CloseDuringOperationTimeoutTitle": "Bereinigung läuft noch",
+    "CloseDuringOperationTimeoutBody": "Die Bereinigung ist nach 10 Sekunden noch nicht abgeschlossen. Trotzdem erzwingen?",
+    "CloseDuringOperationForceExit": "Erzwingen"
   }
 }

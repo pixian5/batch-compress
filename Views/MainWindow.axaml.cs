@@ -8,6 +8,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Media;
 using Avalonia.Metadata;
 using Avalonia.Layout;
 using CommunityToolkit.Mvvm.Input;
@@ -16,6 +17,7 @@ using BatchCompress.Avalonia.ViewModels;
 using BatchCompress.Avalonia.Localization;
 using Avalonia.Input;
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace BatchCompress.Avalonia.Views;
 
@@ -32,6 +34,9 @@ public partial class MainWindow : Window
     private bool _isApplyingNormalBounds;
     // WorkBuddy, 2026-11-16：0.8.13——记录当前绑定的 ViewModel，切换数据上下文或关窗时释放。
     private MainWindowViewModel? _boundViewModel;
+    // WorkBuddy, 2026-11-17：0.8.15——执行中关窗先确认、取消并等待清理，避免硬杀进程留下残片。
+    private bool _closeApproved;
+    private bool _closeDialogOpen;
     // WorkBuddy, 2026-11-16：批次 25（P2）——窗口状态读写收敛到 WindowStateService，
     // 设置文件路径与 JSON 字段保持不变，视图只负责采集当前尺寸与位置。
     private readonly WindowStateService _windowStateService = new();
@@ -113,10 +118,78 @@ public partial class MainWindow : Window
 
     private void MainWindow_Closing(object? sender, WindowClosingEventArgs e)
     {
+        if (_closeApproved)
+        {
+            CompleteClose();
+            return;
+        }
+
+        if (_boundViewModel is { IsOperating: true } viewModel)
+        {
+            // 先取消关闭，等用户确认并完成取消/清理后再真正关闭。
+            e.Cancel = true;
+            if (!_closeDialogOpen)
+            {
+                _ = ConfirmCloseDuringOperationAsync(viewModel);
+            }
+
+            return;
+        }
+
+        CompleteClose();
+    }
+
+    private void CompleteClose()
+    {
         SaveWindowSize();
 
         // 退订静态语言服务并释放文件日志器；Dispose 幂等，重复调用安全。
         _boundViewModel?.Dispose();
+    }
+
+    private async Task ConfirmCloseDuringOperationAsync(MainWindowViewModel viewModel)
+    {
+        _closeDialogOpen = true;
+        try
+        {
+            var confirmed = await ShowOkCancelMessageBoxAsync(
+                L.CloseDuringOperationTitle,
+                L.CloseDuringOperationBody,
+                L.CloseDuringOperationExit,
+                L.CloseDuringOperationContinue);
+            if (!confirmed)
+            {
+                return;
+            }
+
+            viewModel.CancelOperationCommand.Execute(null);
+            var completion = viewModel.WaitForOperationCompletionAsync();
+            var finished = await Task.WhenAny(completion, Task.Delay(TimeSpan.FromSeconds(10))) == completion;
+            if (!finished)
+            {
+                var force = await ShowOkCancelMessageBoxAsync(
+                    L.CloseDuringOperationTimeoutTitle,
+                    L.CloseDuringOperationTimeoutBody,
+                    L.CloseDuringOperationForceExit,
+                    L.CloseDuringOperationContinue);
+                if (!force)
+                {
+                    return;
+                }
+            }
+
+            _closeApproved = true;
+            Close();
+        }
+        catch (Exception ex)
+        {
+            // 对话框失败不能把程序卡在“关不掉”的状态；记录后允许用户再次尝试。
+            Debug.WriteLine($"关窗确认失败: {ex.Message}");
+        }
+        finally
+        {
+            _closeDialogOpen = false;
+        }
     }
 
     private void RestoreWindowSize()
@@ -699,7 +772,7 @@ public partial class MainWindow : Window
                 Margin = new Thickness(20),
                 Children =
                 {
-                    new TextBlock { Text = message, FontSize = 16, Margin = new Thickness(0, 20, 0, 20) },
+                    new TextBlock { Text = message, FontSize = 16, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 20, 0, 20) },
                     new Button
                     {
                         Content = L.Ok,
@@ -736,7 +809,7 @@ public partial class MainWindow : Window
                 Margin = new Thickness(20),
                 Children =
                 {
-                    new TextBlock { Text = message, FontSize = 16, Margin = new Thickness(0, 20, 0, 20) },
+                    new TextBlock { Text = message, FontSize = 16, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 20, 0, 20) },
                     new StackPanel
                     {
                         Orientation = Orientation.Horizontal,

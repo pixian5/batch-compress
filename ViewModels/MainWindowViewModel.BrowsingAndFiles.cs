@@ -236,7 +236,7 @@ public partial class MainWindowViewModel
     private async Task UpdateTotalSizeAsync()
     {
         var targetPath = SaveFilePath;
-        var calculation = await Task.Run(() => CalculateDirectorySize(targetPath));
+        var calculation = await Task.Run(() => DirectorySizeCalculator.Calculate(targetPath));
         if (!string.Equals(SaveFilePath, targetPath, StringComparison.Ordinal))
         {
             return;
@@ -247,45 +247,6 @@ public partial class MainWindowViewModel
         {
             AppendCommandLog(error + "\n");
         }
-    }
-
-    private static (long Size, List<string> Errors) CalculateDirectorySize(string path)
-    {
-        if (!Directory.Exists(path))
-            return (0, []);
-
-        long size = 0;
-        var errors = new List<string>();
-
-        try
-        {
-            // 枚举目录中的候选文件。
-            string[] files = Directory.GetFiles(path, "*", SearchOption.AllDirectories)
-                .Where(file => !SystemMetadataFileFilter.ShouldSkip(file))
-                .ToArray();
-
-            // 汇总候选文件大小并换算为 GB。
-            foreach (string file in files)
-            {
-                try
-                {
-                    FileInfo fileInfo = new FileInfo(file);
-                    size += fileInfo.Length;
-                }
-                catch (Exception ex)
-                {
-                    errors.Add(string.Format(
-                        LocalizationService.Instance.Strings.DirectorySizeFileError, file, ex.Message));
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            errors.Add(string.Format(
-                LocalizationService.Instance.Strings.DirectorySizeAccessError, path, ex.Message));
-        }
-
-        return (size, errors);
     }
 
     private void QueueRefresh(bool includeTotalSize, bool delay = false)

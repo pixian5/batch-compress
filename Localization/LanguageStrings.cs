@@ -430,6 +430,15 @@ public class LanguageStrings : INotifyPropertyChanged
     public string CliWaitingForDisplay { get; set; } = "等待 macOS 显示器就绪后启动图形界面…";
     public string CliFatalError { get; set; } = "致命错误：{0}";
 
+    // WorkBuddy, 2026-11-17：0.8.15——执行中关窗的确认与清理超时提示。
+    public string CloseDuringOperationTitle { get; set; } = "任务正在执行";
+    public string CloseDuringOperationBody { get; set; } = "当前压缩/解压尚未完成。关闭会取消任务并清理临时文件，确定退出吗？";
+    public string CloseDuringOperationExit { get; set; } = "退出";
+    public string CloseDuringOperationContinue { get; set; } = "继续";
+    public string CloseDuringOperationTimeoutTitle { get; set; } = "清理尚未完成";
+    public string CloseDuringOperationTimeoutBody { get; set; } = "任务清理超过 10 秒仍未结束。仍要强制退出吗？";
+    public string CloseDuringOperationForceExit { get; set; } = "强制退出";
+
     // WorkBuddy, 2026-11-16：批次 27（P4-4）——「关于」弹窗的标题、六个字段名、
     // 三个按钮与提示。设计方案估的是 5 个词条，实际字段名与说明文字都要翻译，共 12 个。
     public string About { get; set; } = "关于";

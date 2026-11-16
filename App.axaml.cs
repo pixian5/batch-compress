@@ -202,6 +202,20 @@ public partial class App : Application
 
     private void TrayExit_Clicked(object? sender, EventArgs e)
     {
+        // WorkBuddy, 2026-11-17：0.8.15——托盘退出也走窗口关闭路径，
+        // 这样执行中的任务仍会经过确认、取消与清理，而不是被 desktop.Shutdown 直接杀掉。
+        if (_mainWindow is { } window)
+        {
+            // 只有执行中且窗口被隐藏时才需要显示出来，让确认框有可见的 owner。
+            if (!window.IsVisible && _viewModel?.IsOperating == true)
+            {
+                window.Show();
+            }
+
+            window.Close();
+            return;
+        }
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.Shutdown();

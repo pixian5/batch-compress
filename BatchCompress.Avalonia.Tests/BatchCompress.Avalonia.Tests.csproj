@@ -38,6 +38,10 @@
     <!-- WorkBuddy, 2026-11-16：0.8.13——界面派生逻辑（页签显隐）与生命周期守护。 -->
     <Compile Include="Program.UiLogicTests.cs" />
     <Compile Include="..\ViewModels\TabVisibility.cs" Link="ViewModels\TabVisibility.cs" />
+    <!-- WorkBuddy, 2026-11-17：0.8.15——关窗等待操作完成的纯逻辑。 -->
+    <Compile Include="..\ViewModels\OperationCompletionSignal.cs" Link="ViewModels\OperationCompletionSignal.cs" />
+    <!-- WorkBuddy, 2026-11-17：0.8.15——目录大小计算（符号链接安全）。 -->
+    <Compile Include="..\Core\Services\DirectorySizeCalculator.cs" Link="Core\Services\DirectorySizeCalculator.cs" />
     <!-- WorkBuddy, 2026-11-16：批次 25（P2）——窗口状态持久化回归测试。 -->
     <Compile Include="Program.WindowStateTests.cs" />
     <Compile Include="..\Core\Services\WindowStateService.cs" Link="Core\Services\WindowStateService.cs" />

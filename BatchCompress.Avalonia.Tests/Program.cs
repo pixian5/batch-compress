@@ -93,6 +93,8 @@ internal static partial class Program
             ("CLI帮助文本折行与宽度计算", TestCliHelpTextWrapping),
             ("无界面进度单行格式化", TestHeadlessProgressFormatting),
             ("压缩失败残留回滚", TestFailedCompressionRollback),
+            // WorkBuddy, 2026-11-17：0.8.15——覆盖失败恢复旧归档。
+            ("覆盖失败保留旧归档", TestOverwriteFailureKeepsExistingArchive),
             ("压缩取消残留回滚", TestCancelledCompressionRollback),
             ("解压取消残留回滚", TestCancelledExtractionRollback),
             ("五语言CLI帮助选项完整性", TestAllHelpTextsContainAllOptions),
@@ -130,7 +132,11 @@ internal static partial class Program
             ("串行进度快照不被后续条目改写", TestSequentialProgressSnapshotsAreImmutable),
             // WorkBuddy, 2026-11-16：0.8.13——页签显隐派生逻辑。
             ("页签按钮显隐派生逻辑", TestTabVisibilityDerivation),
-            ("界面生命周期释放接线", TestUiLifecycleWiring)
+            ("界面生命周期释放接线", TestUiLifecycleWiring),
+            // WorkBuddy, 2026-11-17：0.8.15——关窗等待操作完成的信号。
+            ("操作完成信号", TestOperationCompletionSignal),
+            // WorkBuddy, 2026-11-17：0.8.15——目录大小排除符号链接环路。
+            ("目录大小排除符号链接", TestDirectorySizeSkipsSymlinkLoops)
         };
 
         // GLM-5.3, 2026-11-03：跑完全部测试后统一输出失败汇总，CI 中一次可见所有失败项；

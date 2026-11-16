@@ -1282,6 +1282,47 @@ internal static partial class Program
         }
     }
 
+    // WorkBuddy, 2026-11-17：0.8.15——覆盖失败必须恢复旧归档，不能新旧全失。
+    private static async Task TestOverwriteFailureKeepsExistingArchive()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"batch-compress-overwrite-{Guid.NewGuid():N}");
+        var source = Path.Combine(root, "source.txt");
+        var outputDir = Path.Combine(root, "output");
+        Directory.CreateDirectory(root);
+        Directory.CreateDirectory(outputDir);
+        File.WriteAllText(source, "source data");
+
+        var targetArchive = Path.Combine(outputDir, "source.txt.7z");
+        File.WriteAllText(targetArchive, "old archive");
+
+        try
+        {
+            var engine = new PartialFailureArchiveEngine();
+            var snapshots = new List<OperationProgressInfo>();
+            await new BatchOperationService(engine, new TestSystemIntegration()).BatchCompressAsync(
+                [source],
+                new BatchOperationOptions
+                {
+                    OutputPath = outputDir,
+                    Extension = "7z",
+                    ExistingFileMode = ExistingFileMode.Overwrite
+                },
+                new SnapshotProgress(snapshots),
+                CancellationToken.None);
+
+            AssertEqual(1, snapshots.Last().FailCount);
+            Assert(File.Exists(targetArchive), "覆盖失败后旧归档必须存在");
+            AssertEqual("old archive", File.ReadAllText(targetArchive));
+            Assert(!File.Exists(targetArchive + ".001"), "覆盖失败必须清理新生成的分卷");
+            Assert(!File.Exists(targetArchive + ".002"), "覆盖失败必须清理新生成的分卷");
+            Assert(!File.Exists(targetArchive + ".batchcompress-backup"), "覆盖失败后不应残留备份");
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
     // Antigravity, 2026-11-07：批次 13——压缩中途取消时可靠清理在途未完成文件与分卷残片。
     private static async Task TestCancelledCompressionRollback()
     {

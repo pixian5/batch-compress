@@ -351,6 +351,13 @@
     "CliFatalError": "致命的エラー: {0}",
     "CliRunnerDiagnosticsExported": "診断レポートをエクスポートしました: {0}",
     "CliProgressLine": "処理済み: 成功 {0}、失敗 {1}、後処理失敗 {2}、スキップ {3}{4}",
-    "DuplicateArchiveSkipped": "重複したアーカイブタスクをスキップしました: {0}"
+    "DuplicateArchiveSkipped": "重複したアーカイブタスクをスキップしました: {0}",
+    "CloseDuringOperationTitle": "タスク実行中",
+    "CloseDuringOperationBody": "現在の圧縮/解凍はまだ完了していません。閉じるとタスクをキャンセルし、一時ファイルを整理します。終了しますか？",
+    "CloseDuringOperationExit": "終了",
+    "CloseDuringOperationContinue": "続行",
+    "CloseDuringOperationTimeoutTitle": "整理が完了していません",
+    "CloseDuringOperationTimeoutBody": "10 秒経っても整理が終わりません。強制終了しますか？",
+    "CloseDuringOperationForceExit": "強制終了"
   }
 }

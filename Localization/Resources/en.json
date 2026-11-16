@@ -351,6 +351,13 @@
     "CliFatalError": "Fatal error: {0}",
     "CliRunnerDiagnosticsExported": "Diagnostics report exported to: {0}",
     "CliProgressLine": "Processed: {0} success, {1} failed, {2} post-process failed, {3} skipped{4}",
-    "DuplicateArchiveSkipped": "Duplicate archive task skipped: {0}"
+    "DuplicateArchiveSkipped": "Duplicate archive task skipped: {0}",
+    "CloseDuringOperationTitle": "Task in progress",
+    "CloseDuringOperationBody": "The current compression or extraction is not finished. Closing will cancel the task and clean up temporary files. Exit anyway?",
+    "CloseDuringOperationExit": "Exit",
+    "CloseDuringOperationContinue": "Continue",
+    "CloseDuringOperationTimeoutTitle": "Cleanup still running",
+    "CloseDuringOperationTimeoutBody": "Cleanup has not finished after 10 seconds. Force exit anyway?",
+    "CloseDuringOperationForceExit": "Force exit"
   }
 }

@@ -351,6 +351,13 @@
     "CliFatalError": "致命錯誤：{0}",
     "CliRunnerDiagnosticsExported": "診斷報告已匯出：{0}",
     "CliProgressLine": "已處理：成功 {0}，失敗 {1}，後處理失敗 {2}，略過 {3}{4}",
-    "DuplicateArchiveSkipped": "重複的封存任務，已略過：{0}"
+    "DuplicateArchiveSkipped": "重複的封存任務，已略過：{0}",
+    "CloseDuringOperationTitle": "任務正在執行",
+    "CloseDuringOperationBody": "目前壓縮/解壓縮尚未完成。關閉會取消任務並清理暫存檔案，確定退出嗎？",
+    "CloseDuringOperationExit": "退出",
+    "CloseDuringOperationContinue": "繼續",
+    "CloseDuringOperationTimeoutTitle": "清理尚未完成",
+    "CloseDuringOperationTimeoutBody": "任務清理超過 10 秒仍未結束。仍要強制退出嗎？",
+    "CloseDuringOperationForceExit": "強制退出"
   }
 }

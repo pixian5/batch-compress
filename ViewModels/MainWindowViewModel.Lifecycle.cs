@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using BatchCompress.Avalonia.Localization;
 
 namespace BatchCompress.Avalonia.ViewModels;
@@ -8,7 +9,24 @@ namespace BatchCompress.Avalonia.ViewModels;
 // 这里实现幂等的 Dispose，由窗口关闭或数据上下文切换时调用。
 public partial class MainWindowViewModel : IDisposable
 {
+    private readonly OperationCompletionSignal _operationCompletionSignal = new();
     private bool _disposed;
+
+    /// <summary>等待当前批处理真正结束（OperationSession 的 finally 已执行）。</summary>
+    public Task WaitForOperationCompletionAsync() => _operationCompletionSignal.WaitAsync();
+
+    // CommunityToolkit 生成的 IsOperating 变更钩子：开始/结束批处理时同步完成信号。
+    partial void OnIsOperatingChanged(bool value)
+    {
+        if (value)
+        {
+            _operationCompletionSignal.Begin();
+        }
+        else
+        {
+            _operationCompletionSignal.Complete();
+        }
+    }
 
     public void Dispose()
     {
