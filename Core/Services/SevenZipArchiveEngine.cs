@@ -151,10 +151,19 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
             yield break;
         }
 
+        // WorkBuddy, 2026-11-17：0.8.16——生产路径不再信任“当前工作目录”。
+        // 命令行常在下载来的项目/临时目录里运行，目录中的伪造 tools/7zip/.../7zz
+        // 会被当成可信程序执行；需要自定义路径时用显式环境变量。
+        var explicitPath = Environment.GetEnvironmentVariable("BATCHCOMPRESS_7ZZ_PATH");
+        if (!string.IsNullOrWhiteSpace(explicitPath))
+        {
+            yield return Path.GetFullPath(explicitPath);
+            yield break;
+        }
+
         if (OperatingSystem.IsMacOS())
         {
             yield return Path.Combine(AppContext.BaseDirectory, "tools", "7zip", "macos", "7zz");
-            yield return Path.Combine(Directory.GetCurrentDirectory(), "tools", "7zip", "macos", "7zz");
             yield return "/opt/homebrew/bin/7zz";
             yield return "/usr/local/bin/7zz";
         }
@@ -164,7 +173,6 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
                 ? "linux-arm64"
                 : "linux-x64";
             yield return Path.Combine(AppContext.BaseDirectory, "tools", "7zip", platformDirectory, "7zz");
-            yield return Path.Combine(Directory.GetCurrentDirectory(), "tools", "7zip", platformDirectory, "7zz");
             yield return "/usr/local/bin/7zz";
             yield return "/usr/bin/7zz";
         }

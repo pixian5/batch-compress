@@ -39,8 +39,8 @@ public static partial class CommandLineHandler
           --temp-dir <目录>              归档程序临时目录
 
         密码:
-          --random-password, -r          按归档文件名生成兼容随机密码，默认开启
-          --no-random-password           关闭随机密码派生
+          --random-password, -r          按归档文件名生成兼容密码，默认开启
+          --no-random-password           关闭按文件名生成密码
           --password, -p <密码>          直接提供自定义密码
           --password-file <文件>         从文件第一行读取密码
           --password-stdin               从标准输入第一行读取密码
@@ -123,8 +123,8 @@ public static partial class CommandLineHandler
           --temp-dir <目錄>              封存程式暫存目錄
 
         密碼:
-          --random-password, -r          依封存檔名產生相容隨機密碼，預設開啟
-          --no-random-password           關閉隨機密碼衍生
+          --random-password, -r          依封存檔名產生相容密碼，預設開啟
+          --no-random-password           關閉依檔名產生密碼
           --password, -p <密碼>          直接提供自訂密碼
           --password-file <檔案>         從檔案第一行讀取密碼
           --password-stdin               從標準輸入第一行讀取密碼
@@ -210,9 +210,9 @@ public static partial class CommandLineHandler
           --temp-dir <dir>               Temporary directory for archiver
 
         Passwords:
-          --random-password, -r          Derive legacy random password from archive
+          --random-password, -r          Derive legacy password from archive name
                                         name (default on)
-          --no-random-password           Disable random password derivation
+          --no-random-password           Disable file-name password derivation
           --password, -p <password>      Provide a custom password directly
           --password-file <file>         Read the password from the first line
           --password-stdin               Read the password from standard input
@@ -299,8 +299,8 @@ public static partial class CommandLineHandler
           --temp-dir <ディレクトリ>     アーカイブプログラムの一時ディレクトリ
 
         パスワード:
-          --random-password, -r         アーカイブ名から互換ランダムパスワードを生成（デフォルト有効）
-          --no-random-password          ランダムパスワード派生を無効化
+          --random-password, -r         アーカイブ名から互換パスワードを生成（デフォルト有効）
+          --no-random-password          ファイル名パスワードの生成を無効化
           --password, -p <パスワード>   カスタムパスワードを直接指定
           --password-file <ファイル>    ファイルの先頭行からパスワードを読み込む
           --password-stdin              標準入力の先頭行からパスワードを読み込む
@@ -387,8 +387,8 @@ public static partial class CommandLineHandler
           --temp-dir <Verzeichnis>      Temporaeres Verzeichnis fuer Archivierer
 
         Passwoerter:
-          --random-password, -r         Kompatibles Zufallspasswort aus Archivname ableiten (Standard aktiv)
-          --no-random-password          Ableitung von Zufallspasswoertern deaktivieren
+          --random-password, -r         Kompatibles Passwort aus Archivnamen ableiten (Standard aktiv)
+          --no-random-password          Dateiname-Passwort ableiten deaktivieren
           --password, -p <Passwort>     Benutzerdefiniertes Passwort direkt angeben
           --password-file <Datei>       Passwort aus der ersten Zeile der Datei lesen
           --password-stdin              Passwort aus Standard-Eingabe (erste Zeile) lesen

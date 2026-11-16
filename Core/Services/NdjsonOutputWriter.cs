@@ -72,6 +72,8 @@ public sealed class NdjsonOutputWriter
         _incompleteVolumeCount = info.IncompleteVolumeCount;
         _ambiguousCount = info.AmbiguousArchiveCount;
 
+        var safeMessage = info.Message is null ? null : CredentialRedactor.Redact(info.Message);
+
         if (succeeded || failed || skipped)
         {
             var status = succeeded ? "success" : failed ? "fail" : "skip";
@@ -80,7 +82,7 @@ public sealed class NdjsonOutputWriter
                 type = "item",
                 status,
                 source = info.CurrentFile,
-                message = info.Message,
+                message = safeMessage,
                 successCount = info.SuccessCount,
                 failCount = info.FailCount,
                 postProcessFailCount = info.PostProcessFailCount,
@@ -102,7 +104,7 @@ public sealed class NdjsonOutputWriter
                     type = "progress",
                     phase,
                     source = info.CurrentFile,
-                    message = info.Message,
+                    message = safeMessage,
                     subProgressPercent = info.SubProgressPercent
                 });
             }

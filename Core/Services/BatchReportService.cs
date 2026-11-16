@@ -4,7 +4,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using BatchCompress.Avalonia.Core.Models;
 using BatchCompress.Avalonia.Localization;
 
@@ -198,17 +197,12 @@ public sealed class BatchReportCollector
     }
 
     // 第二道保证：即使将来有人把命令文本塞进用户可见消息，也只保留到不含凭据的程度。
-    // 真实命令里密码常直接连写（-p明文），也可能空格分隔或写成 --password=xxx，三种都要覆盖。
-    // 宁可多省略一条消息，也不能让凭据进入报告。
-    private static readonly Regex CredentialPattern = new(
-        @"(?:^|\s)(?:--password|-hp|-p)(?:[=:]\S*|\s+\S+|\S+)",
-        RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
+    // 与诊断包共用 CredentialRedactor，避免报告规则落后于诊断包（例如引号整体形态）。
     private static string Sanitize(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return string.Empty;
         var flat = text.Replace('\r', ' ').Replace('\n', ' ').Trim();
-        return CredentialPattern.IsMatch(flat) ? RedactedMarker : flat;
+        return CredentialRedactor.ContainsCredential(flat) ? RedactedMarker : flat;
     }
 }
 

@@ -136,7 +136,11 @@ internal static partial class Program
             // WorkBuddy, 2026-11-17：0.8.15——关窗等待操作完成的信号。
             ("操作完成信号", TestOperationCompletionSignal),
             // WorkBuddy, 2026-11-17：0.8.15——目录大小排除符号链接环路。
-            ("目录大小排除符号链接", TestDirectorySizeSkipsSymlinkLoops)
+            ("目录大小排除符号链接", TestDirectorySizeSkipsSymlinkLoops),
+            // WorkBuddy, 2026-11-17：0.8.16——安全边界。
+            ("共享密码脱敏规则", TestCredentialRedactorSharedRules),
+            ("报告与 NDJSON 脱敏", TestReportAndNdjsonRedactQuotedCredentials),
+            ("7-Zip 不信任当前目录", TestSevenZipDoesNotTrustCurrentDirectory)
         };
 
         // GLM-5.3, 2026-11-03：跑完全部测试后统一输出失败汇总，CI 中一次可见所有失败项；

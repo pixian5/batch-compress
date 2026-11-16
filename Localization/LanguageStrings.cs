@@ -50,7 +50,7 @@ public class LanguageStrings : INotifyPropertyChanged
     public string DecompressionOptions { get; set; } = "解压选项";
     public string FileNameLabel { get; set; } = "文件名（不含扩展名）：";
     public string QueryPassword { get; set; } = "查询密码";
-    public string RandomPassword { get; set; } = "随机密码";
+    public string RandomPassword { get; set; } = "文件名密码";
     public string CustomPasswordWatermark { get; set; } = "自定义密码";
     public string CopiedToClipboard { get; set; } = "（已复制到剪贴板）";
     public string ExtensionLabel { get; set; } = "扩展名：";
@@ -236,10 +236,10 @@ public class LanguageStrings : INotifyPropertyChanged
     // 压缩选项区域提示与标签。
     public string TooltipPasswordQueryFileName { get; set; } = "输入文件名以生成或查询兼容密码";
     public string TooltipQueryPasswordCompression { get; set; } = "生成密码并复制当前压缩密码";
-    public string TooltipRandomPasswordCompression { get; set; } = "按文件名生成压缩密码";
+    public string TooltipRandomPasswordCompression { get; set; } = "按文件名生成压缩密码（兼容旧版，不是随机密码）";
     public string TooltipCustomPasswordCompression { get; set; } = "关闭随机密码后使用此密码";
     public string PasswordBasisLabel { get; set; } = "密码依据";
-    public string TooltipPasswordNameMode { get; set; } = "随机密码可按完整归档名或不含扩展名的文件名生成";
+    public string TooltipPasswordNameMode { get; set; } = "文件名密码可按完整归档名或不含扩展名的文件名生成";
     public string TooltipExtensionCompression { get; set; } = "压缩格式支持 rar、7z、zip、tar、gz、bz2、xz、wim；iso 等只读格式仅用于解压";
     public string TooltipVerify { get; set; } = "压缩完成后使用对应归档程序校验结果";
     public string TooltipCompressionLevel { get; set; } = "压缩率越高，处理时间通常越长";
@@ -268,7 +268,7 @@ public class LanguageStrings : INotifyPropertyChanged
     // 解压选项区域提示与标签。
     public string TooltipPasswordQueryFileNameDecompression { get; set; } = "输入归档文件名以生成或查询解压密码";
     public string TooltipQueryPasswordDecompression { get; set; } = "生成密码并复制当前候选密码";
-    public string TooltipRandomPasswordDecompression { get; set; } = "按归档文件名生成解压密码";
+    public string TooltipRandomPasswordDecompression { get; set; } = "按归档文件名生成解压密码（兼容旧版）";
     public string TooltipCustomPasswordDecompression { get; set; } = "关闭随机密码后使用此解压密码";
     public string TooltipExtensionDecompression { get; set; } = "用于目录扫描和未知归档格式的筛选";
     public string ExistingFilesLabel { get; set; } = "已有文件：";

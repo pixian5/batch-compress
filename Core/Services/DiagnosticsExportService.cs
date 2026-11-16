@@ -58,42 +58,7 @@ public sealed class DiagnosticsExportService
     /// <summary>
     /// 对日志文本中的密码凭据进行脱敏替换（-p、-hp、--password 后续值替换为 ***）。
     /// </summary>
-    public static string RedactSensitiveText(string input)
-    {
-        if (string.IsNullOrEmpty(input)) return input;
-
-        // WorkBuddy, 2026-11-16：0.8.13——密码含空格时，归档程序展示用的命令行会把
-        // 整个参数加引号，写成 "-pSuper Secret 123"（引号在 -p 前面），
-        // 旧的「-p 前必须是行首或空白」规则全部落空。先处理“引号包住整个参数”的三种形态。
-        // (?=\S) 要求开关后至少有一个非空白字符，避免把孤立的 "-p" 当成密码。
-        var result = Regex.Replace(input, @"""(-hp|-p)(?=\S)([^""]*)""", @"""$1***""");
-
-        // "--password=带空格" 与 "--password 带空格" 两种赋值/空格形态。
-        result = Regex.Replace(result, @"""(--password)([=:])([^""]*)""", @"""$1$2***""");
-        result = Regex.Replace(result, @"""(--password)\s+([^""]*)""", @"""$1 ***""");
-
-        // 1. 脱敏 --password "..." 与 --password ...（此时 result 已处理过引号整体形态）
-        result = Regex.Replace(result, @"(--password\s+)""[^""]*""", "$1\"***\"");
-        // WorkBuddy, 2026-11-16：0.8.13——只吃到空白或引号为止，否则会把已脱敏占位符后面的
-        // 结尾引号一起吞掉，导致 "--password ***  -e 7z" 这类文本丢失引号。
-        result = Regex.Replace(result, @"(--password\s+)(?!\*\*\*(?=$|[\s""]))[^\s""]+", "$1***");
-
-        // WorkBuddy, 2026-11-16：复查修复——等号/冒号赋值形式此前完全漏网。
-        // 结果报告服务早就把 --password=xxx 列为真实命令形式，诊断包必须同步覆盖，
-        // 否则可对外分享的 zip 会原样带出明文口令。带引号与不带引号合并成一条规则，
-        // 避免二次替换把已脱敏的占位符再改一遍。
-        result = Regex.Replace(result, @"(--password)[=:](?:""[^""]*""|[^\s""]+)", "$1=***");
-
-        // 2. 脱敏 -p"..." 与 -p...（必须位于行首或空格之后，避免误伤 --password 中的 -p）
-        result = Regex.Replace(result, @"(^|\s)(-p)""[^""]*""", "$1$2\"***\"");
-        result = Regex.Replace(result, @"(^|\s)(-p)(?!\*\*\*(?=$|[\s""]))[^\s""]+", "$1$2***");
-
-        // 3. 脱敏 -hp"..." 与 -hp...（WinRAR 加密文件头参数）
-        result = Regex.Replace(result, @"(^|\s)(-hp)""[^""]*""", "$1$2\"***\"");
-        result = Regex.Replace(result, @"(^|\s)(-hp)(?!\*\*\*(?=$|[\s""]))[^\s""]+", "$1$2***");
-
-        return result;
-    }
+    public static string RedactSensitiveText(string input) => CredentialRedactor.Redact(input);
 
     /// <summary>
     /// 导出脱敏诊断包至指定 zip 路径。
