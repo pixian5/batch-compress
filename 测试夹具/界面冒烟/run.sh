@@ -47,7 +47,9 @@ fi
 
 # 1. 启动后主程序与状态栏帮助进程都存在。
 if ! pgrep -x BatchCompress.Avalonia >/dev/null; then
-    open "$app"
+    # WorkBuddy, 2026-11-16：用户明确要求桌面程序只在后台运行、不要抢前台。
+    # -g 不激活应用，-j 以隐藏方式启动；后续核对只读进程、版本与窗口标题。
+    open -g -j "$app"
     started=1
     sleep 4
 fi

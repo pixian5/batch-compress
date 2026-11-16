@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -34,6 +35,10 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly EnclosureConfigService _enclosureConfig;
     // GLM-5.3, 2026-11-04：批次 2 阶段 3——通知节流等会话状态迁至 OperationSession；取消令牌仍由 VM 持有。
     private CancellationTokenSource? _cancellationTokenSource;
+    // WorkBuddy, 2026-11-16：0.8.13——保存语言事件处理器引用，窗口关闭时才能精确退订；
+    // 原来用匿名 lambda 订阅静态单例，进程内永远不会释放对该 ViewModel 的引用。
+    private readonly PropertyChangedEventHandler _languageChangedHandler;
+
     private readonly OperationTabState _compressionTabState = new();
     private readonly OperationTabState _decompressionTabState = new();
     private bool _isSwitchingOperationTab;
@@ -144,6 +149,10 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(IsCommandLogTab))]
     [NotifyPropertyChangedFor(nameof(IsOperationTab))]
     [NotifyPropertyChangedFor(nameof(SourcePathLabel))]
+    // WorkBuddy, 2026-11-16：0.8.13——「开始」页的两个操作按钮直接绑这两个派生属性，
+    // 原来漏发通知时会停在上一页的显隐状态。
+    [NotifyPropertyChangedFor(nameof(IsCompressionActionVisible))]
+    [NotifyPropertyChangedFor(nameof(IsDecompressionActionVisible))]
     private int _activeTab;
 
     public bool IsCompressionTab => ActiveTab == 0;
@@ -153,8 +162,8 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool IsFailLogTab => ActiveTab == 4;
     public bool IsCommandLogTab => ActiveTab == 5;
     public bool IsOperationTab => IsCompressionTab || IsDecompressionTab;
-    public bool IsCompressionActionVisible => IsCompressionTab || IsStartTab;
-    public bool IsDecompressionActionVisible => IsDecompressionTab || IsStartTab;
+    public bool IsCompressionActionVisible => TabVisibility.IsCompressionActionVisible(ActiveTab);
+    public bool IsDecompressionActionVisible => TabVisibility.IsDecompressionActionVisible(ActiveTab);
 
     private int CurrentOperationTab => ActiveTab is 0 or 1 ? ActiveTab : _lastOperationTab;
 
@@ -501,13 +510,15 @@ public partial class MainWindowViewModel : ViewModelBase
         _batchOperationService = new BatchOperationService(_archiveEngine, _systemIntegration, _fileLogger);
 
         // WorkBuddy, 2026-11-16：批次 25（P2）——缩放按钮文案跟随语言切换刷新。
-        BatchCompress.Avalonia.Localization.LocalizationService.Instance.PropertyChanged += (_, e) =>
+        // 批次 28 后续：改用可保存的处理器，关闭窗口时退订，避免静态服务长期持有 ViewModel。
+        _languageChangedHandler = (_, e) =>
         {
             if (e.PropertyName == nameof(BatchCompress.Avalonia.Localization.LocalizationService.Strings))
             {
                 OnPropertyChanged(nameof(ZoomButtonText));
             }
         };
+        LocalizationService.Instance.PropertyChanged += _languageChangedHandler;
 
         // GPT-5, 2026-08-05：在绑定渲染前填充可观察选项集合，并在语言变化时刷新。
         RefreshAllDropdownOptions();
@@ -523,8 +534,17 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        // 检测并设置系统语言。
-        DetectSystemLanguage();
+        // WorkBuddy, 2026-11-16：0.8.13——命令行显式给了 --lang 时，界面必须沿用该语言；
+        // 原来的无条件系统语言检测会把命令行指定的语言覆盖掉。
+        if (LocalizationService.Instance.LanguageExplicitlySet)
+        {
+            SelectedLanguage = LocalizationService.Instance.CurrentLanguage;
+        }
+        else
+        {
+            // 检测并设置系统语言。
+            DetectSystemLanguage();
+        }
 
         // 设置运行时默认值。
         SourceMode = 1;
@@ -541,7 +561,8 @@ public partial class MainWindowViewModel : ViewModelBase
         var volumeText = EnableVolume ? $"{VolumeSize}{volumeUnit}" : "none";
         _fileLogger?.LogOperation(
             "GUI_DEFAULTS",
-            $"level={CompressionLevel}, recovery={RecoveryRecordPercent}%, volume={volumeText}");
+            $"language={SelectedLanguage}, level={CompressionLevel}, " +
+            $"recovery={RecoveryRecordPercent}%, volume={volumeText}");
 
         // GPT-5, 2026-08-05：仅在剪贴板文本是现有目录时采用，绝不把任意复制文本作为路径。
         Dispatcher.UIThread.Post(async () =>

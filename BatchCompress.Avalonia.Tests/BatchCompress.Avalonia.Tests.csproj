@@ -31,6 +31,13 @@
     <Compile Include="Program.AboutInfoTests.cs" />
     <!-- WorkBuddy, 2026-11-16：0.8.12——统一默认参数、真实关机与 Windows 自动安装 7-Zip。 -->
     <Compile Include="Program.DecisionTests.cs" />
+    <!-- WorkBuddy, 2026-11-16：0.8.13——诊断包脱敏的引号边界回归测试。 -->
+    <Compile Include="Program.RedactionTests.cs" />
+    <!-- WorkBuddy, 2026-11-16：0.8.13——命令行显式语言标记回归测试。 -->
+    <Compile Include="Program.CliBehaviorTests.cs" />
+    <!-- WorkBuddy, 2026-11-16：0.8.13——界面派生逻辑（页签显隐）与生命周期守护。 -->
+    <Compile Include="Program.UiLogicTests.cs" />
+    <Compile Include="..\ViewModels\TabVisibility.cs" Link="ViewModels\TabVisibility.cs" />
     <!-- WorkBuddy, 2026-11-16：批次 25（P2）——窗口状态持久化回归测试。 -->
     <Compile Include="Program.WindowStateTests.cs" />
     <Compile Include="..\Core\Services\WindowStateService.cs" Link="Core\Services\WindowStateService.cs" />

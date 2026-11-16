@@ -29,7 +29,8 @@ sealed class Program
         {
             // 进程即将退出，强制落盘，绕过 2 秒去重。
             CrashLogService.Write("main", ex, "启动或运行期未处理异常", force: true);
-            Console.Error.WriteLine($"Fatal error: {ex.Message}");
+            Console.Error.WriteLine(string.Format(
+                LocalizationService.Instance.Strings.CliFatalError, ex.Message));
             return 1;
         }
     }
@@ -121,7 +122,8 @@ sealed class Program
             logger.LogError("Fatal error in headless mode", ex);
             // WorkBuddy, 2026-11-16：批次 21——命令行失败同样留一份崩溃记录，便于事后定位。
             CrashLogService.Write("headless", ex, "无界面批处理致命异常", force: true);
-            Console.Error.WriteLine($"Fatal error: {ex.Message}");
+            Console.Error.WriteLine(string.Format(
+                LocalizationService.Instance.Strings.CliFatalError, ex.Message));
             return 1;
         }
     }
@@ -156,7 +158,7 @@ sealed class Program
 
             if (DateTime.UtcNow - lastNotice >= TimeSpan.FromSeconds(10))
             {
-                Console.Error.WriteLine("等待 macOS 显示器就绪后启动图形界面...");
+                Console.Error.WriteLine(LocalizationService.Instance.Strings.CliWaitingForDisplay);
                 lastNotice = DateTime.UtcNow;
             }
 

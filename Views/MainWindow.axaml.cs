@@ -30,6 +30,8 @@ public partial class MainWindow : Window
     private bool _hasLastNormalPosition;
     private WindowState _lastWindowState = WindowState.Normal;
     private bool _isApplyingNormalBounds;
+    // WorkBuddy, 2026-11-16：0.8.13——记录当前绑定的 ViewModel，切换数据上下文或关窗时释放。
+    private MainWindowViewModel? _boundViewModel;
     // WorkBuddy, 2026-11-16：批次 25（P2）——窗口状态读写收敛到 WindowStateService，
     // 设置文件路径与 JSON 字段保持不变，视图只负责采集当前尺寸与位置。
     private readonly WindowStateService _windowStateService = new();
@@ -112,6 +114,9 @@ public partial class MainWindow : Window
     private void MainWindow_Closing(object? sender, WindowClosingEventArgs e)
     {
         SaveWindowSize();
+
+        // 退订静态语言服务并释放文件日志器；Dispose 幂等，重复调用安全。
+        _boundViewModel?.Dispose();
     }
 
     private void RestoreWindowSize()
@@ -264,8 +269,6 @@ public partial class MainWindow : Window
         // 订阅 CommandLog 属性变化。
         if (DataContext is MainWindowViewModel viewModel)
         {
-            viewModel.PropertyChanged += ViewModel_PropertyChanged;
-
             // WorkBuddy, 2026-11-16：0.8.12——窗口显示后在后台检查 7-Zip；
             // Windows 缺失时自动从官方渠道下载安装，不阻塞界面启动。
             _ = viewModel.EnsureArchiveToolingAsync();
@@ -419,6 +422,20 @@ public partial class MainWindow : Window
         
         if (DataContext is MainWindowViewModel viewModel)
         {
+            // WorkBuddy, 2026-11-16：0.8.13——切换数据上下文时先退订并释放旧实例；
+            // 同一个实例重复设置时不重复订阅。
+            if (!ReferenceEquals(_boundViewModel, viewModel))
+            {
+                if (_boundViewModel is { } previous)
+                {
+                    previous.PropertyChanged -= ViewModel_PropertyChanged;
+                    previous.Dispose();
+                }
+
+                viewModel.PropertyChanged += ViewModel_PropertyChanged;
+                _boundViewModel = viewModel;
+            }
+
             // GPT-5, 2026-08-05：StorageProvider 和 Window.Hide 需要存活的 Avalonia 窗口。
             // 注入这些回调可使 ViewModel 不依赖平台控件。
             viewModel.BrowseSourceRequested = BrowseSourceAsync;

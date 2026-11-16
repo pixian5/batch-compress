@@ -83,6 +83,12 @@ public sealed class BatchExecutionPipeline<TInput>
             StartTime = DateTime.Now
         };
 
+        // WorkBuddy, 2026-11-16：0.8.13——串行路径此前直接把共享的可变进度对象交给回调，
+        // 而界面用 Progress<T> 异步投递，下一项开始后会改写同一个对象，
+        // 导致逐项日志里的文件名/计数对不上。并发路径早就用克隆快照，
+        // 这里给串行路径也套一层，保证回调拿到的永远是当时那一刻的副本。
+        var progressSink = new CloningProgress(progress);
+
         double processedSizeGB = 0;
 
         foreach (var input in inputs)
@@ -90,7 +96,7 @@ public sealed class BatchExecutionPipeline<TInput>
             cancellationToken.ThrowIfCancellationRequested();
 
             // 预检：跳过或失败时适配器已自行更新计数并上报进度。
-            var item = await _adapter.PrepareAsync(input, options, progressInfo, progress);
+            var item = await _adapter.PrepareAsync(input, options, progressInfo, progressSink);
             if (item == null)
             {
                 continue;
@@ -100,7 +106,7 @@ public sealed class BatchExecutionPipeline<TInput>
             progressInfo.Message = item.StartedMessage;
             progressInfo.IsError = false;
             progressInfo.SubProgressPercent = null;
-            progress.Report(progressInfo);
+            progressSink.Report(progressInfo);
 
             item.Options.OutputLineHandler = line =>
             {
@@ -108,14 +114,14 @@ public sealed class BatchExecutionPipeline<TInput>
                 if (percent.HasValue && percent.Value != progressInfo.SubProgressPercent)
                 {
                     progressInfo.SubProgressPercent = percent.Value;
-                    progress.Report(CloneProgress(progressInfo));
+                    progressSink.Report(progressInfo);
                 }
             };
 
             // 调用归档引擎执行；异常（含取消）由适配器的 finally 语义负责清理暂存资源。
             var result = await _adapter.ExecuteAsync(item, cancellationToken);
             progressInfo.SubProgressPercent = null;
-            ReportArchiveOutput(item.CommandLabel, result, progressInfo, progress);
+            ReportArchiveOutput(item.CommandLabel, result, progressInfo, progressSink);
 
             if (result.Success)
             {
@@ -155,14 +161,14 @@ public sealed class BatchExecutionPipeline<TInput>
             }
 
             progressInfo.Elapsed = DateTime.Now - progressInfo.StartTime;
-            progress.Report(progressInfo);
+            progressSink.Report(progressInfo);
 
             // 达到总大小上限后停止后续任务。
             if (options.MaxSizeGB > 0 && processedSizeGB >= options.MaxSizeGB)
             {
                 Log(LogLevel.Information, $"Size limit reached: {processedSizeGB:F3} GB >= {options.MaxSizeGB} GB");
                 progressInfo.Message = L.SizeLimitReached;
-                progress.Report(progressInfo);
+                progressSink.Report(progressInfo);
                 break;
             }
         }
@@ -434,6 +440,21 @@ public sealed class BatchExecutionPipeline<TInput>
                 isError: !result.Success,
                 isCommandOutput: true));
         }
+    }
+
+    /// <summary>
+    /// 串行路径的进度转发器：每次上报都先克隆，避免回调异步投递时看到下一项的状态。
+    /// </summary>
+    private sealed class CloningProgress : IProgress<OperationProgressInfo>
+    {
+        private readonly IProgress<OperationProgressInfo> _inner;
+
+        public CloningProgress(IProgress<OperationProgressInfo> inner)
+        {
+            _inner = inner;
+        }
+
+        public void Report(OperationProgressInfo value) => _inner.Report(CloneProgress(value));
     }
 
     // GLM-5.3, 2026-11-04：批次 5——并发路径的状态快照克隆：按当前消息与标记原样复制，

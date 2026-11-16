@@ -412,6 +412,43 @@ report "界面字段初值引用 ArchiveDefaults 常量，不再各写一套" "$
 if "$dotnet_bin" "$app" --help 2>/dev/null | grep -q -- '--shutdown'; then r=0; else r=1; fi
 report "帮助文本仍声明 --shutdown（真实关机命令由单元测试守护）" "$r"
 
+echo "=== 21. 命令行来源校验与文案（0.8.13）==="
+cli_dir="$work/cli-behavior"
+mkdir -p "$cli_dir"
+printf 'cli behavior payload\n' > "$cli_dir/a.txt"
+
+"$dotnet_bin" "$app" compress -i "$cli_dir/a.txt" -i "$cli_dir/missing" \
+  -o "$cli_dir/mixed-out" -e 7z --no-random-password \
+  > "$cli_dir/mixed.out" 2> "$cli_dir/mixed.err"
+mixed_rc=$?
+if [[ $mixed_rc -eq 0 ]] && grep -q "NotFound=1" "$cli_dir/mixed.out" \
+   && [[ -f "$cli_dir/mixed-out/a.txt.7z" ]]; then r=0; else r=1; fi
+report "混合存在/缺失时处理存在项并记 NotFound=1（退出码 $mixed_rc）" "$r"
+
+"$dotnet_bin" "$app" compress -i "$cli_dir/a.txt/" -o "$cli_dir/slash-out" \
+  -e 7z --no-random-password > "$cli_dir/slash.out" 2> "$cli_dir/slash.err"
+slash_rc=$?
+if [[ $slash_rc -eq 0 && -f "$cli_dir/slash-out/a.txt.7z" ]]; then r=0; else r=1; fi
+report "路径末尾带斜杠的文件不再被误判为不存在（退出码 $slash_rc）" "$r"
+
+"$dotnet_bin" "$app" compress -i "$cli_dir/missing-dry" -o "$cli_dir/dry-out" \
+  -e 7z --no-random-password --dry-run > "$cli_dir/dry.out" 2> "$cli_dir/dry.err"
+dry_rc=$?
+if [[ $dry_rc -eq 2 ]] && grep -q "未找到" "$cli_dir/dry.out"; then r=0; else r=1; fi
+report "试运行遇到缺失来源仍明确报错并返回 2（退出码 $dry_rc）" "$r"
+
+"$dotnet_bin" "$app" compress --lang en -i "$cli_dir/a.txt" -o "$cli_dir/en-out" \
+  -e 7z --no-random-password > "$cli_dir/en.out" 2> "$cli_dir/en.err"
+if grep -q "Found 1 items to compress" "$cli_dir/en.out" \
+   && grep -q "Log file:" "$cli_dir/en.out"; then r=0; else r=1; fi
+report "英文模式运行器文案为英文（Found / Log file）" "$r"
+
+"$dotnet_bin" "$app" compress --lang de -i "$cli_dir/a.txt" -o "$cli_dir/de-out" \
+  -e 7z --no-random-password > "$cli_dir/de.out" 2> "$cli_dir/de.err"
+if grep -q "zu komprimierende Elemente gefunden" "$cli_dir/de.out" \
+   && grep -q "Protokolldatei:" "$cli_dir/de.out"; then r=0; else r=1; fi
+report "德文模式运行器文案为德文（gefunden / Protokolldatei）" "$r"
+
 echo ""
 echo "=== 汇总 ==="
 echo "PASS=$pass FAIL=$fail"

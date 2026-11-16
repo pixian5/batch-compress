@@ -151,6 +151,11 @@ internal sealed class DecompressionItemAdapter : IBatchItemAdapter<FileEntry>
         {
             Log(LogLevel.Debug, $"Skipping duplicate archive task: {archivePath}");
             progressInfo.IgnoreCount++;
+            // WorkBuddy, 2026-11-16：0.8.13——串行路径改用克隆快照后，只加计数不上报
+            // 会让消费者完全看不到这次跳过；这里显式上报一次。
+            progressInfo.Message = string.Format(L.DuplicateArchiveSkipped, archivePath);
+            progressInfo.IsError = false;
+            progress.Report(progressInfo);
             return Task.FromResult<PreparedBatchItem?>(null);
         }
 

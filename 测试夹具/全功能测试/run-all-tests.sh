@@ -91,16 +91,28 @@ check_contains() {
 
 check_not_contains() {
   local name="$1" path="$2" text="$3"
-  if [[ ! -f "$path" ]] || ! /usr/bin/grep -Fq -- "$text" "$path"; then
-    record_result 1 "$name"
-  else
+  # WorkBuddy, 2026-11-16：0.8.13——文件不存在时不能再判通过，
+  # 否则前置命令失败会被“没有出现不该出现的文本”掩盖成绿灯。
+  if [[ ! -f "$path" ]]; then
+    record_result 0 "$name" "missing file: $path"
+    return
+  fi
+  if /usr/bin/grep -Fq -- "$text" "$path"; then
     record_result 0 "$name" "unexpected text: $text"
+  else
+    record_result 1 "$name"
   fi
 }
 
 check_sha() {
   local name="$1" expected="$2" actual="$3"
   local expected_hash actual_hash
+  # WorkBuddy, 2026-11-16：0.8.13——两边都不存在时 sha256 都是空串，会误判相等；
+  # 必须显式要求两个文件都存在。
+  if [[ ! -f "$expected" || ! -f "$actual" ]]; then
+    record_result 0 "$name" "missing file: $expected / $actual"
+    return
+  fi
   expected_hash="$(shasum -a 256 "$expected" | awk '{print $1}')"
   actual_hash="$(shasum -a 256 "$actual" | awk '{print $1}')"
   [[ "$expected_hash" == "$actual_hash" ]] && record_result 1 "$name" || record_result 0 "$name" "sha256 differs"
@@ -172,6 +184,9 @@ run_case compress-gz 0 "${APP[@]}" compress -i "$FIXTURE/来源目录/普通文�
 run_case compress-bz2 0 "${APP[@]}" compress -i "$FIXTURE/来源目录/普通文本.txt" -o "$OUT/bz2" -e bz2 --no-random-password --test
 run_case compress-xz 0 "${APP[@]}" compress -i "$FIXTURE/来源目录/普通文本.txt" -o "$OUT/xz" -e xz --no-random-password --test
 run_case compress-wim 0 "${APP[@]}" compress -i "$FIXTURE/来源目录/子目录" -o "$OUT/wim" -e wim --no-random-password --test
+# WorkBuddy, 2026-11-16：0.8.13——压缩用例不能只比退出码，必须确认归档真的生成。
+check_file compress-zip-output "$OUT/zip/中文文件.txt.zip"
+check_file compress-rar-output "$OUT/rar/子目录.rar"
 check_file compress-tar-output "$OUT/tar/子目录.tar"
 check_file compress-gz-output "$OUT/gz/普通文本.txt.gz"
 check_file compress-bz2-output "$OUT/bz2/普通文本.txt.bz2"
@@ -186,7 +201,9 @@ run_case compress-no-attachments 0 "${APP[@]}" compress -i "$FIXTURE/来源目�
 # 已有文件策略、锁定归档、大小上限和后处理。
 run_case existing-initial 0 "${APP[@]}" compress -i "$GEN/更新测试.txt" -o "$OUT/existing" -e 7z --no-random-password --existing overwrite
 run_case existing-skip 0 "${APP[@]}" compress -i "$GEN/更新测试.txt" -o "$OUT/existing" -e 7z --no-random-password --existing skip
-check_contains existing-skip-log "$GEN/existing-skip.stdout" "Skipped"
+# WorkBuddy, 2026-11-16：0.8.13——汇总行无论有没有跳过都会固定打印 "Skipped="，
+# 原来只断言字段名属于恒真。这里必须断言精确数量：第二次执行应恰好跳过 1 项。
+check_contains existing-skip-log "$GEN/existing-skip.stdout" "Skipped=1"
 printf '%s\n' 'updated payload' > "$GEN/更新测试.txt"
 run_case existing-update 0 "${APP[@]}" compress -i "$GEN/更新测试.txt" -o "$OUT/existing" -e 7z --no-random-password --existing update
 printf '%s\n' 'overwritten payload' >> "$GEN/更新测试.txt"
@@ -230,6 +247,11 @@ check_file extract-gz-content "$OUT/extract-gz/普通文本.txt"
 check_file extract-bz2-content "$OUT/extract-bz2/普通文本.txt"
 check_file extract-xz-content "$OUT/extract-xz/普通文本.txt"
 check_file extract-wim-content "$OUT/extract-wim/子目录/嵌套文件.txt"
+# WorkBuddy, 2026-11-16：0.8.13——补齐 zip/rar 的产物与内容一致性检查。
+check_file extract-zip-content "$OUT/extract-zip/中文文件.txt"
+check_file extract-rar-content "$OUT/extract-rar/子目录/嵌套文件.txt"
+check_sha extract-zip-same-as-source "$FIXTURE/来源目录/中文文件.txt" "$OUT/extract-zip/中文文件.txt"
+check_sha extract-rar-same-as-source "$FIXTURE/来源目录/子目录/嵌套文件.txt" "$OUT/extract-rar/子目录/嵌套文件.txt"
 run_case extract-random 0 "${APP[@]}" extract -i "$OUT/7z-random/更新测试.txt.7z" -o "$OUT/extract-random" -e 7z
 run_case extract-base 0 "${APP[@]}" extract -i "$OUT/7z-base/空文件.txt.7z" -o "$OUT/extract-base" -e 7z --password-name base
 run_stdin_case extract-stdin 0 $'fixture-password\n' "${APP[@]}" extract -i "$OUT/7z-password-file/带空格 文件.txt.7z" -o "$OUT/extract-stdin" -e 7z --password-stdin
@@ -258,7 +280,11 @@ cp "$OUT/vol7z/大文件随机.bin.7z.001" "$GEN/incomplete-7z/"
 cp "$OUT/vol7z/大文件随机.bin.7z.003" "$GEN/incomplete-7z/"
 cp "$OUT/vol7z/大文件随机.bin.7z.004" "$GEN/incomplete-7z/"
 run_case extract-incomplete-volume 1 "${APP[@]}" extract --source "$GEN/incomplete-7z" -o "$OUT/extract-incomplete" -e 7z --no-random-password
-check_not_contains incomplete-no-output "$GEN/extract-incomplete.stdout" "成功"
+# WorkBuddy, 2026-11-16：0.8.13——用例名是 extract-incomplete-volume，
+# 原断言引用了不存在的 extract-incomplete.stdout，靠“文件缺失即通过”一直空过。
+# WorkBuddy, 2026-11-16：0.8.13——进度行本地化后包含“成功”字样，
+# 不能再拿“输出里没有成功”当判据；缺卷用例应直接断言没有产生输出目录。
+check_absent incomplete-no-output "$OUT/extract-incomplete"
 
 # 真实引擎极端分卷：分别删除首卷、中间卷、末卷。末卷缺失时 7zz 可能先写出残片，
 # 业务层必须回滚新增输出；三个引擎都必须返回非零且不留下部分文件。

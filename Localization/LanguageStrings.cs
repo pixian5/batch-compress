@@ -213,6 +213,7 @@ public class LanguageStrings : INotifyPropertyChanged
     public string CannotResolveArchive { get; set; } = "无法解析: {0} - {1}";
     public string CaseAmbiguitySkipped { get; set; } = "文件名大小写存在歧义，已跳过: {0}";
     public string DuplicateVolumeSkipped { get; set; } = "分卷编号重复，已跳过: {0}";
+    public string DuplicateArchiveSkipped { get; set; } = "重复的归档任务，已跳过：{0}";
     public string IncompleteVolumesSkipped { get; set; } = "分卷不完整，已跳过：{0}（{1}）";
     public string MissingFirstVolume { get; set; } = "缺少编号 1 的首卷";
     public string MissingVolumeNumbers { get; set; } = "缺少分卷编号 {0}";
@@ -401,6 +402,33 @@ public class LanguageStrings : INotifyPropertyChanged
     public string ReportOmittedNote { get; set; } = "另有 {0} 条因超出上限未列出，请缩小批次或分批执行";
     public string ReportCredentialRedacted { get; set; } = "（已省略含凭据的文本）";
     public string CliReportModeSkipped { get; set; } = "当前模式（{0}）不产生逐项结果，未生成报告：{1}";
+
+    // WorkBuddy, 2026-11-16：0.8.13——命令行批处理执行器的人类可读文案。
+    // 说明：DRY-RUN 清单、Completed 汇总与 DEFAULTS 行保持英文，作为稳定的机器可读契约，
+    // 避免脚本解析随界面语言漂移；这里只本地化其余提示与错误。
+    public string CliProgressLine { get; set; } = "已处理：成功 {0}，失败 {1}，后处理失败 {2}，跳过 {3}{4}";
+    public string CliRunnerCancelling { get; set; } = "正在取消操作…";
+    public string CliRunnerCancelled { get; set; } = "操作已取消。";
+    public string CliRunnerLogFile { get; set; } = "日志文件：{0}";
+    public string CliRunnerError { get; set; } = "错误：{0}";
+    public string CliRunnerReportWritten { get; set; } = "结果报告：{0}（{1} 项）";
+    public string CliRunnerReportWriteFailed { get; set; } = "错误：写入结果报告失败：{0}";
+    public string CliRunnerFoundCompress { get; set; } = "找到 {0} 个待压缩项目";
+    public string CliRunnerNoCompressSources { get; set; } = "没有找到可压缩的项目。";
+    public string CliRunnerFoundDecompress { get; set; } = "找到 {0} 个待解压归档";
+    public string CliRunnerNoDecompressSources { get; set; } = "没有找到可解压的归档。";
+    public string CliRunnerNoArchiveEngine { get; set; } = "错误：没有可用的归档程序（WinRAR/RAR 或 7-Zip）。";
+    public string CliRunnerOutputRequired { get; set; } = "错误：必须指定输出路径。请使用 --output 或 -o。";
+    public string CliRunnerCreateOutputFailed { get; set; } = "错误：创建输出目录失败：{0}";
+    public string CliRunnerPasswordReadFailed { get; set; } = "读取密码失败：{0}";
+    public string CliRunnerShutdownScheduled { get; set; } = "已请求系统在一分钟后关机。";
+    public string CliRunnerShutdownFailed { get; set; } = "警告：关机请求失败。";
+    public string CliRunnerDiagnosticsExported { get; set; } = "诊断报告已导出：{0}";
+    public string CliRunnerDiagnosticsFailed { get; set; } = "错误：导出诊断失败：{0}";
+    public string CliRunnerProvisionWarning { get; set; } = "警告：{0}";
+    public string CliRunnerProvisionException { get; set; } = "警告：自动安装 7-Zip 失败：{0}";
+    public string CliWaitingForDisplay { get; set; } = "等待 macOS 显示器就绪后启动图形界面…";
+    public string CliFatalError { get; set; } = "致命错误：{0}";
 
     // WorkBuddy, 2026-11-16：批次 27（P4-4）——「关于」弹窗的标题、六个字段名、
     // 三个按钮与提示。设计方案估的是 5 个词条，实际字段名与说明文字都要翻译，共 12 个。

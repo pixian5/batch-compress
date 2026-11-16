@@ -1415,4 +1415,41 @@ internal static partial class Program
             if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
         }
     }
+
+    // WorkBuddy, 2026-11-16：0.8.13——串行路径曾把同一个可变进度对象交给异步回调，
+    // 第二项开始后会改写第一项的快照，逐项日志因此可能张冠李戴。
+    private static async Task TestSequentialProgressSnapshotsAreImmutable()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"sequential-snapshot-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        var first = Path.Combine(root, "first.txt");
+        var second = Path.Combine(root, "second.txt");
+        File.WriteAllText(first, "first");
+        File.WriteAllText(second, "second");
+
+        try
+        {
+            var snapshots = new List<OperationProgressInfo>();
+            var service = new BatchOperationService(new TestArchiveEngine(), new TestSystemIntegration());
+            await service.BatchCompressAsync(
+                [first, second],
+                new BatchOperationOptions
+                {
+                    OutputPath = Path.Combine(root, "out"),
+                    Extension = "7z",
+                    ExistingFileMode = ExistingFileMode.Overwrite
+                },
+                new CloningProgress(snapshots),
+                CancellationToken.None);
+
+            var firstStarted = snapshots.First(snapshot => !string.IsNullOrEmpty(snapshot.CurrentFile));
+            AssertEqual("first.txt", firstStarted.CurrentFile);
+            Assert(snapshots.Any(snapshot => snapshot.CurrentFile == "second.txt"),
+                "第二项也必须有自己的进度快照");
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
 }

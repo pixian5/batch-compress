@@ -474,29 +474,44 @@ internal static partial class Program
     // Antigravity, 2026-11-04：批次 12——无界面批处理进度单行刷新格式测试。
     private static Task TestHeadlessProgressFormatting()
     {
-        // 1) 无 CurrentFile 时的单行格式（严格保持既有前缀与计数）
-        var infoWithoutFile = new OperationProgressInfo
+        // WorkBuddy, 2026-11-16：0.8.13——单行进度改为跟随当前语言；
+        // 两种语言都断言，既锁住英文既有格式，也确认中文不再残留英文前缀。
+        var service = BatchCompress.Avalonia.Localization.LocalizationService.Instance;
+        var originalLanguage = service.CurrentLanguage;
+        try
         {
-            SuccessCount = 2,
-            FailCount = 1,
-            PostProcessFailCount = 0,
-            IgnoreCount = 3
-        };
-        var line1 = BatchCompress.Avalonia.HeadlessBatchRunner.FormatProgressLine(infoWithoutFile);
-        AssertEqual("\rProcessed: 2 success, 1 failed, 0 post-process failed, 3 skipped    ", line1);
+            service.CurrentLanguage = "en";
+            var infoWithoutFile = new OperationProgressInfo
+            {
+                SuccessCount = 2,
+                FailCount = 1,
+                PostProcessFailCount = 0,
+                IgnoreCount = 3
+            };
+            var line1 = BatchCompress.Avalonia.HeadlessBatchRunner.FormatProgressLine(infoWithoutFile);
+            AssertEqual("\rProcessed: 2 success, 1 failed, 0 post-process failed, 3 skipped    ", line1);
 
-        // 2) 携带 CurrentFile 时的单行格式（追加文件名与分隔符）
-        var infoWithFile = new OperationProgressInfo
+            var infoWithFile = new OperationProgressInfo
+            {
+                SuccessCount = 5,
+                FailCount = 0,
+                PostProcessFailCount = 1,
+                IgnoreCount = 2,
+                CurrentFile = "/path/to/archive.tar.gz"
+            };
+            var line2 = BatchCompress.Avalonia.HeadlessBatchRunner.FormatProgressLine(infoWithFile);
+            Assert(line2.StartsWith("\rProcessed: 5 success, 0 failed, 1 post-process failed, 2 skipped | archive.tar.gz"),
+                $"应包含文件名后缀，实际为: {line2}");
+
+            service.CurrentLanguage = "zh-CN";
+            var lineZh = BatchCompress.Avalonia.HeadlessBatchRunner.FormatProgressLine(infoWithFile);
+            Assert(lineZh.StartsWith("\r已处理：成功 5，失败 0，后处理失败 1，跳过 2 | archive.tar.gz"),
+                $"中文进度行格式不正确，实际为: {lineZh}");
+        }
+        finally
         {
-            SuccessCount = 5,
-            FailCount = 0,
-            PostProcessFailCount = 1,
-            IgnoreCount = 2,
-            CurrentFile = "/path/to/archive.tar.gz"
-        };
-        var line2 = BatchCompress.Avalonia.HeadlessBatchRunner.FormatProgressLine(infoWithFile);
-        Assert(line2.StartsWith("\rProcessed: 5 success, 0 failed, 1 post-process failed, 2 skipped | archive.tar.gz"),
-            $"应包含文件名后缀，实际为: {line2}");
+            service.CurrentLanguage = originalLanguage;
+        }
 
         return Task.CompletedTask;
     }

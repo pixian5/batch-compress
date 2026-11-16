@@ -1,3 +1,4 @@
+using System;
 using Avalonia.Threading;
 
 namespace BatchCompress.Avalonia.ViewModels;
@@ -17,22 +18,46 @@ public partial class MainWindowViewModel
     private readonly LogBuffer _successLogBuffer = new(MaxLogLines, LogFlushIntervalMs);
     private readonly LogBuffer _failLogBuffer = new(MaxLogLines, LogFlushIntervalMs);
 
+    // WorkBuddy, 2026-11-16：0.8.13——批处理之外的零散日志（复制密码、清理提示等）
+    // 只追加一次时，200ms 节流可能让最后一行一直不显示。这里补一次性的尾刷。
+    private bool _tailFlushScheduled;
+
     internal void AppendCommandLog(string? text)
     {
         _commandLogBuffer.Append(text);
         if (_commandLogBuffer.TryFlush(out var snapshot)) CommandLog = snapshot;
+        else ScheduleTailFlush();
     }
 
     internal void AppendSuccessLog(string? text)
     {
         _successLogBuffer.Append(text);
         if (_successLogBuffer.TryFlush(out var snapshot)) SuccessLog = snapshot;
+        else ScheduleTailFlush();
     }
 
     internal void AppendFailLog(string? text)
     {
         _failLogBuffer.Append(text);
         if (_failLogBuffer.TryFlush(out var snapshot)) FailLog = snapshot;
+        else ScheduleTailFlush();
+    }
+
+    private void ScheduleTailFlush()
+    {
+        if (_tailFlushScheduled)
+        {
+            return;
+        }
+
+        _tailFlushScheduled = true;
+        DispatcherTimer.RunOnce(
+            () =>
+            {
+                _tailFlushScheduled = false;
+                ForceFlushLogs();
+            },
+            TimeSpan.FromMilliseconds(LogFlushIntervalMs + 50));
     }
 
     /// <summary>批次结束、导出或关闭窗口前无条件刷新，避免最后几行因节流丢失。</summary>

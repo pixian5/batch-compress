@@ -92,6 +92,12 @@ public class LocalizationService : INotifyPropertyChanged
     }
     
     /// <summary>
+    /// 命令行是否显式指定了 --lang。图形界面启动时据此跳过系统语言检测，
+    /// 否则「单独使用 --lang 直接以该语言启动界面」会被系统语言覆盖。
+    /// </summary>
+    public bool LanguageExplicitlySet { get; set; }
+
+    /// <summary>
     /// 获取当前本地化字符串集合。
     /// </summary>
     public LanguageStrings Strings

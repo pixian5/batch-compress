@@ -124,6 +124,10 @@ public static partial class CommandLineHandler
         ArgumentNullException.ThrowIfNull(args);
         var effectiveArgs = NormalizeVerb(args);
 
+        // WorkBuddy, 2026-11-16：0.8.13——每次解析先清除显式语言标记；
+        // 只有本次真正解析到有效 --lang 时才置位，避免静态状态跨调用残留。
+        LocalizationService.Instance.LanguageExplicitlySet = false;
+
         // GLM-5.3, 2026-11-04：批次 4——解析期错误文案跟随 --language/--lang：
         // 即使语言参数出现在出错参数之后，报错也按该语言输出；
         // Program.Main 在解析成功后仍会统一同步一次，GUI 场景不受影响。
@@ -847,6 +851,9 @@ public static partial class CommandLineHandler
                 if (TryNormalizeLanguage(value, out _))
                 {
                     state.LanguageRequested = true;
+                    // WorkBuddy, 2026-11-16：0.8.13——图形界面需要知道语言是用户显式指定的，
+                    // 不能再用系统语言把它覆盖掉。
+                    LocalizationService.Instance.LanguageExplicitlySet = true;
                 }
                 break;
             case "--output-format":

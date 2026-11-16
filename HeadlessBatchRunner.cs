@@ -35,6 +35,10 @@ public class HeadlessBatchRunner
     // 只在结构化进度字段上累积，绝不与命令日志文本发生关系。
     private readonly BatchReportCollector _reportCollector = new();
 
+    // WorkBuddy, 2026-11-16：0.8.13——命令行人类可读文案跟随 --lang / 系统语言。
+    // DRY-RUN 清单、Completed 汇总与 DEFAULTS 行仍保持英文，作为稳定的机器可读契约。
+    private static LanguageStrings L => LocalizationService.Instance.Strings;
+
     public HeadlessBatchRunner(CommandLineOptions options, FileLoggerService logger)
     {
         _options = options;
@@ -88,13 +92,13 @@ public class HeadlessBatchRunner
             try
             {
                 var zip = await exporter.ExportAsync(_options.ExportDiagnosticsPath).ConfigureAwait(false);
-                Console.WriteLine($"Diagnostics report exported to: {zip}");
+                Console.WriteLine(string.Format(L.CliRunnerDiagnosticsExported, zip));
                 return 0;
             }
             catch (Exception ex)
             {
                 _logger.LogError("Failed to export diagnostics", ex);
-                Console.Error.WriteLine($"Error exporting diagnostics: {ex.Message}");
+                Console.Error.WriteLine(string.Format(L.CliRunnerDiagnosticsFailed, ex.Message));
                 return 1;
             }
         }
@@ -115,16 +119,13 @@ public class HeadlessBatchRunner
         if (!TryResolvePassword(out var passwordError))
         {
             _logger.LogError(passwordError);
-            Console.Error.WriteLine($"Error: {passwordError}");
+            Console.Error.WriteLine(string.Format(L.CliRunnerError, passwordError));
             return 2;
         }
 
-        if (!ValidateSourcePaths(out var sourceError))
-        {
-            _logger.LogError(sourceError);
-            Console.Error.WriteLine($"Error: {sourceError}");
-            return 2;
-        }
+        // WorkBuddy, 2026-11-16：0.8.13——来源存在性不再做「有一个缺失就整批退出」的前置校验。
+        // 与界面口径一致：缺失项交给适配器逐项按“未找到”计数，其余来源照常处理。
+        // 路径规范化在来源收集阶段完成，尾斜杠文件不会再被误判为不存在。
 
         // WorkBuddy, 2026-11-15：批次 18（P4-2）——auto 在试运行前先解析并提示，
         // 让 --dry-run 预检也能看到推荐并发度；真实执行复用同一份缓存值。
@@ -146,14 +147,14 @@ public class HeadlessBatchRunner
         if (!_archiveEngine.IsAvailable())
         {
             _logger.LogError("No supported archive engine was found.");
-            Console.Error.WriteLine("Error: no supported archive engine was found (WinRAR/RAR or 7-Zip).");
+            Console.Error.WriteLine(L.CliRunnerNoArchiveEngine);
             return 1;
         }
 
         if (string.IsNullOrEmpty(_options.OutputPath))
         {
             _logger.LogError("Output path is required for headless operation.");
-            Console.Error.WriteLine("Error: Output path is required. Use --output or -o option.");
+            Console.Error.WriteLine(L.CliRunnerOutputRequired);
             return 1;
         }
 
@@ -169,7 +170,7 @@ public class HeadlessBatchRunner
             catch (Exception ex)
             {
                 _logger.LogError($"Failed to create output directory: {_options.OutputPath}", ex);
-                Console.Error.WriteLine($"Error: Failed to create output directory: {ex.Message}");
+                Console.Error.WriteLine(string.Format(L.CliRunnerCreateOutputFailed, ex.Message));
                 return 1;
             }
         }
@@ -182,7 +183,7 @@ public class HeadlessBatchRunner
         {
             e.Cancel = true;
             _logger.LogWarning("Operation cancelled by user (Ctrl+C)");
-            WriteLine("\nCancelling operation...");
+            WriteLine("\n" + L.CliRunnerCancelling);
             cts.Cancel();
         };
 
@@ -244,7 +245,7 @@ public class HeadlessBatchRunner
                          $"Ambiguous={progressInfo.AmbiguousArchiveCount}";
             _logger.LogOperation("COMPLETE", summary);
             WriteLine(summary);
-            WriteLine($"Log file: {_logger.LogFilePath}");
+            WriteLine(string.Format(L.CliRunnerLogFile, _logger.LogFilePath));
 
             return progressInfo.FailCount > 0 ||
                    progressInfo.PostProcessFailCount > 0 ||
@@ -256,13 +257,13 @@ public class HeadlessBatchRunner
         catch (OperationCanceledException)
         {
             _logger.LogWarning("Operation was cancelled");
-            WriteLine("\nOperation cancelled.");
+            WriteLine("\n" + L.CliRunnerCancelled);
             return 130;
         }
         catch (Exception ex)
         {
             _logger.LogError("Unhandled exception during operation", ex);
-            Console.Error.WriteLine($"\nError: {ex.Message}");
+            Console.Error.WriteLine("\n" + string.Format(L.CliRunnerError, ex.Message));
             return 1;
         }
     }
@@ -284,13 +285,13 @@ public class HeadlessBatchRunner
                 _options.ReportPath!, _reportCollector.Entries, _reportCollector.OmittedEntries);
             _logger.LogOperation("REPORT",
                 $"Wrote batch report: {reportPath} ({_reportCollector.Entries.Count} items)");
-            Console.Error.WriteLine(
-                $"Batch report: {reportPath} ({_reportCollector.Entries.Count} items)");
+            Console.Error.WriteLine(string.Format(
+                L.CliRunnerReportWritten, reportPath, _reportCollector.Entries.Count));
         }
         catch (Exception ex)
         {
             _logger.LogError($"Failed to write batch report: {_options.ReportPath}", ex);
-            Console.Error.WriteLine($"Error: Failed to write batch report: {ex.Message}");
+            Console.Error.WriteLine(string.Format(L.CliRunnerReportWriteFailed, ex.Message));
         }
     }
 
@@ -311,12 +312,12 @@ public class HeadlessBatchRunner
         var sourcePaths = CollectCompressionSources();
 
         _logger.LogOperation("FILES_FOUND", $"Found {sourcePaths.Count} files to compress");
-        WriteLine($"Found {sourcePaths.Count} items to compress");
+        WriteLine(string.Format(L.CliRunnerFoundCompress, sourcePaths.Count));
 
         if (sourcePaths.Count == 0)
         {
             _logger.LogWarning("No files found to compress");
-            WriteLine("No files found to compress.");
+            WriteLine(L.CliRunnerNoCompressSources);
             return;
         }
 
@@ -328,12 +329,12 @@ public class HeadlessBatchRunner
         var entries = CollectDecompressionEntries();
 
         _logger.LogOperation("FILES_FOUND", $"Found {entries.Count} files to decompress");
-        WriteLine($"Found {entries.Count} files to decompress");
+        WriteLine(string.Format(L.CliRunnerFoundDecompress, entries.Count));
 
         if (entries.Count == 0)
         {
             _logger.LogWarning("No files found to decompress");
-            WriteLine("No files found to decompress.");
+            WriteLine(L.CliRunnerNoDecompressSources);
             return;
         }
 
@@ -368,30 +369,9 @@ public class HeadlessBatchRunner
         }
         catch (Exception ex)
         {
-            error = $"读取密码失败: {ex.Message}";
+            error = string.Format(L.CliRunnerPasswordReadFailed, ex.Message);
             return false;
         }
-    }
-
-    private bool ValidateSourcePaths(out string error)
-    {
-        error = string.Empty;
-        var paths = _options.InputPaths.AsEnumerable();
-        if (!string.IsNullOrWhiteSpace(_options.SourcePath))
-        {
-            paths = paths.Append(_options.SourcePath);
-        }
-
-        foreach (var path in paths)
-        {
-            if (!File.Exists(path) && !Directory.Exists(path))
-            {
-                error = $"来源不存在: {path}";
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private int RunDryRun()
@@ -408,6 +388,24 @@ public class HeadlessBatchRunner
         }
 
         WriteLine($"Total: {paths.Count}. No files or directories were changed.");
+
+        // WorkBuddy, 2026-11-16：0.8.13——真实执行改为逐项计数后，试运行仍保留“预检”语义：
+        // 只要请求的来源里有不存在的项，就明确列出并返回参数错误码 2，
+        // 避免用户把“试运行成功”误当成“真实执行也会成功”。
+        var missing = paths
+            .Where(path => !File.Exists(path) && !Directory.Exists(path))
+            .Distinct(OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (missing.Count > 0)
+        {
+            foreach (var path in missing)
+            {
+                WriteLine(string.Format(L.ItemNotFound, path));
+            }
+
+            return 2;
+        }
+
         return paths.Count > 0 ? 0 : 1;
     }
 
@@ -422,8 +420,10 @@ public class HeadlessBatchRunner
                     _options.SourcePath,
                     _options.SkipProcessed));
             }
-            else if (File.Exists(_options.SourcePath))
+            else
             {
+                // 文件或缺失项都作为单个来源：缺失由适配器按 ItemNotFound 计数，
+                // 不再像以前那样在收集阶段静默丢弃。
                 paths.Add(_options.SourcePath);
             }
         }
@@ -432,8 +432,8 @@ public class HeadlessBatchRunner
         paths.AddRange(_options.InputPaths);
 
         // GLM-5.3, 2026-11-04：批次 2 阶段 2——过滤/规范化/去重统一下沉到 SourceCollector，
-        // 尾部斜杠路径在 CLI 侧同样被规范化；--input 存在性已由 ValidateSourcePaths 前置校验，
-        // 极端竞态下被删除的项将进入服务的 ItemNotFound 报告而非静默丢弃。
+        // 尾部斜杠路径在 CLI 侧同样被规范化。存在性不再前置校验：
+        // 缺失项（包括竞态下被删除的文件）统一进入服务的 ItemNotFound 报告。
         return SourceCollector.CollectCompressionSources(paths);
     }
 
@@ -464,12 +464,43 @@ public class HeadlessBatchRunner
 
         // GLM-5.3, 2026-11-04：批次 2 阶段 2——路径→任务条目（文件格式校验/首卷折叠/目录展开）、
         // 元数据过滤与全路径去重统一下沉到 SourceCollector。
-        return SourceCollector.CollectDecompressionEntries(
+        var entries = SourceCollector.CollectDecompressionEntries(
             seedEntries,
             rawPaths,
             _options.Extension,
             _options.SkipProcessed,
             _batchOperationService);
+
+        // WorkBuddy, 2026-11-16：0.8.13——SourceCollector 会静默丢弃不存在的路径；
+        // 这里把缺失来源补成条目，让适配器按 ItemNotFound 计数，与界面的逐项处理口径一致。
+        AppendMissingDecompressionSources(entries, rawPaths);
+        return entries;
+    }
+
+    private static void AppendMissingDecompressionSources(List<FileEntry> entries, IEnumerable<string> rawPaths)
+    {
+        var known = new HashSet<string>(
+            entries.Select(entry => entry.FilePath),
+            OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
+
+        foreach (var rawPath in rawPaths)
+        {
+            var normalized = SourceCollector.NormalizePath(rawPath);
+            if (normalized.Length == 0 || SystemMetadataFileFilter.ShouldSkip(normalized))
+            {
+                continue;
+            }
+
+            if (File.Exists(normalized) || Directory.Exists(normalized))
+            {
+                continue;
+            }
+
+            if (known.Add(normalized))
+            {
+                entries.Add(new FileEntry { FilePath = normalized });
+            }
+        }
     }
 
     private void WriteLine(string message)
@@ -561,13 +592,13 @@ public class HeadlessBatchRunner
             _logger.LogOperation("7ZIP_PROVISION", result.Message);
             if (!result.Success)
             {
-                Console.Error.WriteLine($"Warning: {result.Message}");
+                Console.Error.WriteLine(string.Format(L.CliRunnerProvisionWarning, result.Message));
             }
         }
         catch (Exception ex)
         {
             _logger.LogError("7-Zip auto provisioning failed", ex);
-            Console.Error.WriteLine($"Warning: 7-Zip auto provisioning failed: {ex.Message}");
+            Console.Error.WriteLine(string.Format(L.CliRunnerProvisionException, ex.Message));
         }
     }
 
@@ -643,7 +674,15 @@ public class HeadlessBatchRunner
         var currentSuffix = !string.IsNullOrWhiteSpace(info.CurrentFile)
             ? $" | {Path.GetFileName(info.CurrentFile)}"
             : string.Empty;
-        return $"\rProcessed: {info.SuccessCount} success, {info.FailCount} failed, {info.PostProcessFailCount} post-process failed, {info.IgnoreCount} skipped{currentSuffix}    ";
+        // WorkBuddy, 2026-11-16：0.8.13——单行进度也跟随当前语言；
+        // 行尾空格用于覆盖上一次更长的输出，保持原契约。
+        return "\r" + string.Format(
+            LocalizationService.Instance.Strings.CliProgressLine,
+            info.SuccessCount,
+            info.FailCount,
+            info.PostProcessFailCount,
+            info.IgnoreCount,
+            currentSuffix) + "    ";
     }
 }
 
@@ -690,9 +729,8 @@ internal class HeadlessSystemIntegration : ISystemIntegration
         var accepted = await _powerService.ShutdownAsync().ConfigureAwait(false);
         _logger.LogOperation("SHUTDOWN", accepted ? "System shutdown accepted" : "System shutdown failed");
         // 结构化输出模式下标准输出只承载 JSON 事件，提示统一走标准错误。
-        Console.Error.WriteLine(accepted
-            ? "System shutdown requested (60-second delay)."
-            : "Warning: system shutdown request failed.");
+        var strings = LocalizationService.Instance.Strings;
+        Console.Error.WriteLine(accepted ? strings.CliRunnerShutdownScheduled : strings.CliRunnerShutdownFailed);
     }
 
     public Task CancelShutdownAsync()

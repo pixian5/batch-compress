@@ -120,7 +120,17 @@ internal static partial class Program
             ("命令行关机命令跨平台构造", TestSystemPowerCommands),
             ("7-Zip 官方发布接口解析", TestSevenZipReleaseJsonParsing),
             ("7-Zip 官方下载页解析", TestSevenZipDownloadPageParsing),
-            ("7-Zip 安装布局与校验和", TestSevenZipInstallLayoutAndChecksum)
+            ("7-Zip 安装布局与校验和", TestSevenZipInstallLayoutAndChecksum),
+            // WorkBuddy, 2026-11-16：0.8.13——诊断包含空格密码的引号边界脱敏。
+            ("诊断包脱敏引号包住整个参数的密码", TestDiagnosticsRedactsQuotedWholeArgumentPasswords),
+            ("诊断包脱敏不误伤普通路径", TestDiagnosticsRedactionLeavesOrdinaryPathsAlone),
+            // WorkBuddy, 2026-11-16：0.8.13——显式 --lang 必须保留到界面初始化。
+            ("命令行显式语言标记", TestExplicitLanguageFlagSurvivesToGui),
+            // WorkBuddy, 2026-11-16：0.8.13——串行进度快照不可被后续条目改写。
+            ("串行进度快照不被后续条目改写", TestSequentialProgressSnapshotsAreImmutable),
+            // WorkBuddy, 2026-11-16：0.8.13——页签显隐派生逻辑。
+            ("页签按钮显隐派生逻辑", TestTabVisibilityDerivation),
+            ("界面生命周期释放接线", TestUiLifecycleWiring)
         };
 
         // GLM-5.3, 2026-11-03：跑完全部测试后统一输出失败汇总，CI 中一次可见所有失败项；
