@@ -20,6 +20,10 @@
         <string>0.6.5</string>
         <key>CFBundleVersion</key>
         <string>0.6.5</string>
+	<!-- WorkBuddy, 2026-11-16：0.8.12——“完成后关机”在 macOS 上通过 AppleScript
+	     请求 System Events 关机，需要向用户说明用途，否则系统无法弹出自动化授权提示。 -->
+	<key>NSAppleEventsUsageDescription</key>
+	<string>执行“完成后关机”功能时需要请求系统关机。</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
 	<key>NSHighResolutionCapable</key>

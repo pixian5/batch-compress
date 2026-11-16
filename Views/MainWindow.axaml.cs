@@ -265,6 +265,10 @@ public partial class MainWindow : Window
         if (DataContext is MainWindowViewModel viewModel)
         {
             viewModel.PropertyChanged += ViewModel_PropertyChanged;
+
+            // WorkBuddy, 2026-11-16：0.8.12——窗口显示后在后台检查 7-Zip；
+            // Windows 缺失时自动从官方渠道下载安装，不阻塞界面启动。
+            _ = viewModel.EnsureArchiveToolingAsync();
         }
     }
 

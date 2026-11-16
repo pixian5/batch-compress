@@ -26,15 +26,17 @@ public sealed class CommandLineOptions
     public string? PasswordFile { get; set; }
     public bool ReadPasswordFromStandardInput { get; set; }
     public string PasswordName { get; set; } = "archive";
-    public int CompressionLevel { get; set; } = 3;
+    // WorkBuddy, 2026-11-16：0.8.12——默认值统一读 ArchiveDefaults，与图形界面同源。
+    public int CompressionLevel { get; set; } = ArchiveDefaults.DefaultCompressionLevel;
     public bool Solid { get; set; } = true;
+    // 默认不分卷（DefaultEnableVolume 为 false），因此不设置分卷大小；用户显式传 --volume 才会启用。
     public string? VolumeSize { get; set; }
-    public string VolumeUnit { get; set; } = "g";
+    public string VolumeUnit { get; set; } = ArchiveDefaults.DefaultVolumeUnit;
     public bool QuickOpen { get; set; }
     public bool TestArchive { get; set; }
     public string? CommentFile { get; set; }
     public string? TempDir { get; set; }
-    public int RecoveryRecord { get; set; } = 3;
+    public int RecoveryRecord { get; set; } = ArchiveDefaults.DefaultRecoveryRecordPercent;
     public bool LockArchive { get; set; }
     public string ExistingFileMode { get; set; } = "overwrite";
     public bool SkipProcessed { get; set; } = true;

@@ -325,6 +325,8 @@
     "AboutOpenLogDirectory": "Protokollverzeichnis öffnen",
     "AboutClose": "Schließen",
     "AboutOpenFolderFailed": "Protokollverzeichnis konnte nicht geöffnet werden: {0}",
+    "SevenZipAutoInstalled": "7-Zip wurde automatisch installiert: {0}",
+    "SevenZipAutoInstallFailed": "Automatische Installation von 7-Zip fehlgeschlagen: {0}",
     "AboutDirectoryNote": "Über die Befehlszeile können --report, --log-file und --export-diagnostics andere Pfade festlegen; hier werden die Standardwerte der Oberfläche angezeigt."
   }
 }

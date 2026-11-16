@@ -3,8 +3,9 @@ set -euo pipefail
 
 # GLM-5.3, 2026-11-04：批次 6——Windows 便携版打包（win-x64 自包含 zip）。
 # 可在任意支持 .NET SDK 的 Unix 环境（macOS/Linux/CI runner）交叉打包：dotnet RID 发布
-# 不依赖构建机操作系统；Windows 运行时的 RAR/7-Zip 由最终用户按 LICENSE 与 README 安装
-# （仓库不携带 Windows 版第三方归档器二进制，Windows 侧历史策略为系统 WinRAR/7-Zip）。
+# 不依赖构建机操作系统。按用户决定，Windows 产物不携带 7-Zip；首次真实执行时若系统里
+# 找不到，程序会从 7-Zip 官方渠道自动下载安装到当前用户目录（见 SevenZipProvisioner）。
+# RAR 创建仍依赖用户安装的 WinRAR。
 # 产物名与根目录 VERSION 严格绑定：BatchCompress.Avalonia_<版本>_win-x64.zip。
 # 用法：package-windows.sh [--dist|--check]；--dist 输出到 .artifacts/dist（默认即 dist 模式）。
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

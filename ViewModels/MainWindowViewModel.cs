@@ -58,12 +58,14 @@ public partial class MainWindowViewModel : ViewModelBase
         public bool ShutdownAfterComplete { get; set; }
         public string PasswordQueryFileName { get; set; } = string.Empty;
         public string PasswordQueryResult { get; set; } = string.Empty;
-        public int CompressionLevel { get; set; } = 1;
+        // WorkBuddy, 2026-11-16：0.8.12——页签状态也是默认值来源之一；
+        // 此前这里单独写着“最快 + 开分卷 + 恢复记录 0”，切到解压页会把统一后的默认值覆盖掉。
+        public int CompressionLevel { get; set; } = ArchiveDefaults.DefaultCompressionLevel;
         public bool SolidArchive { get; set; } = true;
-        public bool EnableVolume { get; set; } = true;
-        public string VolumeSize { get; set; } = "20";
+        public bool EnableVolume { get; set; } = ArchiveDefaults.DefaultEnableVolume;
+        public string VolumeSize { get; set; } = ArchiveDefaults.DefaultVolumeSize;
         public int VolumeUnit { get; set; }
-        public int RecoveryRecordPercent { get; set; }
+        public int RecoveryRecordPercent { get; set; } = ArchiveDefaults.DefaultRecoveryRecordPercent;
         public bool LockArchive { get; set; }
         public bool QuickOpen { get; set; }
         public bool TestArchive { get; set; }
@@ -301,7 +303,9 @@ public partial class MainWindowViewModel : ViewModelBase
     private int _passwordNameMode;
 
     [ObservableProperty]
-    private int _compressionLevel = 1; // 0-5
+    // WorkBuddy, 2026-11-16：0.8.12——界面默认压缩级别统一读 ArchiveDefaults（标准），
+    // 不再单独写死“最快”，避免同一任务从两个入口跑出不同结果。
+    private int _compressionLevel = ArchiveDefaults.DefaultCompressionLevel; // 0-5
 
     // GLM-5.3, 2026-11-04：批次 5——受控并发度（1-16，默认 1 串行），
     // 两个操作页签共享同一设置（机器级参数，不参与页签状态切换）。
@@ -312,16 +316,16 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool _solidArchive = true;
 
     [ObservableProperty]
-    private bool _enableVolume = true;
+    private bool _enableVolume = ArchiveDefaults.DefaultEnableVolume;
 
     [ObservableProperty]
-    private string _volumeSize = "20";
+    private string _volumeSize = ArchiveDefaults.DefaultVolumeSize;
 
     [ObservableProperty]
-    private int _volumeUnit = 0; // 0=G, 1=M, 2=K
+    private int _volumeUnit = 0; // 0=G, 1=M, 2=K；与 DefaultVolumeUnit 的 "g" 对应
 
     [ObservableProperty]
-    private int _recoveryRecordPercent;
+    private int _recoveryRecordPercent = ArchiveDefaults.DefaultRecoveryRecordPercent;
 
     [ObservableProperty]
     private int _existingFileMode = 2; // 0=Skip, 1=Update, 2=Overwrite
@@ -529,6 +533,15 @@ public partial class MainWindowViewModel : ViewModelBase
         // 不存在或为空时回退默认联系文案模版。
         // GLM-5.3, 2026-11-04：批次 9——改用注入的配置服务实例（测试可隔离）。
         EnclosureList = _enclosureConfig.LoadEnclosuresText();
+
+        // WorkBuddy, 2026-11-16：0.8.12——把界面实际默认值写进运行日志，
+        // 便于核对两个入口是否真的统一，也便于排查“为什么这次没有分卷”。
+        // 说明：用户在界面上的后续修改会保存在页签状态里，不受这里的默认值影响。
+        var volumeUnit = VolumeUnit switch { 1 => "m", 2 => "k", _ => "g" };
+        var volumeText = EnableVolume ? $"{VolumeSize}{volumeUnit}" : "none";
+        _fileLogger?.LogOperation(
+            "GUI_DEFAULTS",
+            $"level={CompressionLevel}, recovery={RecoveryRecordPercent}%, volume={volumeText}");
 
         // GPT-5, 2026-08-05：仅在剪贴板文本是现有目录时采用，绝不把任意复制文本作为路径。
         Dispatcher.UIThread.Post(async () =>

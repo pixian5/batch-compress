@@ -170,11 +170,29 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
         }
         else if (OperatingSystem.IsWindows())
         {
+            // WorkBuddy, 2026-11-16：0.8.12——用户决定 Windows 产物不随包带 7-Zip。
+            // 首选自动安装目录（当前用户、无需管理员），再找系统安装位置。
+            yield return SevenZipProvisioner.InstalledExecutablePath;
+
+            // 兼容旧版随包目录：发布已不再携带，但开发机上可能残留。
             yield return Path.Combine(AppContext.BaseDirectory, "tools", "7zip", "windows-x64", "7z.exe");
+
             var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             if (!string.IsNullOrWhiteSpace(programFiles))
             {
                 yield return Path.Combine(programFiles, "7-Zip", "7z.exe");
+            }
+
+            var programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+            if (!string.IsNullOrWhiteSpace(programFilesX86))
+            {
+                yield return Path.Combine(programFilesX86, "7-Zip", "7z.exe");
+            }
+
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (!string.IsNullOrWhiteSpace(localAppData))
+            {
+                yield return Path.Combine(localAppData, "Programs", "7-Zip", "7z.exe");
             }
         }
     }
@@ -265,7 +283,10 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
     {
         Success = false,
         ExitCode = -2,
-        ErrorMessage = "未找到 7-Zip 官方命令行程序 7zz。"
+        // WorkBuddy, 2026-11-16：0.8.12——Windows 会自动下载安装，给出失败后的可操作指令。
+        ErrorMessage = OperatingSystem.IsWindows()
+            ? "未找到 7-Zip 命令行程序 7z，自动下载安装也未成功。请联网后重试，或从 https://www.7-zip.org/download.html 手动安装。"
+            : "未找到 7-Zip 官方命令行程序 7zz。"
     };
 
     private static string JoinOutput(string first, string second)

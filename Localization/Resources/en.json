@@ -325,6 +325,8 @@
     "AboutOpenLogDirectory": "Open log directory",
     "AboutClose": "Close",
     "AboutOpenFolderFailed": "Failed to open log directory: {0}",
+    "SevenZipAutoInstalled": "7-Zip was installed automatically: {0}",
+    "SevenZipAutoInstallFailed": "Failed to install 7-Zip automatically: {0}",
     "AboutDirectoryNote": "The command line can override these with --report, --log-file and --export-diagnostics; values shown here are the GUI defaults."
   }
 }

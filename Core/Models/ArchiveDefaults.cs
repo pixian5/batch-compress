@@ -4,6 +4,24 @@ namespace BatchCompress.Avalonia.Core.Models;
 // 7z/ZIP 不读取本清单；它们由 SevenZipCommandBuilder 使用自己的参数模型处理。
 public static class ArchiveDefaults
 {
+    // WorkBuddy, 2026-11-16：0.8.12——用户决定统一图形界面与命令行的默认压缩参数。
+    // 这里是唯一来源：命令行选项初值、界面字段初值与界面侧的兜底取值都读它，
+    // 避免两个入口各写一套默认值导致同一任务产出不同结果。
+    // 压缩级别取值 0-5，3 对应“标准”。
+    public const int DefaultCompressionLevel = 3;
+
+    /// <summary>恢复记录默认百分比；0 表示关闭。</summary>
+    public const int DefaultRecoveryRecordPercent = 3;
+
+    /// <summary>是否默认启用分卷；统一为关闭，避免用户意外得到多个分卷文件。</summary>
+    public const bool DefaultEnableVolume = false;
+
+    /// <summary>分卷大小的默认数值（仅在启用分卷时生效）。</summary>
+    public const string DefaultVolumeSize = "20";
+
+    /// <summary>命令行分卷单位默认值；界面下拉索引 0 表示 GB，与此处一致。</summary>
+    public const string DefaultVolumeUnit = "g";
+
     /// <summary>
     /// 通常已经压缩或编码，重复压缩收益很低，RAR 默认仅存储这些文件。
     /// </summary>

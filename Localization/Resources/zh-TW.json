@@ -325,6 +325,8 @@
     "AboutOpenLogDirectory": "開啟紀錄目錄",
     "AboutClose": "關閉",
     "AboutOpenFolderFailed": "開啟紀錄目錄失敗：{0}",
+    "SevenZipAutoInstalled": "已自動安裝 7-Zip：{0}",
+    "SevenZipAutoInstallFailed": "自動安裝 7-Zip 失敗：{0}",
     "AboutDirectoryNote": "命令列可透過 --report、--log-file、--export-diagnostics 指定其它路徑；此處顯示的是介面預設值。"
   }
 }

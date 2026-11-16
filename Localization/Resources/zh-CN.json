@@ -325,6 +325,8 @@
     "AboutOpenLogDirectory": "打开日志目录",
     "AboutClose": "关闭",
     "AboutOpenFolderFailed": "打开日志目录失败：{0}",
+    "SevenZipAutoInstalled": "已自动安装 7-Zip：{0}",
+    "SevenZipAutoInstallFailed": "自动安装 7-Zip 失败：{0}",
     "AboutDirectoryNote": "命令行可通过 --report、--log-file、--export-diagnostics 指定其它路径；此处显示的是界面默认值。"
   }
 }

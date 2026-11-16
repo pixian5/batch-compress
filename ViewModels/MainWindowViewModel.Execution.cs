@@ -25,6 +25,11 @@ public partial class MainWindowViewModel
             AppendCommandLog(L.CompressionPageOnly + "\n");
             return;
         }
+
+        // WorkBuddy, 2026-11-16：0.8.12——Windows 首次使用时先确保 7-Zip 就绪；
+        // 其它平台立即返回，不影响启动速度。
+        await EnsureArchiveToolingAsync();
+
         ActivateOperationStateForStart(0);
 
         if (ExistingFileMode == 1 && LockArchive)
@@ -89,6 +94,10 @@ public partial class MainWindowViewModel
             AppendCommandLog(L.DecompressionPageOnly + "\n");
             return;
         }
+
+        // WorkBuddy, 2026-11-16：0.8.12——解压同样需要 7-Zip（RAR 也可能回退到 7-Zip）。
+        await EnsureArchiveToolingAsync();
+
         ActivateOperationStateForStart(1);
 
         // GLM-5.3, 2026-11-04：批次 2 阶段 3——进度回调与生命周期收敛到 OperationSession。
@@ -323,7 +332,7 @@ public partial class MainWindowViewModel
         var volumeUnitIndex = VolumeUnit >= 0 && VolumeUnit < volumeUnits.Length ? VolumeUnit : 0;
 
         var clampedCompressionLevel = CompressionLevel >= 0 && CompressionLevel <= 5
-            ? CompressionLevel : 3;
+            ? CompressionLevel : ArchiveDefaults.DefaultCompressionLevel;
         var clampedExistingFileMode = ExistingFileMode >= 0 && ExistingFileMode <= 2
             ? ExistingFileMode : 2;
 

@@ -415,5 +415,8 @@ public class LanguageStrings : INotifyPropertyChanged
     public string AboutOpenLogDirectory { get; set; } = "打开日志目录";
     public string AboutClose { get; set; } = "关闭";
     public string AboutOpenFolderFailed { get; set; } = "打开日志目录失败：{0}";
+    // WorkBuddy, 2026-11-16：0.8.12——Windows 首次使用自动下载安装 7-Zip 的结果提示。
+    public string SevenZipAutoInstalled { get; set; } = "已自动安装 7-Zip：{0}";
+    public string SevenZipAutoInstallFailed { get; set; } = "自动安装 7-Zip 失败：{0}";
     public string AboutDirectoryNote { get; set; } = "命令行可通过 --report、--log-file、--export-diagnostics 指定其它路径；此处显示的是界面默认值。";
 }

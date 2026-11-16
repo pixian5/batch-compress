@@ -325,6 +325,8 @@
     "AboutOpenLogDirectory": "ログディレクトリを開く",
     "AboutClose": "閉じる",
     "AboutOpenFolderFailed": "ログディレクトリを開けませんでした: {0}",
+    "SevenZipAutoInstalled": "7-Zip を自動インストールしました: {0}",
+    "SevenZipAutoInstallFailed": "7-Zip の自動インストールに失敗しました: {0}",
     "AboutDirectoryNote": "コマンドラインでは --report、--log-file、--export-diagnostics で別のパスを指定できます。ここでは画面の既定値を表示しています。"
   }
 }

@@ -114,7 +114,13 @@ internal static partial class Program
             ("关于弹窗入口接线", TestAboutWindowWiring),
             // WorkBuddy, 2026-11-16：复查发现项——诊断包崩溃日志配额与等号形式密码脱敏。
             ("诊断包保留崩溃日志不被常规日志挤掉", TestDiagnosticsKeepsCrashLogsWhenRegularLogsAreMany),
-            ("诊断包脱敏等号与冒号形式的密码", TestDiagnosticsRedactsPasswordAssignmentForms)
+            ("诊断包脱敏等号与冒号形式的密码", TestDiagnosticsRedactsPasswordAssignmentForms),
+            // WorkBuddy, 2026-11-16：0.8.12——统一默认参数、真实关机、Windows 自动安装 7-Zip。
+            ("命令行与界面默认参数统一", TestUnifiedArchiveDefaults),
+            ("命令行关机命令跨平台构造", TestSystemPowerCommands),
+            ("7-Zip 官方发布接口解析", TestSevenZipReleaseJsonParsing),
+            ("7-Zip 官方下载页解析", TestSevenZipDownloadPageParsing),
+            ("7-Zip 安装布局与校验和", TestSevenZipInstallLayoutAndChecksum)
         };
 
         // GLM-5.3, 2026-11-03：跑完全部测试后统一输出失败汇总，CI 中一次可见所有失败项；

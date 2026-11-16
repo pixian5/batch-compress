@@ -14,6 +14,10 @@ namespace BatchCompress.Avalonia.Core.Services;
 // GPT-5, 2026-08-05：将应用动作映射到 macOS、Windows、Linux 原生命令，同时使用 ArgumentList 传递路径和通知文本，避免 Shell 解释。
 public class SystemIntegrationService : ISystemIntegration
 {
+    // WorkBuddy, 2026-11-16：0.8.12——关机实现抽到 SystemPowerService，
+    // 与命令行共用；macOS 改用 AppleScript，避免普通用户执行 shutdown 因缺少 root 而失败。
+    private readonly SystemPowerService _powerService = new();
+
     public async Task OpenFolderAsync(string path)
     {
         if (!Directory.Exists(path)) return;
@@ -89,36 +93,14 @@ public class SystemIntegrationService : ISystemIntegration
         catch (Exception ex) { Debug.WriteLine($"显示通知失败: {ex.Message}"); }
     }
 
-    public Task ShutdownAsync() => RunSystemCommandAsync("启动关机",
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "shutdown" : "shutdown",
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? new[] { "/s", "/t", "60" } : new[] { "-h", "+1" });
+    public Task ShutdownAsync() => _powerService.ShutdownAsync();
 
-    public Task CancelShutdownAsync()
+    public async Task CancelShutdownAsync()
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            return RunSystemCommandAsync("取消关机", "killall", new[] { "shutdown" });
-        return RunSystemCommandAsync("取消关机", "shutdown",
-            RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? new[] { "/a" } : new[] { "-c" });
-    }
-
-    private async Task RunSystemCommandAsync(string operation, string fileName, string[] arguments)
-    {
-        await Task.Run(() =>
+        if (!await _powerService.CancelShutdownAsync())
         {
-            try
-            {
-                // GPT-5, 2026-08-05：等待关机命令结束，以便通过非零结果发现权限或命令失败。
-                using var process = StartProcess(fileName, arguments);
-                process.WaitForExit();
-                if (process.ExitCode != 0)
-                    ShowNotification("操作失败", $"{operation}失败，可能需要管理员权限。");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"{operation}失败: {ex.Message}");
-                ShowNotification("操作失败", $"{operation}失败，可能未安装系统命令或权限不足。");
-            }
-        });
+            ShowNotification("操作失败", "取消关机失败，可能没有待取消的关机请求。");
+        }
     }
 
     private static async Task RunDetachedAsync(string fileName, string[] arguments)

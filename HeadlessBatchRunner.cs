@@ -104,6 +104,12 @@ public class HeadlessBatchRunner
         _logger.LogOperation("SOURCE", _options.SourcePath ?? "Not specified");
         _logger.LogOperation("OUTPUT", _options.OutputPath ?? "Not specified");
         _logger.LogOperation("EXTENSION", _options.Extension);
+        // WorkBuddy, 2026-11-16：0.8.12——把真正生效的默认参数写进日志，
+        // 便于核对图形界面与命令行是否已统一，也便于用户排查“为什么这次没分卷”。
+        _logger.LogOperation(
+            "DEFAULTS",
+            $"level={_options.CompressionLevel}, recovery={_options.RecoveryRecord}%, " +
+            $"volume={(string.IsNullOrWhiteSpace(_options.VolumeSize) ? "none" : _options.VolumeSize + _options.VolumeUnit)}");
         _logger.LogOperation("LOG_FILE", _logger.LogFilePath);
 
         if (!TryResolvePassword(out var passwordError))
@@ -132,6 +138,10 @@ public class HeadlessBatchRunner
             NotifyReportModeSkipped("dry-run");
             return RunDryRun();
         }
+
+        // WorkBuddy, 2026-11-16：0.8.12——Windows 不随包分发 7-Zip，缺少时从官方渠道自动下载安装。
+        // 放在试运行之后：--dry-run 只做预检，不应产生网络下载或安装副作用。
+        await EnsureSevenZipProvisionedAsync().ConfigureAwait(false);
 
         if (!_archiveEngine.IsAvailable())
         {
@@ -527,6 +537,40 @@ public class HeadlessBatchRunner
         return recommendation.Recommended;
     }
 
+    /// <summary>
+    /// Windows 上缺少 7-Zip 时，从官方渠道自动下载安装；其他平台不做任何事。
+    /// 安装失败只告警，不中断批次：若机器上还有 WinRAR，RAR 任务仍可继续。
+    /// </summary>
+    private async Task EnsureSevenZipProvisionedAsync()
+    {
+        if (!OperatingSystem.IsWindows() || SevenZipProvisioner.FindExistingExecutable() != null)
+        {
+            return;
+        }
+
+        try
+        {
+            var progress = new Progress<string>(message =>
+            {
+                _logger.LogOperation("7ZIP_PROVISION", message);
+                // 结构化输出模式下 stdout 只承载 JSON，进度提示走 stderr。
+                Console.Error.WriteLine(message);
+            });
+
+            var result = await SevenZipProvisioner.EnsureAsync(progress).ConfigureAwait(false);
+            _logger.LogOperation("7ZIP_PROVISION", result.Message);
+            if (!result.Success)
+            {
+                Console.Error.WriteLine($"Warning: {result.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("7-Zip auto provisioning failed", ex);
+            Console.Error.WriteLine($"Warning: 7-Zip auto provisioning failed: {ex.Message}");
+        }
+    }
+
     private BatchOperationOptions BuildBatchOperationOptions()
     {
         var existingMode = _options.ExistingFileMode.ToLowerInvariant() switch
@@ -609,6 +653,8 @@ public class HeadlessBatchRunner
 internal class HeadlessSystemIntegration : ISystemIntegration
 {
     private readonly FileLoggerService _logger;
+    // WorkBuddy, 2026-11-16：0.8.12——命令行关机改为真正调用系统命令，与界面共用同一服务。
+    private readonly SystemPowerService _powerService = new();
 
     public HeadlessSystemIntegration(FileLoggerService logger)
     {
@@ -638,16 +684,20 @@ internal class HeadlessSystemIntegration : ISystemIntegration
         Console.WriteLine($"[{title}] {message}");
     }
 
-    public Task ShutdownAsync()
+    public async Task ShutdownAsync()
     {
-        _logger.LogOperation("SHUTDOWN", "System shutdown requested");
-        Console.WriteLine("System shutdown requested.");
-        return Task.CompletedTask;
+        _logger.LogOperation("SHUTDOWN", "Requesting system shutdown with a 60-second delay");
+        var accepted = await _powerService.ShutdownAsync().ConfigureAwait(false);
+        _logger.LogOperation("SHUTDOWN", accepted ? "System shutdown accepted" : "System shutdown failed");
+        // 结构化输出模式下标准输出只承载 JSON 事件，提示统一走标准错误。
+        Console.Error.WriteLine(accepted
+            ? "System shutdown requested (60-second delay)."
+            : "Warning: system shutdown request failed.");
     }
 
     public Task CancelShutdownAsync()
     {
-        _logger.LogOperation("CANCEL_SHUTDOWN", "Shutdown cancelled");
+        _logger.LogOperation("CANCEL_SHUTDOWN", "Shutdown cancellation is not exposed in headless mode");
         return Task.CompletedTask;
     }
 }

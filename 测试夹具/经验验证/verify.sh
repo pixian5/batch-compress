@@ -377,6 +377,41 @@ quota_log_count="$(print -r -- "$quota_entries" | grep -c '^logs/' || true)"
 if [[ "$quota_log_count" -le 10 ]]; then r=0; else r=1; fi
 report "诊断包日志总数仍不超过 10 份（实际 $quota_log_count）" "$r"
 
+echo "=== 20. 统一默认参数（0.8.12）：界面与命令行同源 ==="
+defaults_log="$work/defaults.log"
+"$dotnet_bin" "$app" compress --input "$work/来源/普通文本.txt" \
+  --output "$work/defaults-out" --dry-run --log-file "$defaults_log" \
+  > "$work/defaults.out" 2>&1
+defaults_rc=$?
+defaults_line="$(grep -m1 '\[DEFAULTS\]' "$defaults_log" 2>/dev/null | sed 's/.*\[DEFAULTS\] //')"
+if [[ $defaults_rc -eq 0 && "$defaults_line" == *"level=3"* \
+      && "$defaults_line" == *"recovery=3%"* && "$defaults_line" == *"volume=none"* ]]; then r=0; else r=1; fi
+report "命令行默认值：标准压缩、3% 恢复记录、不分卷（$defaults_line）" "$r"
+
+override_log="$work/defaults-override.log"
+"$dotnet_bin" "$app" compress --input "$work/来源/普通文本.txt" \
+  --output "$work/defaults-out" --level 5 --recovery 7 \
+  --volume-size 10 --volume-unit m --dry-run --log-file "$override_log" \
+  > "$work/defaults-override.out" 2>&1
+override_line="$(grep -m1 '\[DEFAULTS\]' "$override_log" 2>/dev/null | sed 's/.*\[DEFAULTS\] //')"
+if [[ "$override_line" == *"level=5"* && "$override_line" == *"recovery=7%"* \
+      && "$override_line" == *"volume=10m"* ]]; then r=0; else r=1; fi
+report "显式参数仍能覆盖默认值（$override_line）" "$r"
+
+if grep -q '_compressionLevel = ArchiveDefaults.DefaultCompressionLevel' "$repo_root/ViewModels/MainWindowViewModel.cs" \
+   && grep -q '_enableVolume = ArchiveDefaults.DefaultEnableVolume' "$repo_root/ViewModels/MainWindowViewModel.cs" \
+   && grep -q '_recoveryRecordPercent = ArchiveDefaults.DefaultRecoveryRecordPercent' "$repo_root/ViewModels/MainWindowViewModel.cs"; then
+  r=0
+else
+  r=1
+fi
+report "界面字段初值引用 ArchiveDefaults 常量，不再各写一套" "$r"
+
+# 注意：--shutdown 的真实行为不能在本机实测，否则会真的关掉开发机。
+# 该命令的跨平台参数由单元测试「命令行关机命令跨平台构造」守护，这里只核对帮助仍在。
+if "$dotnet_bin" "$app" --help 2>/dev/null | grep -q -- '--shutdown'; then r=0; else r=1; fi
+report "帮助文本仍声明 --shutdown（真实关机命令由单元测试守护）" "$r"
+
 echo ""
 echo "=== 汇总 ==="
 echo "PASS=$pass FAIL=$fail"
