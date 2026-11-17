@@ -313,7 +313,28 @@ public static class BatchReportWriter
             Directory.CreateDirectory(directory);
         }
 
-        File.WriteAllText(fullPath, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: !isMarkdown));
+        // WorkBuddy, 2026-11-17：0.8.17——先写同目录临时文件再原子替换，
+        // 避免进程被杀/磁盘满时留下半截 CSV/Markdown。
+        var tempPath = fullPath + ".tmp-" + Guid.NewGuid().ToString("N");
+        try
+        {
+            File.WriteAllText(tempPath, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: !isMarkdown));
+            File.Move(tempPath, fullPath, overwrite: true);
+        }
+        catch
+        {
+            try
+            {
+                if (File.Exists(tempPath)) File.Delete(tempPath);
+            }
+            catch
+            {
+                // 清理临时文件失败不覆盖原始异常。
+            }
+
+            throw;
+        }
+
         return fullPath;
     }
 

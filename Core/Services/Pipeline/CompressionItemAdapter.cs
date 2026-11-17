@@ -49,6 +49,9 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
     private readonly string _normalizedFormat;
     private readonly ArchiveFormatDefinition _formatDefinition;
     private readonly ILogger? _logger;
+    // 同一输出目录在一次批处理里只扫描一次备份残片。
+    private readonly HashSet<string> _recoveredOutputDirectories = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _recoveryGate = new();
 
     // 报告给界面与命令行的逐项状态消息跟随当前界面语言。
     private static LanguageStrings L => LocalizationService.Instance.Strings;
@@ -116,6 +119,7 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
         // 使用来源项目名称构造输出归档名称。
         var outputFileName = name + "." + _normalizedFormat;
         var outputDirectory = OutputPathResolver.ResolveAndCreate(options.OutputPath, sourcePath);
+        RecoverOutputDirectoryOnce(outputDirectory);
         var outputPath = Path.Combine(outputDirectory, outputFileName);
 
         // 根据用户选择处理已有输出文件。分卷输出可能没有基础文件，必须检查全部卷。
@@ -289,18 +293,16 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
         RestoreOutputBackups(prepared);
     }
 
-    private const string OutputBackupSuffix = ".batchcompress-backup";
-
     /// <summary>把已存在的输出卷改名备份；遇到上次残留的备份先按时间恢复或清理。</summary>
     private bool TryPrepareOutputReplacement(PreparedCompressionItem prepared, out string? error)
     {
         error = null;
         foreach (var originalPath in ArchiveVolumeResolver.ResolveOutputFiles(prepared.OutputPath))
         {
-            var backupPath = originalPath + OutputBackupSuffix;
+            var backupPath = originalPath + OutputBackupRecovery.BackupSuffix;
             try
             {
-                ResolveStaleBackup(originalPath, backupPath);
+                OutputBackupRecovery.TryRecoverPair(originalPath, backupPath);
 
                 File.Move(originalPath, backupPath);
                 prepared.OutputBackups.Add(new PreparedCompressionItem.OutputBackup(originalPath, backupPath));
@@ -316,27 +318,17 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
         return true;
     }
 
-    /// <summary>上次成功但删除备份失败时，最终文件比备份新，删备份；否则用备份恢复。</summary>
-    private static void ResolveStaleBackup(string originalPath, string backupPath)
+    private void RecoverOutputDirectoryOnce(string directory)
     {
-        if (!File.Exists(backupPath))
+        lock (_recoveryGate)
         {
-            return;
-        }
-
-        if (!File.Exists(originalPath) ||
-            File.GetLastWriteTimeUtc(backupPath) > File.GetLastWriteTimeUtc(originalPath))
-        {
-            if (File.Exists(originalPath))
+            if (!_recoveredOutputDirectories.Add(directory))
             {
-                File.Delete(originalPath);
+                return;
             }
-
-            File.Move(backupPath, originalPath);
-            return;
         }
 
-        File.Delete(backupPath);
+        OutputBackupRecovery.RecoverDirectory(directory);
     }
 
     private void RestoreOutputBackups(PreparedCompressionItem prepared)

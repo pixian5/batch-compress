@@ -445,12 +445,18 @@ public class HeadlessBatchRunner
             var sourceDirectory = Directory.Exists(_options.SourcePath)
                 ? _options.SourcePath
                 : Path.GetDirectoryName(Path.GetFullPath(_options.TextFile)) ?? Directory.GetCurrentDirectory();
-            var textEntries = _batchOperationService.LoadFilesFromTextFile(
+            // WorkBuddy, 2026-11-17：0.8.17——改用带诊断的加载方法，把缺失/缺卷/歧义
+            // 条目补进任务列表，由解压适配器逐项计数，不再静默跳过。
+            var import = _batchOperationService.LoadFilesFromTextFileWithDiagnostics(
                 _options.TextFile,
                 sourceDirectory,
                 _options.Extension);
-            seedEntries.AddRange(textEntries);
-            _logger.LogOperation("FILES_LOADED", $"Loaded {textEntries.Count} files from text file");
+            seedEntries.AddRange(import.Entries);
+            AppendTextFileDiagnostics(seedEntries, import);
+            _logger.LogOperation("FILES_LOADED",
+                $"Loaded {import.Entries.Count} files from text file; " +
+                $"missing={import.MissingEntries.Count}, incomplete={import.IncompleteVolumes.Count}, " +
+                $"ambiguous={import.AmbiguousEntries.Count + import.DuplicateVolumeEntries.Count}");
         }
 
         // GPT-5, 2026-08-06：TXT 模式中的 --source 只作为相对文件名的基准目录，不能再把整个目录重复加入任务。
@@ -475,6 +481,28 @@ public class HeadlessBatchRunner
         // 这里把缺失来源补成条目，让适配器按 ItemNotFound 计数，与界面的逐项处理口径一致。
         AppendMissingDecompressionSources(entries, rawPaths);
         return entries;
+    }
+
+    /// <summary>
+    /// 把 TXT 清单导入阶段发现的缺失、缺卷、歧义/重复卷条目补进任务列表；
+    /// 解压适配器会分别计入 NotFound / IncompleteVolumes / Ambiguous 计数。
+    /// </summary>
+    internal static void AppendTextFileDiagnostics(List<FileEntry> entries, TextFileImportResult import)
+    {
+        var known = new HashSet<string>(
+            entries.Select(entry => entry.FilePath),
+            OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
+
+        foreach (var path in import.MissingEntries
+                     .Concat(import.IncompleteVolumes)
+                     .Concat(import.AmbiguousEntries)
+                     .Concat(import.DuplicateVolumeEntries))
+        {
+            if (known.Add(path))
+            {
+                entries.Add(new FileEntry { FilePath = path });
+            }
+        }
     }
 
     private static void AppendMissingDecompressionSources(List<FileEntry> entries, IEnumerable<string> rawPaths)

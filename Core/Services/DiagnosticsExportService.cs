@@ -184,23 +184,9 @@ public sealed class DiagnosticsExportService
 
     private object CreateDiagnosticSummary()
     {
-        string appVersion = "unknown";
-        try
-        {
-            var baseDir = AppContext.BaseDirectory;
-            var cur = new DirectoryInfo(baseDir);
-            while (cur != null)
-            {
-                var candidate = Path.Combine(cur.FullName, "VERSION");
-                if (File.Exists(candidate))
-                {
-                    appVersion = File.ReadAllText(candidate).Trim();
-                    break;
-                }
-                cur = cur.Parent;
-            }
-        }
-        catch { }
+        // WorkBuddy, 2026-11-17：0.8.17——版本与 --version/关于同源。
+        // 旧实现自己向上找 VERSION 文件，但三平台打包都不复制它，导致诊断包 AppVersion=unknown。
+        var appVersion = ApplicationInfoService.ReadApplicationVersion();
 
         return new
         {

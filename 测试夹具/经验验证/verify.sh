@@ -449,6 +449,20 @@ if grep -q "zu komprimierende Elemente gefunden" "$cli_dir/de.out" \
    && grep -q "Protokolldatei:" "$cli_dir/de.out"; then r=0; else r=1; fi
 report "德文模式运行器文案为德文（gefunden / Protokolldatei）" "$r"
 
+echo "=== 22. 命令行 TXT 清单缺失项（0.8.17） ==="
+mkdir -p "$work/txt-src" "$work/txt-out" "$work/txt-extract"
+printf 'txt missing probe' > "$work/txt-src/txt.txt"
+"$dotnet_bin" "$app" compress -i "$work/txt-src/txt.txt" -o "$work/txt-out" \
+  -e 7z --password txt-pass --log-file "$work/txt-c.log" > /dev/null 2>&1
+printf 'txt.txt.7z\ntxt-pass\nmissing.7z\ntxt-pass\n' > "$work/txt-list.txt"
+"$dotnet_bin" "$app" extract --source "$work/txt-out" --text-file "$work/txt-list.txt" \
+  -o "$work/txt-extract" -e 7z --no-random-password --log-file "$work/txt-e.log" \
+  > "$work/txt.out" 2> "$work/txt.err"
+txt_rc=$?
+if [[ $txt_rc -eq 0 ]] && grep -q "NotFound=1" "$work/txt.out" \
+   && [[ -f "$work/txt-extract/txt.txt" ]]; then r=0; else r=1; fi
+report "TXT 清单缺失项计 NotFound=1 且存在项正常解压（退出码 $txt_rc）" "$r"
+
 echo ""
 echo "=== 汇总 ==="
 echo "PASS=$pass FAIL=$fail"

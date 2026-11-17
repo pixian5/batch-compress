@@ -110,8 +110,9 @@ internal static partial class Program
                 .Where(message => !string.IsNullOrWhiteSpace(message))
                 .ToArray();
             Assert(messages.Length > 0, "服务层必须报告状态消息");
-            Assert(messages.Any(message => message.Contains(localization.Strings.MissingFirstVolume, StringComparison.Ordinal)),
-                "英文模式的分卷不完整消息必须取自英文资源: " + string.Join(" | ", messages));
+            var missingPrefix = localization.Strings.ItemNotFound.Replace("{0}", string.Empty);
+            Assert(messages.Any(message => message.Contains(missingPrefix, StringComparison.Ordinal)),
+                "英文模式的缺失归档消息必须取自英文资源: " + string.Join(" | ", messages));
             Assert(!messages.Any(message => message.Any(character => character >= '\u4e00' && character <= '\u9fff')),
                 "英文模式下不得出现中文消息: " + string.Join(" | ", messages));
         }

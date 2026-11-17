@@ -140,7 +140,10 @@ internal static partial class Program
             // WorkBuddy, 2026-11-17：0.8.16——安全边界。
             ("共享密码脱敏规则", TestCredentialRedactorSharedRules),
             ("报告与 NDJSON 脱敏", TestReportAndNdjsonRedactQuotedCredentials),
-            ("7-Zip 不信任当前目录", TestSevenZipDoesNotTrustCurrentDirectory)
+            ("7-Zip 不信任当前目录", TestSevenZipDoesNotTrustCurrentDirectory),
+            // WorkBuddy, 2026-11-17：0.8.17——TXT 诊断条目与覆盖备份恢复。
+            ("CLI TXT 诊断条目", TestCliTextFileDiagnosticsMerge),
+            ("覆盖备份启动恢复", TestOutputBackupRecovery)
         };
 
         // GLM-5.3, 2026-11-03：跑完全部测试后统一输出失败汇总，CI 中一次可见所有失败项；

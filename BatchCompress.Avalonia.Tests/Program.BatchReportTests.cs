@@ -80,6 +80,8 @@ internal static partial class Program
             var mdPath = BatchReportWriter.Write(Path.Combine(tempDir, "r.md"), collector.Entries);
             Assert(File.ReadAllText(mdPath).Contains("# 批处理结果报告", StringComparison.Ordinal),
                 ".md 扩展名必须生成 Markdown");
+            Assert(!Directory.EnumerateFiles(tempDir, "*.tmp-*", SearchOption.AllDirectories).Any(),
+                "报告写入后不得残留临时文件");
         }
         finally
         {

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
 using BatchCompress.Avalonia.Core.Models;
@@ -44,6 +46,48 @@ internal static partial class Program
         var output = writer.ToString();
         Assert(!output.Contains(secret, StringComparison.Ordinal), "NDJSON 仍带出引号整体密码");
         Assert(output.Contains("-p***", StringComparison.Ordinal), "NDJSON 未替换引号整体密码");
+        return Task.CompletedTask;
+    }
+
+
+    private static Task TestCliTextFileDiagnosticsMerge()
+    {
+        var import = new TextFileImportResult();
+        import.Entries.Add(new FileEntry { FilePath = "/valid/a.7z" });
+        import.MissingEntries.Add("/missing/b.7z");
+        import.IncompleteVolumes.Add("/incomplete/c.7z");
+        import.AmbiguousEntries.Add("/ambiguous/d.7z");
+        import.DuplicateVolumeEntries.Add("/duplicate/e.7z");
+
+        var entries = new List<FileEntry>(import.Entries);
+        BatchCompress.Avalonia.HeadlessBatchRunner.AppendTextFileDiagnostics(entries, import);
+
+        AssertEqual(5, entries.Count);
+        Assert(entries.Any(entry => entry.FilePath == "/missing/b.7z"), "TXT 缺失项必须进入任务列表");
+        Assert(entries.Any(entry => entry.FilePath == "/incomplete/c.7z"), "缺卷项必须进入任务列表");
+        return Task.CompletedTask;
+    }
+
+    private static Task TestOutputBackupRecovery()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"backup-recovery-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        var original = Path.Combine(root, "a.7z");
+        var backup = original + ".batchcompress-backup";
+        File.WriteAllText(backup, "old archive");
+
+        try
+        {
+            BatchCompress.Avalonia.Core.Services.Pipeline.OutputBackupRecovery.RecoverDirectory(root);
+            Assert(File.Exists(original), "最终文件缺失时必须恢复备份");
+            AssertEqual("old archive", File.ReadAllText(original));
+            Assert(!File.Exists(backup), "恢复后不应残留备份");
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+
         return Task.CompletedTask;
     }
 

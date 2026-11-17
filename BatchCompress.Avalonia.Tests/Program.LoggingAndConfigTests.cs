@@ -827,7 +827,10 @@ internal static partial class Program
                 var root = summaryDoc.RootElement;
                 Assert(root.TryGetProperty("OSDescription", out _), "摘要必须包含 OSDescription");
                 Assert(root.TryGetProperty("DotNetRuntime", out _), "摘要必须包含 DotNetRuntime");
-                Assert(root.TryGetProperty("AppVersion", out _), "摘要必须包含 AppVersion");
+                Assert(root.TryGetProperty("AppVersion", out var appVersionElement), "摘要必须包含 AppVersion");
+                AssertEqual(
+                    ApplicationInfoService.ReadApplicationVersion(),
+                    appVersionElement.GetString());
             }
 
             var logEntry = zip.GetEntry("logs/batchcompress_20261108_120000.log");

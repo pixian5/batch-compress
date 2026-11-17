@@ -44,6 +44,8 @@
     <Compile Include="..\Core\Services\DirectorySizeCalculator.cs" Link="Core\Services\DirectorySizeCalculator.cs" />
     <!-- WorkBuddy, 2026-11-17：0.8.16——共享密码脱敏与 7-Zip 查找安全。 -->
     <Compile Include="..\Core\Services\CredentialRedactor.cs" Link="Core\Services\CredentialRedactor.cs" />
+    <!-- WorkBuddy, 2026-11-17：0.8.17——覆盖备份的启动恢复。 -->
+    <Compile Include="..\Core\Services\Pipeline\OutputBackupRecovery.cs" Link="Core\Services\Pipeline\OutputBackupRecovery.cs" />
     <Compile Include="Program.SecurityTests.cs" />
     <!-- WorkBuddy, 2026-11-16：批次 25（P2）——窗口状态持久化回归测试。 -->
     <Compile Include="Program.WindowStateTests.cs" />
