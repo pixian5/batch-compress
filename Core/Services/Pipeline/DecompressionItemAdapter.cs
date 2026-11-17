@@ -90,8 +90,10 @@ internal sealed class DecompressionItemAdapter : IBatchItemAdapter<FileEntry>
 
         // WorkBuddy, 2026-11-17：0.8.17——完全不存在且没有同组分卷的条目按 NotFound 计，
         // 不要被 VolumeResolver 的“单名推断分卷组”误判成 IncompleteVolumes。
-        if (!File.Exists(entry.FilePath) &&
-            ArchiveVolumeResolver.Resolve(entry.FilePath).Volumes.Count == 0)
+        var missingResolution = !File.Exists(entry.FilePath)
+            ? ArchiveVolumeResolver.Resolve(entry.FilePath)
+            : null;
+        if (missingResolution is { HasCaseAmbiguity: false, Volumes.Count: 0 })
         {
             progressInfo.NonExistCount++;
             progressInfo.Message = string.Format(L.ItemNotFound, entry.FilePath);
