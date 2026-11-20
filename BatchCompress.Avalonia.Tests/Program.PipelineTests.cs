@@ -107,6 +107,185 @@ internal static partial class Program
         }
     }
 
+    private static async Task TestBatchPreflightSafety()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"batch-compress-preflight-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        try
+        {
+            var firstDirectory = Path.Combine(root, "first");
+            var secondDirectory = Path.Combine(root, "second");
+            Directory.CreateDirectory(firstDirectory);
+            Directory.CreateDirectory(secondDirectory);
+            var first = Path.Combine(firstDirectory, "report.txt");
+            var second = Path.Combine(secondDirectory, "report.txt");
+            File.WriteAllText(first, "first source");
+            File.WriteAllText(second, "second source");
+            var output = Path.Combine(root, "not-created");
+            var engine = new RecordingArchiveEngine();
+            var snapshots = new List<OperationProgressInfo>();
+
+            await new BatchOperationService(engine, new TestSystemIntegration()).BatchCompressAsync(
+                [first, second],
+                new BatchOperationOptions
+                {
+                    OutputPath = output,
+                    Extension = "7z",
+                    ExistingFileMode = ExistingFileMode.Overwrite,
+                    DeleteSourceAfter = true
+                },
+                new SnapshotProgress(snapshots),
+                CancellationToken.None);
+
+            AssertEqual(0, engine.CompressionCalls);
+            Assert(!Directory.Exists(output), "预检失败不得创建输出目录");
+            Assert(File.Exists(first) && File.Exists(second), "预检失败不得删除来源");
+            AssertEqual(2, snapshots.Last().FailCount);
+            Assert(snapshots.Last().Message.Contains("report.txt.7z", StringComparison.Ordinal),
+                "冲突提示应包含目标归档路径");
+
+            // 一个输出目标若等于本批次的另一个输入，也必须在覆盖该输入前阻止。
+            var overlapDirectory = Path.Combine(root, "source-output-overlap");
+            Directory.CreateDirectory(overlapDirectory);
+            var source = Path.Combine(overlapDirectory, "notes.txt");
+            var sourceArchive = Path.Combine(overlapDirectory, "notes.txt.7z");
+            File.WriteAllText(source, "source");
+            File.WriteAllText(sourceArchive, "another source");
+            engine = new RecordingArchiveEngine();
+            snapshots = [];
+            await new BatchOperationService(engine, new TestSystemIntegration()).BatchCompressAsync(
+                [source, sourceArchive],
+                new BatchOperationOptions
+                {
+                    OutputPath = overlapDirectory,
+                    Extension = "7z",
+                    ExistingFileMode = ExistingFileMode.Overwrite,
+                    DeleteSourceAfter = true
+                },
+                new SnapshotProgress(snapshots),
+                CancellationToken.None);
+            AssertEqual(0, engine.CompressionCalls);
+            Assert(File.Exists(source) && File.Exists(sourceArchive), "输出覆盖来源的预检失败不得删除来源");
+
+            // 输出目录嵌入一个明确选择的待压缩目录时，不得把归档写回来源树。
+            var tree = Path.Combine(root, "tree");
+            Directory.CreateDirectory(tree);
+            File.WriteAllText(Path.Combine(tree, "inside.txt"), "inside");
+            var nestedOutput = Path.Combine(tree, "out");
+            engine = new RecordingArchiveEngine();
+            snapshots = [];
+            await new BatchOperationService(engine, new TestSystemIntegration()).BatchCompressAsync(
+                [tree],
+                new BatchOperationOptions
+                {
+                    OutputPath = nestedOutput,
+                    Extension = "7z",
+                    ExistingFileMode = ExistingFileMode.Overwrite
+                },
+                new SnapshotProgress(snapshots),
+                CancellationToken.None);
+            AssertEqual(0, engine.CompressionCalls);
+            Assert(!Directory.Exists(nestedOutput), "重叠预检不得创建嵌套输出目录");
+
+            // 目录批次的输出目录若是集合根的直接子项，只排除该目录；其它来源照常进入计划。
+            var collection = Path.Combine(root, "collection");
+            var collectionOutput = Path.Combine(collection, "out");
+            Directory.CreateDirectory(collectionOutput);
+            var collectionSource = Path.Combine(collection, "a.txt");
+            File.WriteAllText(collectionSource, "a");
+            var collected = new BatchOperationService(new TestArchiveEngine(), new TestSystemIntegration())
+                .LoadCompressionSourcesFromFolder(collection, skipProcessed: false, collectionOutput);
+            AssertEqual(1, collected.Count);
+            AssertEqual(collectionSource, collected[0]);
+
+            var collectionPlan = BatchPreflightService.InspectCompression(
+                Directory.GetFileSystemEntries(collection),
+                new BatchOperationOptions
+                {
+                    SourceCollectionRoot = collection,
+                    OutputPath = collectionOutput,
+                    Extension = "7z",
+                    ExistingFileMode = ExistingFileMode.Overwrite
+                });
+            Assert(collectionPlan.CanExecute, "输出目录作为集合根直接子项时应从来源列表排除");
+            AssertEqual(1, collectionPlan.SourcePaths.Count);
+
+            if (!OperatingSystem.IsWindows())
+            {
+                var symlinkTarget = Path.Combine(root, "outside-output-target");
+                var outputSymlink = Path.Combine(collection, "output-link");
+                Directory.CreateDirectory(symlinkTarget);
+                Directory.CreateSymbolicLink(outputSymlink, symlinkTarget);
+                Assert(BatchPreflightService.ShouldExcludeCollectionEntry(
+                        collection, outputSymlink, outputSymlink),
+                    "集合根下指向外部的输出目录符号链接仍应作为输出项排除");
+            }
+
+            // 分卷名称也属于目标占用范围：pack.rar 与 pack.part1.rar 不能同时生成。
+            var volumeSourceOne = Path.Combine(root, "pack");
+            var volumeSourceTwo = Path.Combine(root, "pack.part1");
+            File.WriteAllText(volumeSourceOne, "one");
+            File.WriteAllText(volumeSourceTwo, "two");
+            var volumePlan = BatchPreflightService.InspectCompression(
+                [volumeSourceOne, volumeSourceTwo],
+                new BatchOperationOptions
+                {
+                    OutputPath = Path.Combine(root, "volume-output"),
+                    Extension = "rar",
+                    VolumeSize = "10",
+                    VolumeSizeUnit = "m",
+                    ExistingFileMode = ExistingFileMode.Overwrite
+                });
+            Assert(!volumePlan.CanExecute, "分卷成员与另一目标重名时必须阻止整批");
+
+            var caseDistinct = SourceCollector.CollectCompressionSources(
+                [Path.Combine(root, "A.txt"), Path.Combine(root, "a.txt")]);
+            AssertEqual(2, caseDistinct.Count);
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private static async Task TestConcurrentPreparationProgressSnapshots()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"batch-compress-prepare-progress-{Guid.NewGuid():N}");
+        var missingOne = Path.Combine(root, "missing-one.txt");
+        var missingTwo = Path.Combine(root, "missing-two.txt");
+        var progress = new DeferredProgress();
+        try
+        {
+            await new BatchOperationService(new TestArchiveEngine(), new TestSystemIntegration()).BatchCompressAsync(
+                [missingOne, missingTwo],
+                new BatchOperationOptions
+                {
+                    OutputPath = Path.Combine(root, "out"),
+                    Extension = "7z",
+                    ExistingFileMode = ExistingFileMode.Overwrite,
+                    MaxConcurrency = 2
+                },
+                progress,
+                CancellationToken.None);
+
+            AssertEqual(2, progress.Reports.Count);
+            Assert(!ReferenceEquals(progress.Reports[0], progress.Reports[1]),
+                "并发预处理的异步进度回调必须收到独立快照");
+            Assert(progress.Reports.Select(report => report.Message)
+                    .All(message => message.Contains(missingOne, StringComparison.Ordinal) ||
+                                    message.Contains(missingTwo, StringComparison.Ordinal)),
+                "排队后的进度消息仍应保留各自来源路径");
+            Assert(progress.Reports.Select(report => report.Message).Distinct(StringComparer.Ordinal).Count() == 2,
+                "两个延迟进度回调不得都变成最后一个来源的消息");
+            Assert(progress.Reports.Select(report => report.NonExistCount).Order().SequenceEqual([1, 2]),
+                "每条进度快照应保留报告时的缺失计数");
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
     // 消息文本、七类计数、关机时机与文件系统副作用，重构期间任何行为漂移都会在此暴露。
     private static async Task TestCompressionLoopCharacterization()
     {

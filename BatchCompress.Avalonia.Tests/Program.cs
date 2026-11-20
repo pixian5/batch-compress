@@ -52,6 +52,7 @@ internal static partial class Program
             ("后处理冲突保留源和目标", TestPostProcessConflict),
             ("官方 7zz 真实压缩解压", TestOfficialSevenZipSmoke),
             ("完整命令行解析", TestCommandLineParsing),
+            ("Windows命令行控制台启动判定", TestWindowsConsoleBootstrapClassification),
             ("命令行错误校验", TestCommandLineValidation),
             ("CLI语言参数", TestCliLanguageOptions),
             ("CLI语言默认GUI启动", TestCliLanguageDefaultGui),
@@ -143,7 +144,9 @@ internal static partial class Program
             ("7-Zip 不信任当前目录", TestSevenZipDoesNotTrustCurrentDirectory),
             // WorkBuddy, 2026-11-17：0.8.17——TXT 诊断条目与覆盖备份恢复。
             ("CLI TXT 诊断条目", TestCliTextFileDiagnosticsMerge),
-            ("覆盖备份启动恢复", TestOutputBackupRecovery)
+            ("覆盖备份启动恢复", TestOutputBackupRecovery),
+            ("批次压缩预检保护", TestBatchPreflightSafety),
+            ("并发预处理进度快照", TestConcurrentPreparationProgressSnapshots)
         };
 
         // GLM-5.3, 2026-11-03：跑完全部测试后统一输出失败汇总，CI 中一次可见所有失败项；
@@ -296,6 +299,20 @@ internal static partial class Program
             lock (_lock)
             {
                 snapshots.Add(value);
+            }
+        }
+    }
+
+    // 保留原始引用，模拟 Progress<T> 在 UI 同步上下文中延迟派发回调。
+    private sealed class DeferredProgress : IProgress<OperationProgressInfo>
+    {
+        public List<OperationProgressInfo> Reports { get; } = [];
+
+        public void Report(OperationProgressInfo value)
+        {
+            lock (Reports)
+            {
+                Reports.Add(value);
             }
         }
     }

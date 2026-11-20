@@ -49,6 +49,8 @@ public class FileEntry
 public class BatchOperationOptions
 {
     public string SourcePath { get; set; } = string.Empty;
+    /// <summary>目录批次的集合根目录；仅用于排除根目录下恰好等于输出目录的直接子项。</summary>
+    public string? SourceCollectionRoot { get; set; }
     public string OutputPath { get; set; } = string.Empty;
     public string Extension { get; set; } = "rar";
     public bool UseRandomPassword { get; set; }

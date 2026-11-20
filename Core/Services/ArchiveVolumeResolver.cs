@@ -346,6 +346,23 @@ public static class ArchiveVolumeResolver
     public static bool HasArchiveExtension(string path) => DetectArchiveKind(path) != ArchiveKind.Unknown;
 
     /// <summary>
+    /// 返回分卷路径对应的逻辑归档主文件名；普通归档返回自身名称。
+    /// 批次预检用它识别主卷与分卷成员可能占用同一输出名的情况。
+    /// </summary>
+    public static string GetLogicalArchiveName(string path)
+    {
+        var name = Path.GetFileName(path);
+        var pattern = ParseVolumePattern(name);
+        if (pattern.Kind != ArchiveVolumeKind.None)
+        {
+            return pattern.LogicalArchiveName;
+        }
+
+        var inferred = CreatePatternFromSingleArchiveName(name);
+        return inferred.Kind == ArchiveVolumeKind.None ? name : inferred.LogicalArchiveName;
+    }
+
+    /// <summary>
     /// GLM-5.3, 2026-11-03：把组内编号换算为用户可直接对照的文件名后缀描述。
     /// 旧式分卷的组内编号与文件名后缀存在偏移（.r01 组内编号为 3），直接显示数字会误导，
     /// 因此旧式返回实际后缀（如 r01 / z02），part 分卷返回 partN.rar，数字分卷维持原数字。

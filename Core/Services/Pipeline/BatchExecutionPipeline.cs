@@ -209,6 +209,9 @@ public sealed class BatchExecutionPipeline<TInput>
             StartTime = DateTime.Now
         };
         var gate = new object();
+        // 并发预处理在锁内修改共享状态，但 Progress<T> 可能把回调投递到 UI 线程。
+        // 克隆 sink 确保回调排队后仍持有当时的快照，而不是后续条目会继续改写的对象。
+        var preparationProgress = new CloningProgress(progress);
         double processedSizeGB = 0;
         var limitReached = false;
 
@@ -249,7 +252,7 @@ public sealed class BatchExecutionPipeline<TInput>
                     PreparedBatchItem? item;
                     lock (gate)
                     {
-                        item = _adapter.PrepareAsync(input, options, progressInfo, progress)
+                        item = _adapter.PrepareAsync(input, options, progressInfo, preparationProgress)
                             .GetAwaiter().GetResult();
                     }
 

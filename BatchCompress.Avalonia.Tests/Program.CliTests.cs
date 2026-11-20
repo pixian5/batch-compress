@@ -13,6 +13,26 @@ internal static partial class Program
     // 命令行解析、错误校验、多语言帮助与无界面进度格式化测试
 
 
+    private static Task TestWindowsConsoleBootstrapClassification()
+    {
+        Assert(!BatchCompress.Avalonia.WindowsConsoleBootstrap.ShouldAttachToParentConsole([]),
+            "无参数启动图形界面不得附加父控制台");
+        Assert(!BatchCompress.Avalonia.WindowsConsoleBootstrap.ShouldAttachToParentConsole(["--lang", "en"]),
+            "仅指定语言仍是图形界面启动");
+        Assert(!BatchCompress.Avalonia.WindowsConsoleBootstrap.ShouldAttachToParentConsole(["gui", "--lang", "en"]),
+            "显式 GUI 启动不得附加父控制台");
+        Assert(BatchCompress.Avalonia.WindowsConsoleBootstrap.ShouldAttachToParentConsole(["compress", "--input", "a"]),
+            "压缩命令应附加父控制台");
+        Assert(BatchCompress.Avalonia.WindowsConsoleBootstrap.ShouldAttachToParentConsole(["extract", "--input", "a.7z"]),
+            "解压命令应附加父控制台");
+        Assert(BatchCompress.Avalonia.WindowsConsoleBootstrap.ShouldAttachToParentConsole(["--help"]),
+            "帮助命令应附加父控制台");
+        Assert(BatchCompress.Avalonia.WindowsConsoleBootstrap.ShouldAttachToParentConsole(["--version"]),
+            "版本命令应附加父控制台");
+        return Task.CompletedTask;
+    }
+
+
     private static Task TestCommandLineParsing()
     {
         var outcome = BatchCompress.Avalonia.CommandLineHandler.ParseArguments(

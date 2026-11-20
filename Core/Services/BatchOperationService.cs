@@ -44,7 +44,10 @@ public class BatchOperationService
     /// <summary>
     /// 从目录加载待压缩文件或目录。只扫描直接子项，不按归档扩展名过滤。
     /// </summary>
-    public List<string> LoadCompressionSourcesFromFolder(string folderPath, bool skipProcessed)
+    public List<string> LoadCompressionSourcesFromFolder(
+        string folderPath,
+        bool skipProcessed,
+        string? outputPath = null)
     {
         Log(LogLevel.Information, $"Loading files from folder: {folderPath}");
         var items = new List<string>();
@@ -63,6 +66,12 @@ public class BatchOperationService
             foreach (var itemPath in allItems)
             {
                 var name = Path.GetFileName(itemPath);
+
+                if (BatchPreflightService.ShouldExcludeCollectionEntry(folderPath, itemPath, outputPath))
+                {
+                    Log(LogLevel.Debug, $"Skipping output directory from source collection: {itemPath}");
+                    continue;
+                }
 
                 // GPT-5, 2026-08-05：在扩展名和已处理判断前使用统一过滤器，确保 Windows、macOS、Linux 结果一致。
                 if (SystemMetadataFileFilter.ShouldSkip(itemPath) ||
@@ -108,7 +117,8 @@ public class BatchOperationService
         }
 
         var archives = new List<string>();
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // 路径去重只折叠字面相同的路径；Linux 上大小写不同的归档可能是不同文件。
+        var seen = new HashSet<string>(StringComparer.Ordinal);
         try
         {
             foreach (var path in Directory.EnumerateFiles(folderPath, "*", SearchOption.TopDirectoryOnly))
@@ -208,7 +218,7 @@ public class BatchOperationService
                     continue;
                 }
 
-                if (result.Entries.Any(entry => entry.FilePath.Equals(fullPath, StringComparison.OrdinalIgnoreCase)))
+                if (result.Entries.Any(entry => entry.FilePath.Equals(fullPath, StringComparison.Ordinal)))
                 {
                     continue;
                 }
@@ -257,7 +267,7 @@ public class BatchOperationService
                     continue;
                 }
 
-                if (!result.Paths.Contains(path, StringComparer.OrdinalIgnoreCase))
+                if (!result.Paths.Contains(path, StringComparer.Ordinal))
                 {
                     result.Paths.Add(path);
                     result.MatchedBytes += File.Exists(path) ? new FileInfo(path).Length : 0;
@@ -377,12 +387,79 @@ public class BatchOperationService
             return;
         }
 
+        var preflight = BatchPreflightService.InspectCompression(sourcePaths, options);
+        if (!preflight.CanExecute)
+        {
+            ReportPreflightFailure(preflight, progress);
+            return;
+        }
+
+        sourcePaths = preflight.SourcePaths.ToList();
+        if (sourcePaths.Count == 0)
+        {
+            var noSources = new OperationProgressInfo
+            {
+                StartTime = DateTime.Now,
+                IgnoreCount = 1,
+                Message = L.CliRunnerNoCompressSources,
+                IsError = false
+            };
+            progress.Report(noSources);
+            return;
+        }
+
         var pipeline = new BatchExecutionPipeline<string>(
             new CompressionItemAdapter(_archiveEngine, normalizedFormat, formatDefinition, _logger),
             _postProcessService,
             _systemIntegration,
             _logger);
         await pipeline.RunAsync(sourcePaths, options, progress, cancellationToken);
+    }
+
+    /// <summary>为图形界面与 dry-run 提供同一份无副作用压缩预检结果。</summary>
+    public BatchPreflightResult InspectCompressionBatch(
+        IEnumerable<string>? sourcePaths,
+        BatchOperationOptions options) =>
+        BatchPreflightService.InspectCompression(sourcePaths, options);
+
+    private void ReportPreflightFailure(
+        BatchPreflightResult result,
+        IProgress<OperationProgressInfo> progress)
+    {
+        var messages = result.Issues.Select(FormatPreflightIssue).ToArray();
+        foreach (var message in messages)
+        {
+            Log(LogLevel.Error, message);
+        }
+
+        var affectedSources = result.Issues
+            .SelectMany(issue => issue.SourcePaths)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        progress.Report(new OperationProgressInfo
+        {
+            StartTime = DateTime.Now,
+            FailCount = Math.Max(1, affectedSources.Length),
+            CurrentFile = affectedSources.FirstOrDefault() is { } path ? Path.GetFileName(path) : string.Empty,
+            CurrentSourcePath = affectedSources.FirstOrDefault() ?? string.Empty,
+            Message = string.Join(Environment.NewLine, messages),
+            IsError = true
+        });
+    }
+
+    private static string FormatPreflightIssue(BatchPreflightIssue issue)
+    {
+        var sources = string.Join(", ", issue.SourcePaths);
+        return issue.Kind switch
+        {
+            BatchPreflightIssueKind.OutputCollision =>
+                string.Format(L.BatchOutputCollision, issue.TargetPath, sources),
+            BatchPreflightIssueKind.OutputInsideSource =>
+                string.Format(L.BatchOutputInsideSource, issue.SourcePaths.FirstOrDefault() ?? string.Empty, issue.TargetPath),
+            BatchPreflightIssueKind.OutputMatchesSource =>
+                string.Format(L.BatchOutputMatchesSource, issue.TargetPath, sources),
+            _ => issue.TargetPath
+        };
     }
 
     /// <summary>

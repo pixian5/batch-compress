@@ -117,10 +117,11 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
         }
 
         // 使用来源项目名称构造输出归档名称。
-        var outputFileName = name + "." + _normalizedFormat;
-        var outputDirectory = OutputPathResolver.ResolveAndCreate(options.OutputPath, sourcePath);
+        var outputPath = BuildOutputPath(options.OutputPath, sourcePath, _normalizedFormat);
+        var outputDirectory = Path.GetDirectoryName(outputPath) ?? Directory.GetCurrentDirectory();
+        Directory.CreateDirectory(outputDirectory);
         RecoverOutputDirectoryOnce(outputDirectory);
-        var outputPath = Path.Combine(outputDirectory, outputFileName);
+        var outputFileName = Path.GetFileName(outputPath);
 
         // 根据用户选择处理已有输出文件。分卷输出可能没有基础文件，必须检查全部卷。
         var existingOutputFiles = ArchiveVolumeResolver.ResolveOutputFiles(outputPath);
@@ -283,6 +284,14 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
             L.PostProcessItemCompressionSource,
             PostProcessItemKind.CompressionSource,
             PreflightWholeGroup: false);
+    }
+
+    /// <summary>按执行器的统一命名规则计算输出路径，不创建目录。</summary>
+    public static string BuildOutputPath(string? configuredOutputPath, string sourcePath, string normalizedFormat)
+    {
+        var outputDirectory = OutputPathResolver.Resolve(configuredOutputPath, sourcePath);
+        var outputFileName = Path.GetFileName(sourcePath) + "." + normalizedFormat;
+        return Path.Combine(outputDirectory, outputFileName);
     }
 
     // Antigravity, 2026-11-07：批次 13——压缩失败或取消时回滚本次新增的在途未完成文件与分卷残片。

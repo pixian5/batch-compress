@@ -180,6 +180,7 @@ public partial class MainWindowViewModel
     private async Task LoadFromFolderAsync(int operationTab)
     {
         var saveFilePath = SaveFilePath;
+        var outputPath = OutputPath;
         var extension = Extension;
         var skipAlreadyProcessed = SkipAlreadyProcessed;
         var files = await Task.Run(() =>
@@ -191,7 +192,7 @@ public partial class MainWindowViewModel
 
             return operationTab == 0
                 ? _batchOperationService.LoadCompressionSourcesFromFolder(
-                    saveFilePath, skipAlreadyProcessed)
+                    saveFilePath, skipAlreadyProcessed, outputPath)
                 : _batchOperationService.LoadArchivesFromFolder(
                     saveFilePath, extension, skipAlreadyProcessed);
         });

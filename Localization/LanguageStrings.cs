@@ -194,6 +194,9 @@ public class LanguageStrings : INotifyPropertyChanged
     // 批处理服务逐项状态（同时用于界面日志与命令行输出）。
     public string FormatCannotCreate { get; set; } = "不支持创建 {0} 格式归档。当前支持：{1}。";
     public string ItemNotFound { get; set; } = "未找到: {0}";
+    public string BatchOutputCollision { get; set; } = "批次输出目标冲突，已在执行前停止：{0}（来源：{1}）";
+    public string BatchOutputInsideSource { get; set; } = "输出目录位于待压缩目录内部，已在执行前停止：{0} -> {1}";
+    public string BatchOutputMatchesSource { get; set; } = "输出文件会覆盖本批次来源，已在执行前停止：{0}（来源：{1}）";
     public string SkipExistingOutput { get; set; } = "[跳过] 已存在：{0}";
     public string CompressionStarted { get; set; } = "[开始压缩] {0}";
     public string ExtractionStarted { get; set; } = "[开始解压] {0}";

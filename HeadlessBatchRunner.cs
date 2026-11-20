@@ -158,23 +158,6 @@ public class HeadlessBatchRunner
             return 1;
         }
 
-        // 解压目录由 BatchOperationService 按任务创建；这样完整性预检拦截的缺卷任务不会留下空目录。
-        // 压缩仍在运行器层提前创建，便于归档引擎和附件暂存使用统一输出根目录。
-        if (_options.Compress && !Directory.Exists(_options.OutputPath))
-        {
-            try
-            {
-                Directory.CreateDirectory(_options.OutputPath);
-                _logger.LogOperation("CREATE_DIR", $"Created output directory: {_options.OutputPath}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Failed to create output directory: {_options.OutputPath}", ex);
-                Console.Error.WriteLine(string.Format(L.CliRunnerCreateOutputFailed, ex.Message));
-                return 1;
-            }
-        }
-
         var batchOptions = BuildBatchOperationOptions();
         var cts = new CancellationTokenSource();
 
@@ -380,6 +363,31 @@ public class HeadlessBatchRunner
             ? CollectCompressionSources()
             : CollectDecompressionEntries().Select(entry => entry.FilePath).ToList();
 
+        if (_options.Compress)
+        {
+            var preflight = _batchOperationService.InspectCompressionBatch(paths, BuildBatchOperationOptions());
+            paths = preflight.SourcePaths.ToList();
+            foreach (var issue in preflight.Issues)
+            {
+                var message = issue.Kind switch
+                {
+                    BatchPreflightIssueKind.OutputCollision => string.Format(
+                        L.BatchOutputCollision, issue.TargetPath, string.Join(", ", issue.SourcePaths)),
+                    BatchPreflightIssueKind.OutputInsideSource => string.Format(
+                        L.BatchOutputInsideSource, issue.SourcePaths.FirstOrDefault() ?? string.Empty, issue.TargetPath),
+                    BatchPreflightIssueKind.OutputMatchesSource => string.Format(
+                        L.BatchOutputMatchesSource, issue.TargetPath, string.Join(", ", issue.SourcePaths)),
+                    _ => issue.TargetPath
+                };
+                WriteLine(message);
+            }
+
+            if (!preflight.CanExecute)
+            {
+                return 2;
+            }
+        }
+
         WriteLine($"DRY-RUN mode={(_options.Compress ? "compress" : "extract")} format={_options.Extension}");
         WriteLine($"Output: {_options.OutputPath}");
         foreach (var path in paths)
@@ -418,7 +426,8 @@ public class HeadlessBatchRunner
             {
                 paths.AddRange(_batchOperationService.LoadCompressionSourcesFromFolder(
                     _options.SourcePath,
-                    _options.SkipProcessed));
+                    _options.SkipProcessed,
+                    _options.OutputPath));
             }
             else
             {
@@ -653,6 +662,9 @@ public class HeadlessBatchRunner
         return new BatchOperationOptions
         {
             SourcePath = _options.SourcePath ?? string.Empty,
+            SourceCollectionRoot = _options.Compress && Directory.Exists(_options.SourcePath)
+                ? _options.SourcePath
+                : null,
             OutputPath = _options.OutputPath ?? string.Empty,
             Extension = _options.Extension,
             UseRandomPassword = _options.UseRandomPassword,

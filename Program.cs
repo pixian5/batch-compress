@@ -17,6 +17,9 @@ sealed class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        // Windows 的 GUI 子系统程序在命令行模式下附加父控制台；普通 GUI 启动不创建控制台。
+        WindowsConsoleBootstrap.AttachForCommandLine(args);
+
         // WorkBuddy, 2026-11-16：批次 21（P0）——先注册全局兜底，
         // 再进入任何可能抛异常的初始化与界面生命周期。
         CrashLogService.RegisterGlobalHandlers();

@@ -339,6 +339,9 @@ public partial class MainWindowViewModel
         return new BatchOperationOptions
         {
             SourcePath = SourcePath,
+            SourceCollectionRoot = SourceMode == 1 && Directory.Exists(SaveFilePath)
+                ? SaveFilePath
+                : null,
             OutputPath = OutputPath,
             Extension = Extension,
             UseRandomPassword = UseRandomPassword,

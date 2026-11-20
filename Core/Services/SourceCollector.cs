@@ -75,13 +75,14 @@ public static class SourceCollector
 
     /// <summary>
     /// 统一收集压缩来源：逐行去空格、过滤空行与系统元数据、路径规范化（含尾部斜杠消除）、
-    /// 忽略大小写去重并保持首次出现顺序。GUI 多行文本与 CLI --input / --source 精确路径共用。
+    /// 按字面路径去重并保持首次出现顺序。Linux 上大小写不同的合法路径必须分别保留。
+    /// GUI 多行文本与 CLI --input / --source 精确路径共用。
     /// 不做存在性过滤：缺失项交给 BatchOperationService 统一按 ItemNotFound 报告计数。
     /// </summary>
     public static List<string> CollectCompressionSources(IEnumerable<string>? rawPaths)
     {
         var result = new List<string>();
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var rawPath in rawPaths ?? [])
         {
             var path = (rawPath ?? string.Empty).Trim();
@@ -177,7 +178,7 @@ public static class SourceCollector
     /// <summary>
     /// CLI 解压任务收集：路径为文件时做格式校验并折叠到分卷首卷，
     /// 为目录时展开目录内匹配格式的归档任务（复用 BatchOperationService 的目录扫描）。
-    /// 最终统一过滤元数据并按全路径忽略大小写去重（保留首次出现，密码本种子条目优先）。
+    /// 最终统一过滤元数据并按字面全路径去重（保留首次出现，密码本种子条目优先）。
     /// </summary>
     /// <param name="seedEntries">已加载的 TXT 密码本条目，优先保留（含条目密码）。</param>
     /// <param name="rawPaths">--source / --input 原始路径。</param>
@@ -199,7 +200,7 @@ public static class SourceCollector
 
         return entries
             .Where(entry => !SystemMetadataFileFilter.ShouldSkip(entry.FilePath))
-            .GroupBy(entry => Path.GetFullPath(entry.FilePath), StringComparer.OrdinalIgnoreCase)
+            .GroupBy(entry => Path.GetFullPath(entry.FilePath), StringComparer.Ordinal)
             .Select(group => group.First())
             .ToList();
     }
