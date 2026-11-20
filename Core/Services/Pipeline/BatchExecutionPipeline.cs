@@ -423,13 +423,18 @@ public sealed class BatchExecutionPipeline<TInput>
             return _postProcessService.Apply(request);
         }
 
+        if (request.Mode == PostProcessMode.None || request.Targets.Count == 0)
+        {
+            // 未开启删除/移动：条目仍计成功，只留一条警告日志，提示归档可能缺文件。
+            Log(LogLevel.Warning,
+                $"Archive tool returned warnings (exit code {result.ExitCode}) for {item.DisplayName}; " +
+                "the archive may be missing files. No post-process configured, item counted as success.");
+            return Array.Empty<string>();
+        }
+
         Log(LogLevel.Warning,
             $"Archive tool returned warnings (exit code {result.ExitCode}) for {item.DisplayName}; " +
             $"post-process mode {request.Mode} skipped, sources kept: {string.Join(", ", request.Targets)}");
-        if (request.Mode == PostProcessMode.None || request.Targets.Count == 0)
-        {
-            return Array.Empty<string>();
-        }
 
         return new[]
         {
