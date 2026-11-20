@@ -152,8 +152,9 @@
                                 <!-- GLM-5.3, 2026-11-04：批次 5——受控并发度（1-16，默认 1 串行）。 -->
                                 <TextBlock Grid.Row="6" Grid.Column="3" Text="{Binding L.MaxConcurrencyLabel}" VerticalAlignment="Center" Margin="20,0,10,3" ToolTip.Tip="{Binding RecommendedConcurrencyHint}"/>
                                 <!-- WorkBuddy, 2026-11-15：批次 18（P4-2）——显示硬件推荐值并支持一键应用。 -->
+                                <!-- 2026-11-20：加宽并发度输入框，为数值和步进按钮留出空间。 -->
                                 <StackPanel Grid.Row="6" Grid.Column="4" Orientation="Horizontal" Spacing="6" Margin="0,0,0,3">
-                                    <NumericUpDown Value="{Binding MaxConcurrency}" Minimum="1" Maximum="16" Increment="1" Width="80" HorizontalAlignment="Left" ToolTip.Tip="{Binding RecommendedConcurrencyHint}"/>
+                                    <NumericUpDown Value="{Binding MaxConcurrency}" Minimum="1" Maximum="16" Increment="1" Width="120" HorizontalAlignment="Left" ToolTip.Tip="{Binding RecommendedConcurrencyHint}"/>
                                     <TextBlock Text="{Binding RecommendedConcurrencyText}" VerticalAlignment="Center" ToolTip.Tip="{Binding RecommendedConcurrencyHint}"/>
                                     <Button Content="{Binding L.ApplyRecommendedConcurrency}" Command="{Binding ApplyRecommendedConcurrencyCommand}" VerticalAlignment="Center" Padding="8,2" ToolTip.Tip="{Binding RecommendedConcurrencyHint}"/>
                                 </StackPanel>
@@ -229,8 +230,9 @@
                             <!-- GLM-5.3, 2026-11-04：批次 5——受控并发度（1-16，默认 1 串行）。 -->
                             <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding L.MaxConcurrencyLabel}" VerticalAlignment="Center" Margin="0,0,10,0" ToolTip.Tip="{Binding RecommendedConcurrencyHint}"/>
                             <!-- WorkBuddy, 2026-11-15：批次 18（P4-2）——显示硬件推荐值并支持一键应用。 -->
+                            <!-- 2026-11-20：加宽并发度输入框，为数值和步进按钮留出空间。 -->
                             <StackPanel Grid.Row="1" Grid.Column="4" Orientation="Horizontal" Spacing="6">
-                                <NumericUpDown Value="{Binding MaxConcurrency}" Minimum="1" Maximum="16" Increment="1" Width="80" ToolTip.Tip="{Binding RecommendedConcurrencyHint}"/>
+                                <NumericUpDown Value="{Binding MaxConcurrency}" Minimum="1" Maximum="16" Increment="1" Width="120" ToolTip.Tip="{Binding RecommendedConcurrencyHint}"/>
                                 <TextBlock Text="{Binding RecommendedConcurrencyText}" VerticalAlignment="Center" ToolTip.Tip="{Binding RecommendedConcurrencyHint}"/>
                                 <Button Content="{Binding L.ApplyRecommendedConcurrency}" Command="{Binding ApplyRecommendedConcurrencyCommand}" VerticalAlignment="Center" Padding="8,2" ToolTip.Tip="{Binding RecommendedConcurrencyHint}"/>
                             </StackPanel>
