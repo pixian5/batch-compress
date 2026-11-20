@@ -151,6 +151,6 @@ public static class SevenZipExitCodes
     // GPT-5, 2026-08-06：7-Zip 定义 0 为无错误、1 为非致命警告；两者均可能产生完整可用的输出。
     public static bool IsSuccess(int exitCode) => exitCode is 0 or Warning;
 
-    // 返回码 1：非致命警告。归档已生成但可能缺少无法读取的文件，调用方需通过 HasWarnings 区分处理。
+    // 返回码 1：非致命警告。压缩时由 CompressionWarningPolicy 改判失败；解压时通过 HasWarnings 拦截后处理。
     public const int Warning = 1;
 }

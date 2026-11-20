@@ -43,6 +43,8 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
         {
             var arguments = SevenZipCommandBuilder.BuildCompressionArguments(input, output, options);
             var result = await ExecuteAsync(arguments, cancellationToken, options.OutputLineHandler).ConfigureAwait(false);
+            // 0.8.22：创建阶段返回码 1（有文件未写入）直接判失败，不再进入校验阶段。
+            result = CompressionWarningPolicy.Apply(result, "7-Zip");
             if (!result.Success || !options.TestArchive)
             {
                 return result;
@@ -60,13 +62,8 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
                     .Where(line => !string.IsNullOrWhiteSpace(line)));
             testResult.StandardOutput = JoinOutput(result.StandardOutput, testResult.StandardOutput);
             testResult.StandardError = JoinOutput(result.StandardError, testResult.StandardError);
-            // 校验只证明归档本身完好，无法发现创建阶段漏掉的文件；创建阶段的警告必须保留。
-            testResult.HasWarnings |= result.HasWarnings;
-            if (testResult.HasWarnings && testResult.ExitCode == 0)
-            {
-                testResult.ExitCode = result.ExitCode;
-            }
-            return testResult;
+            // 创建阶段的警告已在上面判失败；校验阶段若也返回警告，同样按压缩不完整处理。
+            return CompressionWarningPolicy.Apply(testResult, "7-Zip");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

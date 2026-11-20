@@ -66,6 +66,7 @@
     <Compile Include="..\Core\Services\ArchiveProcessRunner.cs" Link="Core\Services\ArchiveProcessRunner.cs" />
     <Compile Include="..\Core\Services\SevenZipCommandBuilder.cs" Link="Core\Services\SevenZipCommandBuilder.cs" />
     <Compile Include="..\Core\Services\SevenZipArchiveEngine.cs" Link="Core\Services\SevenZipArchiveEngine.cs" />
+    <Compile Include="..\Core\Services\CompressionWarningPolicy.cs" Link="Core\Services\CompressionWarningPolicy.cs" />
     <Compile Include="..\Core\Services\ArchiveEngineRouter.cs" Link="Core\Services\ArchiveEngineRouter.cs" />
     <Compile Include="..\Core\Services\ArchiveVolumeResolver.cs" Link="Core\Services\ArchiveVolumeResolver.cs" />
     <Compile Include="..\Core\Services\RarArchiveEngine.cs" Link="Core\Services\RarArchiveEngine.cs" />

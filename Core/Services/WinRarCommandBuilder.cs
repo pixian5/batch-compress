@@ -137,6 +137,6 @@ public static class WinRarExitCodes
 {
     public static bool IsSuccess(int exitCode) => exitCode is 0 or Warning;
 
-    // 返回码 1：非致命警告（RAR 的 WARNING），与 7-Zip 同样需要通过 HasWarnings 拦截后处理。
+    // 返回码 1：非致命警告（RAR 的 WARNING）。压缩时由 CompressionWarningPolicy 改判失败；解压时拦截后处理。
     public const int Warning = 1;
 }

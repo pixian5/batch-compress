@@ -7,6 +7,8 @@ using BatchCompress.Avalonia.Localization;
 internal static partial class Program
 {
     // Claude Opus 5.5, 2026-11-20：0.8.20——归档程序返回码 1（警告）时不得删除/移动来源。
+    // 0.8.22：真实引擎压缩时返回码 1 直接判失败（场景 6）；场景 1–5 用模拟引擎锁定管线兜底拦截，
+    // 覆盖解压警告以及任何返回“成功但有警告”的引擎。
     // 复现场景：源文件无读权限，7zz 返回 1 生成空归档，7zz t 校验仍通过，旧逻辑会删掉源文件。
     private static async Task TestArchiveWarningKeepsSources()
     {
@@ -101,7 +103,7 @@ internal static partial class Program
             AssertEqual(0, plainSnapshots.Last().PostProcessFailCount);
             Assert(!string.IsNullOrWhiteSpace(strings.PostProcessSkippedArchiveWarning), "警告词条不能为空");
 
-            // 场景 6：真实 7zz（仅 macOS）——无读权限文件必须产生 HasWarnings，且校验阶段不能把它抹掉。
+            // 场景 6：真实 7zz（仅 macOS）——0.8.22 起压缩返回码 1 直接判失败。
             if (OperatingSystem.IsMacOS())
             {
                 var executable = Path.Combine(AppContext.BaseDirectory, "tools", "7zip", "macos", "7zz");
@@ -110,13 +112,43 @@ internal static partial class Program
                 File.SetUnixFileMode(locked, UnixFileMode.None);
                 try
                 {
+                    // 6a：引擎层——校验开启时也必须返回失败，错误信息带上 7zz 的警告内容。
                     var result = await new SevenZipArchiveEngine(executable).CompressAsync(
                         locked,
-                        Path.Combine(root, "locked.txt.7z"),
+                        Path.Combine(root, "engine-out", "locked.txt.7z"),
                         new ArchiveOptions { ArchiveFormat = "7z", TestArchive = true });
-                    Assert(result.Success, "7zz 返回码 1 仍视为归档已生成");
-                    Assert(result.HasWarnings, "无读权限文件必须标记 HasWarnings（校验阶段不得清除）");
+                    Assert(!result.Success, "压缩返回码 1 必须判失败");
                     AssertEqual(SevenZipExitCodes.Warning, result.ExitCode);
+                    Assert(result.ErrorMessage?.Contains("压缩不完整", StringComparison.Ordinal) == true,
+                        "失败原因必须说明压缩不完整");
+                    Assert(result.ErrorMessage?.Contains("Permission denied", StringComparison.Ordinal) == true,
+                        "失败原因必须带上 7zz 的警告内容");
+
+                    // 6b：完整管线——覆盖模式 + 删除源：计失败、来源保留、不完整归档被删除、旧归档恢复。
+                    var pipelineOut = Path.Combine(root, "pipeline-out");
+                    Directory.CreateDirectory(pipelineOut);
+                    var oldArchive = Path.Combine(pipelineOut, "locked.txt.7z");
+                    File.WriteAllText(oldArchive, "old archive");
+                    var realSnapshots = new List<OperationProgressInfo>();
+                    await new BatchOperationService(new SevenZipArchiveEngine(executable), new TestSystemIntegration())
+                        .BatchCompressAsync(
+                            [locked],
+                            new BatchOperationOptions
+                            {
+                                OutputPath = pipelineOut,
+                                Extension = "7z",
+                                ExistingFileMode = ExistingFileMode.Overwrite,
+                                DeleteSourceAfter = true,
+                                TestArchive = true
+                            },
+                            new SnapshotProgress(realSnapshots),
+                            CancellationToken.None);
+                    var realFinal = realSnapshots.Last();
+                    AssertEqual(0, realFinal.SuccessCount);
+                    AssertEqual(1, realFinal.FailCount);
+                    Assert(File.Exists(locked), "压缩不完整时不得删除来源");
+                    AssertEqual("old archive", File.ReadAllText(oldArchive));
+                    AssertEqual(1, Directory.GetFiles(pipelineOut).Length);
                 }
                 finally
                 {

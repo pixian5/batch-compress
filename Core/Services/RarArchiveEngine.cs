@@ -505,7 +505,9 @@ public class RarArchiveEngine : IArchiveEngine
         try
         {
             var arguments = WinRarCommandBuilder.BuildCompressionArguments(input, output, options);
-            return await ExecuteRarCommand(arguments, cancellationToken, options.OutputLineHandler).ConfigureAwait(false);
+            var result = await ExecuteRarCommand(arguments, cancellationToken, options.OutputLineHandler).ConfigureAwait(false);
+            // 0.8.22：压缩返回码 1（有文件未写入）按失败处理，与 7-Zip 一致。
+            return CompressionWarningPolicy.Apply(result, "RAR");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
