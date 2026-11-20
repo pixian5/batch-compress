@@ -147,6 +147,7 @@
     "ItemFailed": "失败: {0} - {1}",
     "ItemSucceededWithPostProcessFailure": "成功但后处理失败: {0}（原因：{1}）",
     "PostProcessDeleteSourceFailed": "删除源失败：{0}：{1}",
+    "PostProcessSkippedArchiveWarning": "归档程序返回警告（返回码 {0}），可能有文件未写入归档，已保留来源未删除/移动：{1}",
     "PostProcessMoveSourceFailed": "移动{0}失败：{1}：{2}",
     "PostProcessHandleArchiveFailed": "处理解压归档失败：{0}：{1}",
     "PostProcessMoveTargetExists": "{0}目标已存在，已保留双方文件：{1}",

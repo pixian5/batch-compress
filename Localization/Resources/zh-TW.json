@@ -147,6 +147,7 @@
     "ItemFailed": "失敗: {0} - {1}",
     "ItemSucceededWithPostProcessFailure": "成功但後處理失敗: {0}（原因：{1}）",
     "PostProcessDeleteSourceFailed": "刪除來源失敗：{0}：{1}",
+    "PostProcessSkippedArchiveWarning": "封存程式回傳警告（回傳碼 {0}），可能有檔案未寫入封存，已保留來源未刪除/移動：{1}",
     "PostProcessMoveSourceFailed": "移動{0}失敗：{1}：{2}",
     "PostProcessHandleArchiveFailed": "處理解壓封存失敗：{0}：{1}",
     "PostProcessMoveTargetExists": "{0}目標已存在，已保留雙方檔案：{1}",

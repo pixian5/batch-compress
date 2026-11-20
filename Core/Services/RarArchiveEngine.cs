@@ -585,6 +585,7 @@ public class RarArchiveEngine : IArchiveEngine
         return new ArchiveResult
         {
             Success = success,
+            HasWarnings = success && result.ExitCode == WinRarExitCodes.Warning,
             ExitCode = result.ExitCode,
             StandardOutput = standardOutput,
             StandardError = standardError,

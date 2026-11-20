@@ -205,6 +205,8 @@ public class LanguageStrings : INotifyPropertyChanged
     public string ItemSucceededWithPostProcessFailure { get; set; } = "成功但后处理失败: {0}（原因：{1}）";
     // 后处理失败原因（删除/移动/目标冲突）：既并入失败记录消息，也写入诊断日志。
     public string PostProcessDeleteSourceFailed { get; set; } = "删除源失败：{0}：{1}";
+    // 0.8.20：归档程序返回警告时跳过删除/移动来源。{0}=返回码，{1}=条目名。
+    public string PostProcessSkippedArchiveWarning { get; set; } = "归档程序返回警告（返回码 {0}），可能有文件未写入归档，已保留来源未删除/移动：{1}";
     public string PostProcessMoveSourceFailed { get; set; } = "移动{0}失败：{1}：{2}";
     public string PostProcessHandleArchiveFailed { get; set; } = "处理解压归档失败：{0}：{1}";
     public string PostProcessMoveTargetExists { get; set; } = "{0}目标已存在，已保留双方文件：{1}";

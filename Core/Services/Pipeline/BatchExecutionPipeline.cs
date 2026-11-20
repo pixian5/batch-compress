@@ -135,8 +135,7 @@ public sealed class BatchExecutionPipeline<TInput>
 
                 // 删除/移动后处理统一下沉到 PostProcessService；失败消息逐条计数并写
                 // 警告日志，最后一条并入成功记录，与原双循环内联实现行为一致。
-                var postProcessFailures = _postProcessService.Apply(
-                    _adapter.BuildPostProcessRequest(item, options));
+                var postProcessFailures = ApplyPostProcess(item, options, result);
                 var postProcessFailed = postProcessFailures.Count > 0;
                 var postProcessReason = postProcessFailures.LastOrDefault() ?? string.Empty;
                 foreach (var failure in postProcessFailures)
@@ -319,8 +318,7 @@ public sealed class BatchExecutionPipeline<TInput>
                         }
 
                         var measuredBytes = _adapter.MeasuredBytes(item, sizeBefore);
-                        var postProcessFailures = _postProcessService.Apply(
-                            _adapter.BuildPostProcessRequest(item, options));
+                        var postProcessFailures = ApplyPostProcess(item, options, result);
 
                         // GLM-5.3, 2026-11-04：批次 7——完成消息在锁外预构建：
                         // 字符串格式化不依赖共享状态，锁内只做统计回写与快照上报；
@@ -411,6 +409,34 @@ public sealed class BatchExecutionPipeline<TInput>
 
     // GPT-5, 2026-08-06：归档进程输出是用户要求保留的原始诊断证据。
     // 此处明确不调用脱敏、掩码或替换逻辑，即使 stdout/stderr 中包含密码也原样转发。
+    // Claude Opus 5.5, 2026-11-20：0.8.20——归档程序返回警告（返回码 1）时，归档可能缺少无法读取的
+    // 文件，且 7zz t 校验仍会通过；此时绝不执行删除/移动来源，改记一条后处理失败，
+    // 让命令行退出码非 0、界面显示“成功但后处理失败”，用户可以检查后手动处理。
+    private IReadOnlyList<string> ApplyPostProcess(
+        PreparedBatchItem item,
+        BatchOperationOptions options,
+        ArchiveResult result)
+    {
+        var request = _adapter.BuildPostProcessRequest(item, options);
+        if (!result.HasWarnings)
+        {
+            return _postProcessService.Apply(request);
+        }
+
+        Log(LogLevel.Warning,
+            $"Archive tool returned warnings (exit code {result.ExitCode}) for {item.DisplayName}; " +
+            $"post-process mode {request.Mode} skipped, sources kept: {string.Join(", ", request.Targets)}");
+        if (request.Mode == PostProcessMode.None || request.Targets.Count == 0)
+        {
+            return Array.Empty<string>();
+        }
+
+        return new[]
+        {
+            string.Format(L.PostProcessSkippedArchiveWarning, result.ExitCode, item.DisplayName)
+        };
+    }
+
     private static void ReportArchiveOutput(
         string prefix,
         ArchiveResult result,

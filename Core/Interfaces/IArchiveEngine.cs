@@ -58,6 +58,9 @@ public class ArchiveOptions
 public class ArchiveResult
 {
     public bool Success { get; set; }
+    // Claude Opus 5.5, 2026-11-20：0.8.20——归档程序返回码 1（非致命警告）。7-Zip/RAR 在部分文件
+    // 无法读取时也返回 1，归档可能缺文件；为 true 时管线禁止删除/移动来源，避免数据丢失。
+    public bool HasWarnings { get; set; }
     public int ExitCode { get; set; }
     public string? ErrorMessage { get; set; }
     public string StandardOutput { get; set; } = string.Empty;

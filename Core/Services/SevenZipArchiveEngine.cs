@@ -60,6 +60,12 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
                     .Where(line => !string.IsNullOrWhiteSpace(line)));
             testResult.StandardOutput = JoinOutput(result.StandardOutput, testResult.StandardOutput);
             testResult.StandardError = JoinOutput(result.StandardError, testResult.StandardError);
+            // 校验只证明归档本身完好，无法发现创建阶段漏掉的文件；创建阶段的警告必须保留。
+            testResult.HasWarnings |= result.HasWarnings;
+            if (testResult.HasWarnings && testResult.ExitCode == 0)
+            {
+                testResult.ExitCode = result.ExitCode;
+            }
             return testResult;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -263,6 +269,8 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
         return new ArchiveResult
         {
             Success = success,
+            // 返回码 1 = 非致命警告（例如文件无权限未被压入），由管线拦截后处理。
+            HasWarnings = success && result.ExitCode == SevenZipExitCodes.Warning,
             ExitCode = result.ExitCode,
             StandardOutput = result.StandardOutput,
             StandardError = result.StandardError,

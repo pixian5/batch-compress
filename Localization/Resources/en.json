@@ -147,6 +147,7 @@
     "ItemFailed": "Failed: {0} - {1}",
     "ItemSucceededWithPostProcessFailure": "Succeeded but post-processing failed: {0} (reason: {1})",
     "PostProcessDeleteSourceFailed": "Failed to delete source: {0}: {1}",
+    "PostProcessSkippedArchiveWarning": "Archiver returned warnings (exit code {0}); some files may be missing from the archive. Source kept, not deleted/moved: {1}",
     "PostProcessMoveSourceFailed": "Failed to move {0}: {1}: {2}",
     "PostProcessHandleArchiveFailed": "Failed to process decompression archive: {0}: {1}",
     "PostProcessMoveTargetExists": "{0} move target already exists; both files were kept: {1}",

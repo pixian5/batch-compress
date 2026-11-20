@@ -37,6 +37,8 @@
     <Compile Include="Program.CliBehaviorTests.cs" />
     <!-- WorkBuddy, 2026-11-16：0.8.13——界面派生逻辑（页签显隐）与生命周期守护。 -->
     <Compile Include="Program.UiLogicTests.cs" />
+    <!-- Claude Opus 5.5, 2026-11-20：0.8.20 归档警告保留来源回归测试 -->
+    <Compile Include="Program.ArchiveWarningTests.cs" />
     <Compile Include="..\ViewModels\TabVisibility.cs" Link="ViewModels\TabVisibility.cs" />
     <!-- WorkBuddy, 2026-11-17：0.8.15——关窗等待操作完成的纯逻辑。 -->
     <Compile Include="..\ViewModels\OperationCompletionSignal.cs" Link="ViewModels\OperationCompletionSignal.cs" />

@@ -147,6 +147,7 @@
     "ItemFailed": "失敗: {0} - {1}",
     "ItemSucceededWithPostProcessFailure": "成功しましたが後処理に失敗: {0}（原因：{1}）",
     "PostProcessDeleteSourceFailed": "ソースの削除に失敗: {0}: {1}",
+    "PostProcessSkippedArchiveWarning": "アーカイバーが警告を返しました（終了コード {0}）。一部のファイルがアーカイブに含まれていない可能性があるため、ソースは削除/移動せず保持しました: {1}",
     "PostProcessMoveSourceFailed": "{0}の移動に失敗: {1}: {2}",
     "PostProcessHandleArchiveFailed": "解凍アーカイブの処理に失敗: {0}: {1}",
     "PostProcessMoveTargetExists": "{0}の移動先が既に存在します。双方のファイルを保持しました: {1}",

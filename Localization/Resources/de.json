@@ -147,6 +147,7 @@
     "ItemFailed": "Fehler: {0} - {1}",
     "ItemSucceededWithPostProcessFailure": "Erfolgreich, aber Nachbearbeitung fehlgeschlagen: {0} (Grund: {1})",
     "PostProcessDeleteSourceFailed": "Quelle konnte nicht gelöscht werden: {0}: {1}",
+    "PostProcessSkippedArchiveWarning": "Archivprogramm meldete Warnungen (Exitcode {0}); möglicherweise fehlen Dateien im Archiv. Quelle wurde nicht gelöscht/verschoben: {1}",
     "PostProcessMoveSourceFailed": "{0} konnte nicht verschoben werden: {1}: {2}",
     "PostProcessHandleArchiveFailed": "Dekomprimierungsarchiv konnte nicht verarbeitet werden: {0}: {1}",
     "PostProcessMoveTargetExists": "Ziel für {0} ist bereits vorhanden; beide Dateien wurden behalten: {1}",
