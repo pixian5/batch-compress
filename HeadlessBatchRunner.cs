@@ -691,6 +691,7 @@ public class HeadlessBatchRunner
                 : null,
             TempDirectory = !string.IsNullOrEmpty(_options.TempDir) ? _options.TempDir : _options.OutputPath,
             ExistingFileMode = existingMode,
+            StrictExtract = _options.StrictExtract,
             RecoveryRecordPercent = _options.RecoveryRecord,
             LockArchive = _options.LockArchive,
             AddEnclosures = _options.AddEnclosures,

@@ -365,6 +365,9 @@
     "CloseDuringOperationForceExit": "Erzwingen",
     "ConfirmDeleteSourceTitle": "Löschen der Quelle bestätigen",
     "ConfirmDeleteSourceBody": "Wenn aktiviert, werden Quelldateien oder Archive nach Erfolg dauerhaft gelöscht (ohne Papierkorb). Trotzdem aktivieren?",
-    "ConfirmDeleteSourceEnable": "Aktivieren"
+    "ConfirmDeleteSourceEnable": "Aktivieren",
+    "StrictExtract": "Strenges Entpacken",
+    "TooltipStrictExtract": "Wenn aktiviert, wird der Entpack-Warncode 1 als Fehler gewertet und Teilausgaben werden zurückgesetzt",
+    "LogSearchWatermark": "Protokolle durchsuchen (Ctrl+F)..."
   }
 }

@@ -12,15 +12,12 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
 
-  <!-- GPT-5, 2026-08-05：排除旧版和生成目录，使仅 Avalonia 实现参与编译。 -->
+  <!-- GPT-5, 2026-08-05：排除生成目录与测试工程，使仅 Avalonia 主实现参与编译。 -->
   <ItemGroup>
-    <Compile Remove="old\**\*.cs" />
     <Compile Remove="BatchCompress.Avalonia\**\*.cs" />
     <Compile Remove="BatchCompress.Avalonia.Tests\**\*.cs" />
     <Compile Remove="**\bin\**\*.cs" />
     <Compile Remove="**\obj\**\*.cs" />
-    <EmbeddedResource Remove="old\**\*.resx" />
-    <None Remove="old\**\*" />
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
     <!-- WorkBuddy, 2026-11-16：批次 24（P2）——五种语言的界面词条改为嵌入 JSON 资源。 -->

@@ -208,7 +208,8 @@ internal sealed class DecompressionItemAdapter : IBatchItemAdapter<FileEntry>
                 ? resolved.ActualExtension
                 : options.Extension,
             Password = password,
-            ExistingFileMode = options.ExistingFileMode
+            ExistingFileMode = options.ExistingFileMode,
+            StrictExtract = options.StrictExtract
         };
 
         return Task.FromResult<PreparedBatchItem?>(new PreparedDecompressionItem

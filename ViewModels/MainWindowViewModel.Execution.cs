@@ -253,6 +253,12 @@ public partial class MainWindowViewModel
     }
 
     [RelayCommand]
+    private void FocusLogSearch()
+    {
+        FocusLogSearchRequested?.Invoke();
+    }
+
+    [RelayCommand]
     private async Task ShowHelpAsync()
     {
         if (ShowHelpRequested != null)
@@ -363,6 +369,7 @@ public partial class MainWindowViewModel
             CommentFile = EnableComment && File.Exists(CommentFilePath) ? CommentFilePath : null,
             TempDirectory = !string.IsNullOrEmpty(TempDirectory) ? TempDirectory : OutputPath,
             ExistingFileMode = (Core.Interfaces.ExistingFileMode)clampedExistingFileMode,
+            StrictExtract = StrictExtract,
             RecoveryRecordPercent = Math.Clamp(RecoveryRecordPercent, 0, 100),
             MaxConcurrency = Math.Clamp(MaxConcurrency, 1, 16),
             LockArchive = LockArchive,

@@ -154,7 +154,10 @@ internal static partial class Program
             ("界面删除源二次确认", TestDeleteSourceConfirmation),
             // Gemini 4 Neon, 2026-11-26：0.8.24——异步引擎校验与 ArchiveResult 不可变化。
             ("异步引擎可用性校验", TestAsyncEngineAvailability),
-            ("ArchiveResult不可变性与警告策略", TestArchiveResultImmutability)
+            ("ArchiveResult不可变性与警告策略", TestArchiveResultImmutability),
+            // Gemini 4 Neon, 2026-11-26：0.8.25——严格解压模式与界面日志搜索过滤。
+            ("严格解压策略与CLI解析", TestStrictExtractPolicyAndCli),
+            ("界面日志实时搜索过滤", TestLogSearchFilter)
         };
 
         // GLM-5.3, 2026-11-03：跑完全部测试后统一输出失败汇总，CI 中一次可见所有失败项；

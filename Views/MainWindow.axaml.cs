@@ -522,12 +522,40 @@ public partial class MainWindow : Window
             viewModel.HideWindowRequested = HideWindowFromViewModel;
             viewModel.ConfirmShutdownCancellationRequested = ConfirmShutdownCancellationAsync;
             viewModel.ConfirmDeleteSourceRequested = ConfirmDeleteSourceAsync;
+            viewModel.FocusLogSearchRequested = FocusCurrentLogSearchBox;
         }
     }
 
     private void HideWindowFromViewModel()
     {
         base.Hide();
+    }
+
+    private void FocusCurrentLogSearchBox()
+    {
+        if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        var controlName = viewModel.ActiveTab switch
+        {
+            3 => "SuccessLogSearchBox",
+            4 => "FailLogSearchBox",
+            5 => "CommandLogSearchBox",
+            _ => null
+        };
+        if (controlName == null)
+        {
+            return;
+        }
+
+        var searchBox = this.FindControl<TextBox>(controlName);
+        if (searchBox != null)
+        {
+            searchBox.Focus();
+            searchBox.SelectAll();
+        }
     }
 
     private async Task BrowseAttachmentAsync()

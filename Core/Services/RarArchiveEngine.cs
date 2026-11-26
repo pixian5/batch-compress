@@ -558,9 +558,10 @@ public class RarArchiveEngine : IArchiveEngine
         try
         {
             var arguments = WinRarCommandBuilder.BuildExtractionArguments(archivePath, outputDir, options);
-            return await ExecuteRarCommand(
+            var result = await ExecuteRarCommand(
                 arguments, cancellationToken, options.OutputLineHandler,
                 ArchiveSubProgressParser.TryParseFatalError).ConfigureAwait(false);
+            return CompressionWarningPolicy.ApplyForExtraction(result, "RAR", options.StrictExtract);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

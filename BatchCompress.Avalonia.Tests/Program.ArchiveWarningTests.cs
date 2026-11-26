@@ -193,4 +193,39 @@ internal static partial class Program
             return Task.FromResult(new ArchiveResult { Success = true, HasWarnings = true, ExitCode = 1 });
         }
     }
+
+    // Gemini 4 Neon, 2026-11-26：批次 36——验证 --strict-extract 严格解压策略与命令行解析。
+    private static Task TestStrictExtractPolicyAndCli()
+    {
+        var warningResult = new ArchiveResult
+        {
+            Success = true,
+            HasWarnings = true,
+            ExitCode = 1,
+            StandardError = "WARNING: cannot open file"
+        };
+
+        var defaultResult = CompressionWarningPolicy.ApplyForExtraction(warningResult, "7-Zip", strictExtract: false);
+        Assert(ReferenceEquals(warningResult, defaultResult), "默认非严格模式下应原样返回结果实例");
+        Assert(defaultResult.Success, "默认非严格模式下解压警告仍应计为成功");
+
+        var strictResult = CompressionWarningPolicy.ApplyForExtraction(warningResult, "7-Zip", strictExtract: true);
+        Assert(!ReferenceEquals(warningResult, strictResult), "严格模式下应返回新结果实例");
+        Assert(warningResult.Success, "原结果实例不得被修改");
+        Assert(!strictResult.Success, "严格模式下解压警告必须判失败");
+        Assert(strictResult.ErrorMessage?.Contains("解压不完整", StringComparison.Ordinal) == true,
+            "严格模式失败说明必须包含解压不完整");
+
+        var parsedStrict = BatchCompress.Avalonia.CommandLineHandler.ParseArguments(
+            ["extract", "--input", "a.7z", "--output", "out", "--strict-extract"]);
+        Assert(parsedStrict.Success, "带 --strict-extract 的参数应校验通过");
+        Assert(parsedStrict.Options.StrictExtract, "解析结果应启用 StrictExtract");
+
+        var parsedDefault = BatchCompress.Avalonia.CommandLineHandler.ParseArguments(
+            ["extract", "--input", "a.7z", "--output", "out"]);
+        Assert(parsedDefault.Success, "默认 extract 参数应校验通过");
+        Assert(!parsedDefault.Options.StrictExtract, "未传 --strict-extract 时 StrictExtract 应默认为 false");
+
+        return Task.CompletedTask;
+    }
 }

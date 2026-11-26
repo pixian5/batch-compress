@@ -100,9 +100,10 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
         try
         {
             var arguments = SevenZipCommandBuilder.BuildExtractionArguments(archivePath, outputDir, options);
-            return await ExecuteAsync(
+            var result = await ExecuteAsync(
                 arguments, cancellationToken, options.OutputLineHandler,
                 ArchiveSubProgressParser.TryParseFatalError).ConfigureAwait(false);
+            return CompressionWarningPolicy.ApplyForExtraction(result, "7-Zip", options.StrictExtract);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

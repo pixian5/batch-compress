@@ -192,4 +192,32 @@ internal static partial class Program
         Assert(!string.IsNullOrWhiteSpace(strings.ConfirmDeleteSourceBody), "ConfirmDeleteSourceBody 不能为空");
         Assert(!string.IsNullOrWhiteSpace(strings.ConfirmDeleteSourceEnable), "ConfirmDeleteSourceEnable 不能为空");
     }
+
+    // Gemini 4 Neon, 2026-11-26：批次 36——界面日志实时搜索过滤与快捷键接线守护。
+    private static Task TestLogSearchFilter()
+    {
+        AssertEqual(string.Empty, LogSearchFilter.FilterLines(null, "err"));
+        AssertEqual(string.Empty, LogSearchFilter.FilterLines(string.Empty, "err"));
+
+        var sample = "INFO start\r\nERROR disk full\nwarn skipped\nError timeout";
+        AssertEqual(sample, LogSearchFilter.FilterLines(sample, "   "));
+        AssertEqual(
+            $"ERROR disk full{Environment.NewLine}Error timeout",
+            LogSearchFilter.FilterLines(sample, " error "));
+        AssertEqual(string.Empty, LogSearchFilter.FilterLines(sample, "not-found"));
+
+        var root = FindRepositoryRoot();
+        var axaml = File.ReadAllText(Path.Combine(root, "Views", "MainWindow.axaml"));
+        Assert(axaml.Contains("FilteredSuccessLog", StringComparison.Ordinal), "MainWindow.axaml 缺少 FilteredSuccessLog");
+        Assert(axaml.Contains("FilteredFailLog", StringComparison.Ordinal), "MainWindow.axaml 缺少 FilteredFailLog");
+        Assert(axaml.Contains("FilteredCommandLog", StringComparison.Ordinal), "MainWindow.axaml 缺少 FilteredCommandLog");
+        Assert(axaml.Contains("Gesture=\"Ctrl+F\"", StringComparison.Ordinal), "MainWindow.axaml 缺少 Ctrl+F 快捷键");
+        Assert(axaml.Contains("StrictExtract", StringComparison.Ordinal), "MainWindow.axaml 缺少 StrictExtract 勾选框");
+
+        var codeBehind = File.ReadAllText(Path.Combine(root, "Views", "MainWindow.axaml.cs"));
+        Assert(codeBehind.Contains("FocusLogSearchRequested = FocusCurrentLogSearchBox", StringComparison.Ordinal),
+            "MainWindow.axaml.cs 未接线 FocusLogSearchRequested");
+
+        return Task.CompletedTask;
+    }
 }

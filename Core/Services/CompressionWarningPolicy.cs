@@ -30,4 +30,27 @@ public static class CompressionWarningPolicy
                 : $"压缩不完整：{toolName} 返回警告（返回码 {result.ExitCode}），有文件未写入归档，已按失败处理: {detail}"
         };
     }
+
+    /// <summary>
+    /// Gemini 4 Neon, 2026-11-26：0.8.25——严格解压模式下，解压返回码 1（警告）同样判失败并走既有残片回滚。
+    /// 默认关闭（strictExtract == false），以保持既有向后兼容语义。
+    /// </summary>
+    public static ArchiveResult ApplyForExtraction(ArchiveResult result, string toolName, bool strictExtract)
+    {
+        if (!strictExtract || !result.HasWarnings)
+        {
+            return result;
+        }
+
+        var detail = string.IsNullOrWhiteSpace(result.StandardError)
+            ? result.StandardOutput.Trim()
+            : result.StandardError.Trim();
+        return result with
+        {
+            Success = false,
+            ErrorMessage = string.IsNullOrWhiteSpace(detail)
+                ? $"解压不完整：{toolName} 返回警告（返回码 {result.ExitCode}），部分文件可能未完整解出，已按严格模式判失败"
+                : $"解压不完整：{toolName} 返回警告（返回码 {result.ExitCode}），部分文件可能未完整解出，已按严格模式判失败: {detail}"
+        };
+    }
 }

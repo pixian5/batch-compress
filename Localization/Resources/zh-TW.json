@@ -365,6 +365,9 @@
     "CloseDuringOperationForceExit": "強制退出",
     "ConfirmDeleteSourceTitle": "確認刪除來源檔案",
     "ConfirmDeleteSourceBody": "啟用後，任務成功將永久刪除來源檔案或原封存檔（不經過資源回收筒）。確定要啟用嗎？",
-    "ConfirmDeleteSourceEnable": "啟用"
+    "ConfirmDeleteSourceEnable": "啟用",
+    "StrictExtract": "嚴格解壓",
+    "TooltipStrictExtract": "開啟後，解壓縮回傳警告碼 1 時直接判失敗並回滾殘留檔案",
+    "LogSearchWatermark": "搜尋日誌（Ctrl+F）..."
   }
 }

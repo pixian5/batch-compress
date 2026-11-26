@@ -84,6 +84,8 @@ public class BatchOperationOptions
     // 附件目录和联系信息目录。
     public string[]? EnclosureDirectories { get; set; }
     public bool AddEnclosures { get; set; }
+    // Gemini 4 Neon, 2026-11-26：批次 36——严格解压模式，开启后解压返回码 1（警告）直接判失败并回滚残留。
+    public bool StrictExtract { get; set; }
 }
 
 /// <summary>

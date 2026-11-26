@@ -365,6 +365,9 @@
     "CloseDuringOperationForceExit": "Force exit",
     "ConfirmDeleteSourceTitle": "Confirm source deletion",
     "ConfirmDeleteSourceBody": "When enabled, successful tasks will permanently delete source files or archives (bypassing the Trash/Recycle Bin). Enable anyway?",
-    "ConfirmDeleteSourceEnable": "Enable"
+    "ConfirmDeleteSourceEnable": "Enable",
+    "StrictExtract": "Strict extract",
+    "TooltipStrictExtract": "When enabled, extraction warning exit code 1 is treated as failure and partial output is rolled back",
+    "LogSearchWatermark": "Search logs (Ctrl+F)..."
   }
 }

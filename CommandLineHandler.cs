@@ -39,6 +39,7 @@ public sealed class CommandLineOptions
     public int RecoveryRecord { get; set; } = ArchiveDefaults.DefaultRecoveryRecordPercent;
     public bool LockArchive { get; set; }
     public string ExistingFileMode { get; set; } = "overwrite";
+    public bool StrictExtract { get; set; }
     public bool SkipProcessed { get; set; } = true;
     public bool DeleteSource { get; set; }
     public bool MoveSource { get; set; }
@@ -541,6 +542,7 @@ public static partial class CommandLineHandler
         Add(definitions, "--temp-dir", ValueKind.Single, "--temp-dir");
         Add(definitions, "--recovery", ValueKind.Single, "--recovery");
         Add(definitions, "--existing", ValueKind.Single, "--existing");
+        Add(definitions, "--strict-extract", ValueKind.Flag, "--strict-extract");
         Add(definitions, "--lock", ValueKind.Flag, "--lock");
         Add(definitions, "--skip-processed", ValueKind.Flag, "--skip-processed");
         Add(definitions, "--no-skip-processed", ValueKind.Flag, "--no-skip-processed");
@@ -752,6 +754,9 @@ public static partial class CommandLineHandler
                 break;
             case "--lock":
                 state.Options.LockArchive = value;
+                break;
+            case "--strict-extract":
+                state.Options.StrictExtract = value;
                 break;
             case "--skip-processed":
                 state.Options.SkipProcessed = value;

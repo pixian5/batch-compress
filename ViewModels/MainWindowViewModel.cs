@@ -61,6 +61,7 @@ public partial class MainWindowViewModel : ViewModelBase
         public bool SkipAlreadyProcessed { get; set; } = true;
         public bool DeleteSourceAfter { get; set; }
         public bool MoveSourceAfter { get; set; }
+        public bool StrictExtract { get; set; }
         public double MaxSizeGB { get; set; } = 666;
         public bool ShutdownAfterComplete { get; set; }
         public string PasswordQueryFileName { get; set; } = string.Empty;
@@ -369,6 +370,9 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool _moveSourceAfter = false;
 
     [ObservableProperty]
+    private bool _strictExtract = false;
+
+    [ObservableProperty]
     private bool _addEnclosures = true;
 
     [ObservableProperty]
@@ -456,15 +460,34 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SuccessLogTabHeader))]
+    [NotifyPropertyChangedFor(nameof(FilteredSuccessLog))]
     private string _successLog = string.Empty;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(FailLogTabHeader))]
+    [NotifyPropertyChangedFor(nameof(FilteredFailLog))]
     private string _failLog = string.Empty;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CommandLogTabHeader))]
+    [NotifyPropertyChangedFor(nameof(FilteredCommandLog))]
     private string _commandLog = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FilteredSuccessLog))]
+    private string _successLogFilter = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FilteredFailLog))]
+    private string _failLogFilter = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FilteredCommandLog))]
+    private string _commandLogFilter = string.Empty;
+
+    public string FilteredSuccessLog => LogSearchFilter.FilterLines(SuccessLog, SuccessLogFilter);
+    public string FilteredFailLog => LogSearchFilter.FilterLines(FailLog, FailLogFilter);
+    public string FilteredCommandLog => LogSearchFilter.FilterLines(CommandLog, CommandLogFilter);
 
     // WorkBuddy, 2026-11-16：批次 25（P2）——缩放按钮文案由窗口状态驱动，
     // 视图只负责把 WindowState 同步到这里，不再直接改按钮内容。
@@ -652,6 +675,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public Action? HideWindowRequested { get; set; }
     public Func<Task<bool>>? ConfirmShutdownCancellationRequested { get; set; }
     public Func<Task<bool>>? ConfirmDeleteSourceRequested { get; set; }
+    public Action? FocusLogSearchRequested { get; set; }
 
 
     partial void OnActiveTabChanged(int oldValue, int newValue)
@@ -708,6 +732,7 @@ public partial class MainWindowViewModel : ViewModelBase
             SkipAlreadyProcessed = state.SkipAlreadyProcessed;
             DeleteSourceAfter = state.DeleteSourceAfter;
             MoveSourceAfter = state.MoveSourceAfter;
+            StrictExtract = state.StrictExtract;
             MaxSizeGB = state.MaxSizeGB;
             ShutdownAfterComplete = state.ShutdownAfterComplete;
             PasswordQueryFileName = state.PasswordQueryFileName;
@@ -761,6 +786,7 @@ public partial class MainWindowViewModel : ViewModelBase
         state.SkipAlreadyProcessed = SkipAlreadyProcessed;
         state.DeleteSourceAfter = DeleteSourceAfter;
         state.MoveSourceAfter = MoveSourceAfter;
+        state.StrictExtract = StrictExtract;
         state.MaxSizeGB = MaxSizeGB;
         state.ShutdownAfterComplete = ShutdownAfterComplete;
         state.PasswordQueryFileName = PasswordQueryFileName;

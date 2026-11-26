@@ -17,6 +17,7 @@
         <KeyBinding Gesture="Escape" Command="{Binding CancelOperationCommand}" />
         <KeyBinding Gesture="Ctrl+L" Command="{Binding ClearAllLogsCommand}" />
         <KeyBinding Gesture="Ctrl+H" Command="{Binding HideWindowCommand}" />
+        <KeyBinding Gesture="Ctrl+F" Command="{Binding FocusLogSearchCommand}" />
     </Window.KeyBindings>
 
     <Design.DataContext>
@@ -244,6 +245,7 @@
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <CheckBox Content="{Binding L.DeleteSource}" IsChecked="{Binding DeleteSourceAfter}" ToolTip.Tip="{Binding L.TooltipDeleteSourceDecompression}"/>
                                     <CheckBox Content="{Binding L.MoveSource}" IsChecked="{Binding MoveSourceAfter}" ToolTip.Tip="{Binding L.TooltipMoveSourceDecompression}"/>
+                                    <CheckBox Content="{Binding L.StrictExtract}" IsChecked="{Binding StrictExtract}" ToolTip.Tip="{Binding L.TooltipStrictExtract}"/>
                                     <CheckBox Content="{Binding L.ShutdownAfterComplete}" IsChecked="{Binding ShutdownAfterComplete}"/>
                                     <Button Content="{Binding L.CancelShutdown}" Command="{Binding CancelScheduledShutdownCommand}" IsVisible="{Binding IsShutdownScheduled}"/>
                                 </StackPanel>
@@ -366,31 +368,43 @@
 
             <!-- 三类日志提升为顶部一级标签页。 -->
             <Grid IsVisible="{Binding IsSuccessLogTab}" RowDefinitions="Auto,*" RowSpacing="6">
-                <Button Grid.Row="0" Content="{Binding L.ClearSuccess}" Command="{Binding ClearSuccessLogCommand}"
-                        Width="90" Height="32" HorizontalAlignment="Left" ToolTip.Tip="{Binding L.ClearSuccessTooltip}"/>
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
+                    <Button Content="{Binding L.ClearSuccess}" Command="{Binding ClearSuccessLogCommand}"
+                            Width="90" Height="32" ToolTip.Tip="{Binding L.ClearSuccessTooltip}"/>
+                    <TextBox x:Name="SuccessLogSearchBox" Text="{Binding SuccessLogFilter}" Width="260"
+                             PlaceholderText="{Binding L.LogSearchWatermark}" VerticalAlignment="Center"/>
+                </StackPanel>
                 <ScrollViewer Grid.Row="1" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
-                    <TextBox Text="{Binding SuccessLog}" AcceptsReturn="True" TextWrapping="Wrap" IsReadOnly="True"
+                    <TextBox Text="{Binding FilteredSuccessLog}" AcceptsReturn="True" TextWrapping="Wrap" IsReadOnly="True"
                              BorderThickness="0" Foreground="Green" HorizontalAlignment="Stretch"
                              VerticalAlignment="Stretch" Margin="8,0,8,0"/>
                 </ScrollViewer>
             </Grid>
 
             <Grid IsVisible="{Binding IsFailLogTab}" RowDefinitions="Auto,*" RowSpacing="6">
-                <Button Grid.Row="0" Content="{Binding L.ClearFail}" Command="{Binding ClearFailLogCommand}"
-                        Width="90" Height="32" HorizontalAlignment="Left" ToolTip.Tip="{Binding L.ClearFailTooltip}"/>
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
+                    <Button Content="{Binding L.ClearFail}" Command="{Binding ClearFailLogCommand}"
+                            Width="90" Height="32" ToolTip.Tip="{Binding L.ClearFailTooltip}"/>
+                    <TextBox x:Name="FailLogSearchBox" Text="{Binding FailLogFilter}" Width="260"
+                             PlaceholderText="{Binding L.LogSearchWatermark}" VerticalAlignment="Center"/>
+                </StackPanel>
                 <ScrollViewer Grid.Row="1" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
-                    <TextBox Text="{Binding FailLog}" AcceptsReturn="True" TextWrapping="Wrap" IsReadOnly="True"
+                    <TextBox Text="{Binding FilteredFailLog}" AcceptsReturn="True" TextWrapping="Wrap" IsReadOnly="True"
                              BorderThickness="0" Foreground="Red" HorizontalAlignment="Stretch"
                              VerticalAlignment="Stretch" Margin="8,0,8,0"/>
                 </ScrollViewer>
             </Grid>
 
             <Grid IsVisible="{Binding IsCommandLogTab}" RowDefinitions="Auto,*" RowSpacing="6">
-                <Button Grid.Row="0" Content="{Binding L.ClearCommand}" Command="{Binding ClearCommandLogCommand}"
-                        Width="90" Height="32" HorizontalAlignment="Left" ToolTip.Tip="{Binding L.ClearCommandTooltip}"/>
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
+                    <Button Content="{Binding L.ClearCommand}" Command="{Binding ClearCommandLogCommand}"
+                            Width="90" Height="32" ToolTip.Tip="{Binding L.ClearCommandTooltip}"/>
+                    <TextBox x:Name="CommandLogSearchBox" Text="{Binding CommandLogFilter}" Width="260"
+                             PlaceholderText="{Binding L.LogSearchWatermark}" VerticalAlignment="Center"/>
+                </StackPanel>
                 <ScrollViewer x:Name="CommandLogScrollViewer" Grid.Row="1" HorizontalContentAlignment="Stretch"
                               VerticalContentAlignment="Stretch">
-                    <TextBox x:Name="CommandLogTextBox" Text="{Binding CommandLog}" AcceptsReturn="True"
+                    <TextBox x:Name="CommandLogTextBox" Text="{Binding FilteredCommandLog}" AcceptsReturn="True"
                              TextWrapping="Wrap" IsReadOnly="True" BorderThickness="0"
                              HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="8,0,8,0"/>
                 </ScrollViewer>

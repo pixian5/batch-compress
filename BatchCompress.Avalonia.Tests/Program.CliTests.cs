@@ -451,6 +451,7 @@ internal static partial class Program
             "--password-stdin",
             "--password-name",
             "--existing",
+            "--strict-extract",
             "--lock",
             "--skip-processed",
             "--no-skip-processed",
