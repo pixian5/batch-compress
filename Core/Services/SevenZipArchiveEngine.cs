@@ -22,9 +22,12 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
         _configuredExecutablePath = executablePath;
     }
 
-    public bool IsAvailable()
+    public bool IsAvailable() =>
+        IsAvailableAsync(CancellationToken.None).GetAwaiter().GetResult();
+
+    public async Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default)
     {
-        _executablePath = FindExecutable();
+        _executablePath = await FindExecutableAsync(cancellationToken).ConfigureAwait(false);
         return !string.IsNullOrEmpty(_executablePath);
     }
 
@@ -34,7 +37,7 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
         ArchiveOptions options,
         CancellationToken cancellationToken = default)
     {
-        if (!EnsureExecutableAvailable())
+        if (!await EnsureExecutableAvailableAsync(cancellationToken).ConfigureAwait(false))
         {
             return MissingExecutableResult();
         }
@@ -56,14 +59,17 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
             var testArguments = SevenZipCommandBuilder.BuildTestArguments(testPath, options.Password);
             var testResult = await ExecuteAsync(testArguments, cancellationToken, options.OutputLineHandler).ConfigureAwait(false);
             // GPT-5, 2026-08-06：创建和校验是两次进程，返回时合并两者原始输出，避免丢失第一阶段诊断信息。
-            testResult.CommandLine = string.Join(
-                Environment.NewLine,
-                new[] { result.CommandLine, testResult.CommandLine }
-                    .Where(line => !string.IsNullOrWhiteSpace(line)));
-            testResult.StandardOutput = JoinOutput(result.StandardOutput, testResult.StandardOutput);
-            testResult.StandardError = JoinOutput(result.StandardError, testResult.StandardError);
+            var mergedTestResult = testResult with
+            {
+                CommandLine = string.Join(
+                    Environment.NewLine,
+                    new[] { result.CommandLine, testResult.CommandLine }
+                        .Where(line => !string.IsNullOrWhiteSpace(line))),
+                StandardOutput = JoinOutput(result.StandardOutput, testResult.StandardOutput),
+                StandardError = JoinOutput(result.StandardError, testResult.StandardError)
+            };
             // 创建阶段的警告已在上面判失败；校验阶段若也返回警告，同样按压缩不完整处理。
-            return CompressionWarningPolicy.Apply(testResult, "7-Zip");
+            return CompressionWarningPolicy.Apply(mergedTestResult, "7-Zip");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -86,7 +92,7 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
         ArchiveOptions options,
         CancellationToken cancellationToken = default)
     {
-        if (!EnsureExecutableAvailable())
+        if (!await EnsureExecutableAvailableAsync(cancellationToken).ConfigureAwait(false))
         {
             return MissingExecutableResult();
         }
@@ -125,16 +131,19 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
         }
     }
 
-    private bool EnsureExecutableAvailable()
+    private async Task<bool> EnsureExecutableAvailableAsync(CancellationToken cancellationToken)
     {
-        return !string.IsNullOrEmpty(_executablePath) || IsAvailable();
+        return !string.IsNullOrEmpty(_executablePath) ||
+               await IsAvailableAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    private string? FindExecutable()
+    private async Task<string?> FindExecutableAsync(CancellationToken cancellationToken)
     {
         foreach (var candidate in GetCandidatePaths())
         {
-            if (TryValidateExecutable(candidate, out var message))
+            cancellationToken.ThrowIfCancellationRequested();
+            var (isValid, message) = await TryValidateExecutableAsync(candidate, cancellationToken).ConfigureAwait(false);
+            if (isValid)
             {
                 Debug.WriteLine($"[7-Zip] 已选路径: {candidate}");
                 return candidate;
@@ -208,15 +217,15 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
         }
     }
 
-    private static bool TryValidateExecutable(string path, out string message)
+    private static async Task<(bool IsValid, string Message)> TryValidateExecutableAsync(
+        string path,
+        CancellationToken cancellationToken)
     {
-        message = string.Empty;
         try
         {
             if (!File.Exists(path))
             {
-                message = "文件不存在";
-                return false;
+                return (false, "文件不存在");
             }
 
             if (!OperatingSystem.IsWindows())
@@ -228,25 +237,27 @@ public sealed class SevenZipArchiveEngine : IArchiveEngine
                 }
             }
 
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-            var result = new ArchiveProcessRunner(path, "7-Zip")
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromSeconds(3));
+            var result = await new ArchiveProcessRunner(path, "7-Zip")
                 .RunAsync(["i"], timeout.Token)
-                .GetAwaiter()
-                .GetResult();
+                .ConfigureAwait(false);
             var output = result.StandardOutput + result.StandardError;
             if (!SevenZipExitCodes.IsSuccess(result.ExitCode) ||
                 !output.Contains("7-Zip", StringComparison.OrdinalIgnoreCase))
             {
-                message = $"身份校验失败，返回码 {result.ExitCode}";
-                return false;
+                return (false, $"身份校验失败，返回码 {result.ExitCode}");
             }
 
-            return true;
+            return (true, string.Empty);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
-            message = ex.Message;
-            return false;
+            return (false, ex.Message);
         }
     }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,15 +21,22 @@ public class RarArchiveEngine : IArchiveEngine
 {
     private string? _rarExecutablePath;
     
-    public bool IsAvailable()
+    public bool IsAvailable() =>
+        IsAvailableAsync(CancellationToken.None).GetAwaiter().GetResult();
+
+    public async Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default)
     {
-        _rarExecutablePath = FindRarExecutable();
+        _rarExecutablePath = await FindRarExecutableAsync(cancellationToken).ConfigureAwait(false);
         return !string.IsNullOrEmpty(_rarExecutablePath);
     }
-    
-    private string? FindRarExecutable()
+
+    private async Task<string?> FindRarExecutableAsync(CancellationToken cancellationToken)
     {
-        var candidates = GetCandidatePaths().ToList();
+        var candidates = new List<string>();
+        await foreach (var candidate in GetCandidatePathsAsync(cancellationToken).ConfigureAwait(false))
+        {
+            candidates.Add(candidate);
+        }
 
         Debug.WriteLine($"[RAR] 操作系统={RuntimeInformation.OSDescription}");
         Debug.WriteLine($"[RAR] 程序目录={AppContext.BaseDirectory}");
@@ -36,13 +44,15 @@ public class RarArchiveEngine : IArchiveEngine
 
         foreach (var candidate in candidates)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var normalized = NormalizeCandidate(candidate);
             if (string.IsNullOrWhiteSpace(normalized))
             {
                 continue;
             }
 
-            if (TryValidateRarExecutable(normalized, out var validationMessage))
+            var (isValid, validationMessage) = await TryValidateRarExecutableAsync(normalized, cancellationToken).ConfigureAwait(false);
+            if (isValid)
             {
                 Debug.WriteLine($"[RAR] 已选路径: {normalized}");
                 return normalized;
@@ -59,7 +69,8 @@ public class RarArchiveEngine : IArchiveEngine
     }
     
 
-    private IEnumerable<string> GetCandidatePaths()
+    private async IAsyncEnumerable<string> GetCandidatePathsAsync(
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         // 允许部署者显式提供其自有授权的完整 RAR 可执行文件；该路径优先于所有平台默认位置。
         var configuredPath = Environment.GetEnvironmentVariable("BATCHCOMPRESS_RAR_PATH");
@@ -79,7 +90,7 @@ public class RarArchiveEngine : IArchiveEngine
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            foreach (var p in GetMacCandidates())
+            await foreach (var p in GetMacCandidatesAsync(cancellationToken).ConfigureAwait(false))
             {
                 yield return p;
             }
@@ -88,7 +99,7 @@ public class RarArchiveEngine : IArchiveEngine
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            foreach (var p in GetLinuxCandidates())
+            await foreach (var p in GetLinuxCandidatesAsync(cancellationToken).ConfigureAwait(false))
             {
                 yield return p;
             }
@@ -176,7 +187,8 @@ public class RarArchiveEngine : IArchiveEngine
         }
     }
 
-    private IEnumerable<string> GetMacCandidates()
+    private async IAsyncEnumerable<string> GetMacCandidatesAsync(
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         // GPT-5, 2026-08-05：优先使用应用包内的 RAR；Finder 启动的进程可能不会继承用户 PATH。
         var toolsRarDir = Path.Combine(AppContext.BaseDirectory, "tools", "rarmacOS", "rar");
@@ -188,14 +200,10 @@ public class RarArchiveEngine : IArchiveEngine
         yield return "/usr/bin/rar";
 
         // GPT-5, 2026-08-05：仅将 which 作为后备方案，因为其结果依赖当前进程环境。
-        var which = ExecuteCommandCaptureAll("which", ["rar"], timeoutMs: 2000);
-        if (!string.IsNullOrWhiteSpace(which.Output))
+        var whichPath = await ResolveWhichRarPathAsync(cancellationToken).ConfigureAwait(false);
+        if (!string.IsNullOrWhiteSpace(whichPath))
         {
-            var firstLine = which.Output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(firstLine))
-            {
-                yield return firstLine.Trim();
-            }
+            yield return whichPath;
         }
 
         // GPT-5, 2026-08-05：保留历史用户目录安装位置，作为最后的兼容性后备方案。
@@ -206,7 +214,8 @@ public class RarArchiveEngine : IArchiveEngine
         yield return Path.Combine(AppContext.BaseDirectory, "rar");
     }
 
-    private IEnumerable<string> GetLinuxCandidates()
+    private async IAsyncEnumerable<string> GetLinuxCandidatesAsync(
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         // 1) 程序运行目录下的 tools/rarLinux 目录（优先使用）。
         // GLM-5.3, 2026-11-04：批次 3 决策 B——该目录现携带官方完整未修改分发包
@@ -221,14 +230,10 @@ public class RarArchiveEngine : IArchiveEngine
         yield return "/bin/rar";
 
         // 3) PATH/which
-        var which = ExecuteCommandCaptureAll("which", ["rar"], timeoutMs: 2000);
-        if (!string.IsNullOrWhiteSpace(which.Output))
+        var whichPath = await ResolveWhichRarPathAsync(cancellationToken).ConfigureAwait(false);
+        if (!string.IsNullOrWhiteSpace(whichPath))
         {
-            var firstLine = which.Output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(firstLine))
-            {
-                yield return firstLine.Trim();
-            }
+            yield return whichPath;
         }
 
         // 4) 用户目录兜底
@@ -237,6 +242,21 @@ public class RarArchiveEngine : IArchiveEngine
         
         // 5) 程序运行目录：rarlinux（向后兼容，最后使用）
         yield return Path.Combine(AppContext.BaseDirectory, "rarlinux");
+    }
+
+    private static async Task<string?> ResolveWhichRarPathAsync(CancellationToken cancellationToken)
+    {
+        var which = await ExecuteCommandCaptureAllAsync("which", ["rar"], timeoutMs: 2000, cancellationToken)
+            .ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(which.Output))
+        {
+            return null;
+        }
+
+        var firstLine = which.Output
+            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+            .FirstOrDefault();
+        return string.IsNullOrWhiteSpace(firstLine) ? null : firstLine.Trim();
     }
 
     private static string ExpandHome(string path)
@@ -275,22 +295,20 @@ public class RarArchiveEngine : IArchiveEngine
         return trimmed;
     }
 
-    private bool TryValidateRarExecutable(string path, out string message)
+    private static async Task<(bool IsValid, string Message)> TryValidateRarExecutableAsync(
+        string path,
+        CancellationToken cancellationToken)
     {
-        message = string.Empty;
-
         try
         {
             if (!File.Exists(path))
             {
-                message = "文件不存在";
-                return false;
+                return (false, "文件不存在");
             }
 
             if ((File.GetAttributes(path) & FileAttributes.Directory) != 0)
             {
-                message = "不是文件";
-                return false;
+                return (false, "不是文件");
             }
 
             if (OperatingSystem.IsWindows())
@@ -298,8 +316,7 @@ public class RarArchiveEngine : IArchiveEngine
                 var ext = Path.GetExtension(path);
                 if (!ext.Equals(".exe", StringComparison.OrdinalIgnoreCase))
                 {
-                    message = "非 exe 文件";
-                    return false;
+                    return (false, "非 exe 文件");
                 }
             }
             else
@@ -313,53 +330,50 @@ public class RarArchiveEngine : IArchiveEngine
                     }
                     else
                     {
-                        message = "不可执行（建议 chmod +x）";
-                        return false;
+                        return (false, "不可执行（建议 chmod +x）");
                     }
                 }
             }
 
             // 运行校验：rar -?，2 秒
-            var result = ExecuteCommandCaptureAll(path, ["-?"], timeoutMs: 2000);
+            var result = await ExecuteCommandCaptureAllAsync(path, ["-?"], timeoutMs: 2000, cancellationToken).ConfigureAwait(false);
             if (!result.Started)
             {
-                message = "无法启动进程";
-                return false;
+                return (false, "无法启动进程");
             }
 
             if (result.TimedOut)
             {
-                message = "运行校验超时";
-                return false;
+                return (false, "运行校验超时");
             }
 
             if (result.ExitCode != 0 && result.ExitCode != 1)
             {
-                message = $"运行校验返回码异常：{result.ExitCode}";
-                return false;
+                return (false, $"运行校验返回码异常：{result.ExitCode}");
             }
 
             var output = (result.Output + "\n" + result.Error).Trim();
             if (string.IsNullOrWhiteSpace(output))
             {
-                message = "运行校验无输出";
-                return false;
+                return (false, "运行校验无输出");
             }
 
             var lower = output.ToLowerInvariant();
             bool ok = lower.Contains("rar") || lower.Contains("winrar") || lower.Contains("copyright") || lower.Contains("usage");
             if (!ok)
             {
-                message = "运行校验输出不匹配";
-                return false;
+                return (false, "运行校验输出不匹配");
             }
 
-            return true;
+            return (true, string.Empty);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
-            message = $"校验异常：{ex.Message}";
-            return false;
+            return (false, $"校验异常：{ex.Message}");
         }
     }
 
@@ -429,18 +443,19 @@ public class RarArchiveEngine : IArchiveEngine
         public string Error { get; init; } = string.Empty;
     }
 
-    private static CommandResult ExecuteCommandCaptureAll(
+    private static async Task<CommandResult> ExecuteCommandCaptureAllAsync(
         string fileName,
         IReadOnlyList<string> arguments,
-        int timeoutMs)
+        int timeoutMs,
+        CancellationToken cancellationToken)
     {
         try
         {
-            using var timeout = new CancellationTokenSource(timeoutMs);
-            var result = new WinRarProcessRunner(fileName)
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(timeoutMs);
+            var result = await new WinRarProcessRunner(fileName)
                 .RunAsync(arguments, timeout.Token)
-                .GetAwaiter()
-                .GetResult();
+                .ConfigureAwait(false);
 
             return new CommandResult
             {
@@ -449,6 +464,10 @@ public class RarArchiveEngine : IArchiveEngine
                 Output = result.StandardOutput,
                 Error = result.StandardError
             };
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (OperationCanceledException)
         {
@@ -468,11 +487,11 @@ public class RarArchiveEngine : IArchiveEngine
     /// <summary>
     /// 确保 RAR 可执行文件可用。
     /// </summary>
-    private bool EnsureRarExecutableAvailable()
+    private async Task<bool> EnsureRarExecutableAvailableAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(_rarExecutablePath))
         {
-            return IsAvailable();
+            return await IsAvailableAsync(cancellationToken).ConfigureAwait(false);
         }
         return true;
     }
@@ -492,7 +511,7 @@ public class RarArchiveEngine : IArchiveEngine
 
     public async Task<ArchiveResult> CompressAsync(string input, string output, ArchiveOptions options, CancellationToken cancellationToken = default)
     {
-        if (!EnsureRarExecutableAvailable())
+        if (!await EnsureRarExecutableAvailableAsync(cancellationToken).ConfigureAwait(false))
         {
             return new ArchiveResult
             {
@@ -526,7 +545,7 @@ public class RarArchiveEngine : IArchiveEngine
     
     public async Task<ArchiveResult> ExtractAsync(string archivePath, string outputDir, ArchiveOptions options, CancellationToken cancellationToken = default)
     {
-        if (!EnsureRarExecutableAvailable())
+        if (!await EnsureRarExecutableAvailableAsync(cancellationToken).ConfigureAwait(false))
         {
             return new ArchiveResult
             {

@@ -25,6 +25,12 @@ public interface IArchiveEngine
     /// 检查当前系统是否存在可用归档引擎。
     /// </summary>
     bool IsAvailable();
+
+    /// <summary>
+    /// 异步检查当前系统是否存在可用归档引擎，避免在异步或界面上下文中同步阻塞子进程校验。
+    /// </summary>
+    Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(IsAvailable());
     
 }
 
@@ -53,19 +59,19 @@ public class ArchiveOptions
 }
 
 /// <summary>
-/// 归档操作结果。
+/// 归档操作结果（不可变记录，避免跨阶段复用或并发读写时被原地改写）。
 /// </summary>
-public class ArchiveResult
+public sealed record ArchiveResult
 {
-    public bool Success { get; set; }
+    public bool Success { get; init; }
     // Claude Opus 5.5, 2026-11-20：0.8.20——归档程序返回码 1（非致命警告）。7-Zip/RAR 在部分文件
     // 无法读取时也返回 1，归档可能缺文件；为 true 时管线禁止删除/移动来源，避免数据丢失。
-    public bool HasWarnings { get; set; }
-    public int ExitCode { get; set; }
-    public string? ErrorMessage { get; set; }
-    public string StandardOutput { get; set; } = string.Empty;
-    public string StandardError { get; set; } = string.Empty;
-    public string CommandLine { get; set; } = string.Empty;
+    public bool HasWarnings { get; init; }
+    public int ExitCode { get; init; }
+    public string? ErrorMessage { get; init; }
+    public string StandardOutput { get; init; } = string.Empty;
+    public string StandardError { get; init; } = string.Empty;
+    public string CommandLine { get; init; } = string.Empty;
 }
 
 /// <summary>

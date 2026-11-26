@@ -82,7 +82,7 @@ public sealed class DiagnosticsExportService
         using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: false))
         {
             // 1. 写入系统环境与诊断摘要
-            var summary = CreateDiagnosticSummary();
+            var summary = await CreateDiagnosticSummaryAsync(cancellationToken).ConfigureAwait(false);
             var summaryEntry = archive.CreateEntry("diagnostics_summary.json", System.IO.Compression.CompressionLevel.Optimal);
             using (var summaryStream = summaryEntry.Open())
             using (var writer = new Utf8JsonWriter(summaryStream, new JsonWriterOptions { Indented = true }))
@@ -182,11 +182,15 @@ public sealed class DiagnosticsExportService
         }
     }
 
-    private object CreateDiagnosticSummary()
+    private async Task<object> CreateDiagnosticSummaryAsync(CancellationToken cancellationToken)
     {
         // WorkBuddy, 2026-11-17：0.8.17——版本与 --version/关于同源。
         // 旧实现自己向上找 VERSION 文件，但三平台打包都不复制它，导致诊断包 AppVersion=unknown。
         var appVersion = ApplicationInfoService.ReadApplicationVersion();
+        var rarAvailable = _rarEngine is not null &&
+                           await _rarEngine.IsAvailableAsync(cancellationToken).ConfigureAwait(false);
+        var sevenZipAvailable = _sevenZipEngine is not null &&
+                                await _sevenZipEngine.IsAvailableAsync(cancellationToken).ConfigureAwait(false);
 
         return new
         {
@@ -197,8 +201,8 @@ public sealed class DiagnosticsExportService
             OSDescription = RuntimeInformation.OSDescription,
             OSArchitecture = RuntimeInformation.OSArchitecture.ToString(),
             ProcessArchitecture = RuntimeInformation.ProcessArchitecture.ToString(),
-            RarEngineAvailable = _rarEngine?.IsAvailable() ?? false,
-            SevenZipEngineAvailable = _sevenZipEngine?.IsAvailable() ?? false
+            RarEngineAvailable = rarAvailable,
+            SevenZipEngineAvailable = sevenZipAvailable
         };
     }
 }

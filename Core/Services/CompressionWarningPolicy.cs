@@ -22,10 +22,12 @@ public static class CompressionWarningPolicy
         var detail = string.IsNullOrWhiteSpace(result.StandardError)
             ? result.StandardOutput.Trim()
             : result.StandardError.Trim();
-        result.Success = false;
-        result.ErrorMessage = string.IsNullOrWhiteSpace(detail)
-            ? $"压缩不完整：{toolName} 返回警告（返回码 {result.ExitCode}），有文件未写入归档，已按失败处理"
-            : $"压缩不完整：{toolName} 返回警告（返回码 {result.ExitCode}），有文件未写入归档，已按失败处理: {detail}";
-        return result;
+        return result with
+        {
+            Success = false,
+            ErrorMessage = string.IsNullOrWhiteSpace(detail)
+                ? $"压缩不完整：{toolName} 返回警告（返回码 {result.ExitCode}），有文件未写入归档，已按失败处理"
+                : $"压缩不完整：{toolName} 返回警告（返回码 {result.ExitCode}），有文件未写入归档，已按失败处理: {detail}"
+        };
     }
 }

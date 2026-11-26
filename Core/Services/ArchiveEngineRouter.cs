@@ -26,6 +26,10 @@ public sealed class ArchiveEngineRouter : IArchiveEngine
 
     public bool IsAvailable() => _rarEngine.IsAvailable() || _sevenZipEngine.IsAvailable();
 
+    public async Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default) =>
+        await _rarEngine.IsAvailableAsync(cancellationToken).ConfigureAwait(false) ||
+        await _sevenZipEngine.IsAvailableAsync(cancellationToken).ConfigureAwait(false);
+
     public Task<ArchiveResult> CompressAsync(
         string input,
         string output,
@@ -47,7 +51,7 @@ public sealed class ArchiveEngineRouter : IArchiveEngine
     // GPT-5, 2026-08-06：路由层只决定归档后端，不改变任一后端的参数或输出。
     // Antigravity, 2026-11-08：批次 15（P2-10）——解压 RAR 时若 RAR 引擎不可用（如 macOS 或 Linux ARM64 未装 RAR），
     // 自动回退至支持 RAR/RAR5 解压的 7zz 引擎，避免直接报找不到可执行文件。
-    public Task<ArchiveResult> ExtractAsync(
+    public async Task<ArchiveResult> ExtractAsync(
         string archivePath,
         string outputDir,
         ArchiveOptions options,
@@ -57,29 +61,31 @@ public sealed class ArchiveEngineRouter : IArchiveEngine
         var detectedKind = ArchiveVolumeResolver.DetectArchiveKind(archivePath);
         if (detectedKind == ArchiveKind.Rar)
         {
-            if (_rarEngine.IsAvailable() || !_sevenZipEngine.IsAvailable())
+            if (await _rarEngine.IsAvailableAsync(cancellationToken).ConfigureAwait(false) ||
+                !await _sevenZipEngine.IsAvailableAsync(cancellationToken).ConfigureAwait(false))
             {
-                return _rarEngine.ExtractAsync(archivePath, outputDir, options, cancellationToken);
+                return await _rarEngine.ExtractAsync(archivePath, outputDir, options, cancellationToken).ConfigureAwait(false);
             }
 
-            return _sevenZipEngine.ExtractAsync(archivePath, outputDir, options, cancellationToken);
+            return await _sevenZipEngine.ExtractAsync(archivePath, outputDir, options, cancellationToken).ConfigureAwait(false);
         }
 
         if (detectedKind != ArchiveKind.Unknown)
         {
-            return _sevenZipEngine.ExtractAsync(archivePath, outputDir, options, cancellationToken);
+            return await _sevenZipEngine.ExtractAsync(archivePath, outputDir, options, cancellationToken).ConfigureAwait(false);
         }
 
         if (ArchiveFormatCatalog.Normalize(options.ArchiveFormat) == "rar")
         {
-            if (_rarEngine.IsAvailable() || !_sevenZipEngine.IsAvailable())
+            if (await _rarEngine.IsAvailableAsync(cancellationToken).ConfigureAwait(false) ||
+                !await _sevenZipEngine.IsAvailableAsync(cancellationToken).ConfigureAwait(false))
             {
-                return _rarEngine.ExtractAsync(archivePath, outputDir, options, cancellationToken);
+                return await _rarEngine.ExtractAsync(archivePath, outputDir, options, cancellationToken).ConfigureAwait(false);
             }
 
-            return _sevenZipEngine.ExtractAsync(archivePath, outputDir, options, cancellationToken);
+            return await _sevenZipEngine.ExtractAsync(archivePath, outputDir, options, cancellationToken).ConfigureAwait(false);
         }
 
-        return _sevenZipEngine.ExtractAsync(archivePath, outputDir, options, cancellationToken);
+        return await _sevenZipEngine.ExtractAsync(archivePath, outputDir, options, cancellationToken).ConfigureAwait(false);
     }
 }

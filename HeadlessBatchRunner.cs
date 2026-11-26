@@ -144,7 +144,7 @@ public class HeadlessBatchRunner
         // 放在试运行之后：--dry-run 只做预检，不应产生网络下载或安装副作用。
         await EnsureSevenZipProvisionedAsync().ConfigureAwait(false);
 
-        if (!_archiveEngine.IsAvailable())
+        if (!await _archiveEngine.IsAvailableAsync().ConfigureAwait(false))
         {
             _logger.LogError("No supported archive engine was found.");
             Console.Error.WriteLine(L.CliRunnerNoArchiveEngine);

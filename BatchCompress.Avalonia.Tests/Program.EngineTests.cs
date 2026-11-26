@@ -724,4 +724,70 @@ internal static partial class Program
         AssertEqual("line2", receivedLines[1]);
         AssertEqual("line3", receivedLines[2]);
     }
+
+    // Gemini 4 Neon, 2026-11-26：批次 35——验证异步引擎可用性检查及核心异步调用点接线。
+    private static async Task TestAsyncEngineAvailability()
+    {
+        var missingEngine = new SevenZipArchiveEngine("/nonexistent/path/7zz");
+        Assert(!await missingEngine.IsAvailableAsync(), "不存在的 7zz 路径应异步返回不可用");
+
+        if (OperatingSystem.IsMacOS())
+        {
+            var executable = Path.Combine(AppContext.BaseDirectory, "tools", "7zip", "macos", "7zz");
+            var realEngine = new SevenZipArchiveEngine(executable);
+            Assert(await realEngine.IsAvailableAsync(), "项目自带 macOS 7zz 必须通过异步可用性校验");
+        }
+
+        var availableRouter = new ArchiveEngineRouter(
+            new FallbackProbeEngine(false, "rar"),
+            new FallbackProbeEngine(true, "7z"));
+        Assert(await availableRouter.IsAvailableAsync(), "任一子引擎可用时路由器应异步返回可用");
+
+        var unavailableRouter = new ArchiveEngineRouter(
+            new FallbackProbeEngine(false, "rar"),
+            new FallbackProbeEngine(false, "7z"));
+        Assert(!await unavailableRouter.IsAvailableAsync(), "全部子引擎不可用时路由器应异步返回不可用");
+
+        var root = FindRepositoryRoot();
+        Assert(File.ReadAllText(Path.Combine(root, "HeadlessBatchRunner.cs"))
+                .Contains("IsAvailableAsync", StringComparison.Ordinal),
+            "HeadlessBatchRunner 必须使用 IsAvailableAsync");
+        Assert(File.ReadAllText(Path.Combine(root, "Core", "Services", "DiagnosticsExportService.cs"))
+                .Contains("IsAvailableAsync", StringComparison.Ordinal),
+            "DiagnosticsExportService 必须使用 IsAvailableAsync");
+        Assert(File.ReadAllText(Path.Combine(root, "Core", "Services", "ArchiveEngineRouter.cs"))
+                .Contains("IsAvailableAsync", StringComparison.Ordinal),
+            "ArchiveEngineRouter 必须使用 IsAvailableAsync");
+    }
+
+    // Gemini 4 Neon, 2026-11-26：批次 35——验证 ArchiveResult 不可变及警告策略返回新实例。
+    private static Task TestArchiveResultImmutability()
+    {
+        Assert(typeof(ArchiveResult).IsSealed, "ArchiveResult 应为不可变密封记录");
+        foreach (var property in typeof(ArchiveResult).GetProperties())
+        {
+            var setMethod = property.GetSetMethod(nonPublic: true);
+            Assert(setMethod != null, $"ArchiveResult.{property.Name} 应包含 init 访问器");
+            var requiredModifiers = setMethod!.ReturnParameter.GetRequiredCustomModifiers();
+            Assert(requiredModifiers.Any(m => m.FullName == "System.Runtime.CompilerServices.IsExternalInit"),
+                $"ArchiveResult.{property.Name} 必须为 init-only 属性，禁止运行期可变赋值");
+        }
+
+        var original = new ArchiveResult
+        {
+            Success = true,
+            HasWarnings = true,
+            ExitCode = 1,
+            StandardError = "WARNING: locked"
+        };
+        var updated = CompressionWarningPolicy.Apply(original, "7-Zip");
+        Assert(!ReferenceEquals(original, updated), "CompressionWarningPolicy.Apply 必须返回新实例");
+        Assert(original.Success, "原 ArchiveResult.Success 不得被修改");
+        Assert(original.ErrorMessage == null, "原 ArchiveResult.ErrorMessage 不得被修改");
+        Assert(!updated.Success, "返回的新实例必须标记为失败");
+        Assert(updated.ErrorMessage?.Contains("压缩不完整", StringComparison.Ordinal) == true,
+            "返回的新实例必须说明压缩不完整");
+
+        return Task.CompletedTask;
+    }
 }

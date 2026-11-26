@@ -151,7 +151,10 @@ internal static partial class Program
             ("归档警告不删除来源", TestArchiveWarningKeepsSources),
             // Gemini 4 Neon, 2026-11-26：0.8.23——数据安全加固（解压快照大小写、删除源二次确认）。
             ("解压失败回滚大小写保护", TestFailedExtractionRollbackCaseSensitivity),
-            ("界面删除源二次确认", TestDeleteSourceConfirmation)
+            ("界面删除源二次确认", TestDeleteSourceConfirmation),
+            // Gemini 4 Neon, 2026-11-26：0.8.24——异步引擎校验与 ArchiveResult 不可变化。
+            ("异步引擎可用性校验", TestAsyncEngineAvailability),
+            ("ArchiveResult不可变性与警告策略", TestArchiveResultImmutability)
         };
 
         // GLM-5.3, 2026-11-03：跑完全部测试后统一输出失败汇总，CI 中一次可见所有失败项；
