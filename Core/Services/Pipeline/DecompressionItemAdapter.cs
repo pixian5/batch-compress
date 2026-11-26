@@ -306,7 +306,10 @@ internal sealed class DecompressionItemAdapter : IBatchItemAdapter<FileEntry>
 
     private static HashSet<string> SnapshotOutputDirectory(string outputDirectory)
     {
-        var snapshot = new HashSet<string>(StringComparer.Ordinal);
+        // Gemini 4 Neon, 2026-11-26: macOS APFS / Windows NTFS 默认大小写不敏感，
+        // 若输出目录已有 readme.txt 而失败归档写出 Readme.txt，Ordinal 比较会误判为新增文件并在回滚时删掉原文件；
+        // 复用 FileSystemPathIdentity.GetComparer 与预检保持统一口径。
+        var snapshot = new HashSet<string>(FileSystemPathIdentity.GetComparer(outputDirectory));
         if (!Directory.Exists(outputDirectory))
         {
             return snapshot;

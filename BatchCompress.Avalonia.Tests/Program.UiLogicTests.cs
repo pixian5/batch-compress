@@ -142,4 +142,54 @@ internal static partial class Program
 
         return Task.CompletedTask;
     }
+
+    // Gemini 4 Neon, 2026-11-26：批次 34——界面“删除源”勾选框二次确认状态协调与接线守护。
+    private static async Task TestDeleteSourceConfirmation()
+    {
+        var guard = new DeleteSourceConfirmationGuard();
+
+        Assert(await guard.ConfirmEnableAsync(null), "未注入确认回调时应允许启用");
+        Assert(!guard.IsConfirming, "未注入回调结束后不应处于确认中");
+
+        Assert(await guard.ConfirmEnableAsync(() => Task.FromResult(true)), "用户确认时应返回 true");
+        Assert(!guard.IsConfirming, "确认完成后状态必须复位");
+
+        Assert(!await guard.ConfirmEnableAsync(() => Task.FromResult(false)), "用户取消时应返回 false");
+        Assert(!guard.IsConfirming, "取消完成后状态必须复位");
+
+        Assert(!await guard.ConfirmEnableAsync(() => throw new InvalidOperationException("boom")), "确认回调异常时应安全返回 false");
+        Assert(!guard.IsConfirming, "异常后状态必须复位");
+
+        var tcs = new TaskCompletionSource<bool>();
+        var pending = guard.ConfirmEnableAsync(() => tcs.Task);
+        Assert(guard.IsConfirming, "确认进行中时 IsConfirming 必须为 true");
+        Assert(!await guard.ConfirmEnableAsync(() => Task.FromResult(true)), "确认进行中重入调用必须返回 false");
+        tcs.SetResult(true);
+        Assert(await pending, "原确认任务完成时应返回用户结果");
+        Assert(!guard.IsConfirming, "全部完成后状态必须复位");
+
+        var root = FindRepositoryRoot();
+        var viewModelText = File.ReadAllText(Path.Combine(root, "ViewModels", "MainWindowViewModel.cs"));
+        Assert(viewModelText.Contains("ConfirmDeleteSourceRequested", StringComparison.Ordinal),
+            "MainWindowViewModel 缺少 ConfirmDeleteSourceRequested 回调");
+        Assert(viewModelText.Contains("_deleteSourceConfirmationGuard", StringComparison.Ordinal),
+            "MainWindowViewModel 缺少 _deleteSourceConfirmationGuard");
+        Assert(viewModelText.Contains("DeleteSourceAfter = false", StringComparison.Ordinal),
+            "MainWindowViewModel 取消确认时未回退 DeleteSourceAfter");
+
+        var windowText = File.ReadAllText(Path.Combine(root, "Views", "MainWindow.axaml.cs"));
+        Assert(windowText.Contains("ConfirmDeleteSourceRequested = ConfirmDeleteSourceAsync", StringComparison.Ordinal),
+            "MainWindow 未接线 ConfirmDeleteSourceRequested");
+        Assert(windowText.Contains("L.ConfirmDeleteSourceTitle", StringComparison.Ordinal),
+            "MainWindow 未使用 ConfirmDeleteSourceTitle");
+        Assert(windowText.Contains("L.ConfirmDeleteSourceBody", StringComparison.Ordinal),
+            "MainWindow 未使用 ConfirmDeleteSourceBody");
+        Assert(windowText.Contains("L.ConfirmDeleteSourceEnable", StringComparison.Ordinal),
+            "MainWindow 未使用 ConfirmDeleteSourceEnable");
+
+        var strings = BatchCompress.Avalonia.Localization.LocalizationService.Instance.Strings;
+        Assert(!string.IsNullOrWhiteSpace(strings.ConfirmDeleteSourceTitle), "ConfirmDeleteSourceTitle 不能为空");
+        Assert(!string.IsNullOrWhiteSpace(strings.ConfirmDeleteSourceBody), "ConfirmDeleteSourceBody 不能为空");
+        Assert(!string.IsNullOrWhiteSpace(strings.ConfirmDeleteSourceEnable), "ConfirmDeleteSourceEnable 不能为空");
+    }
 }

@@ -362,6 +362,9 @@
     "CloseDuringOperationContinue": "Continue",
     "CloseDuringOperationTimeoutTitle": "Cleanup still running",
     "CloseDuringOperationTimeoutBody": "Cleanup has not finished after 10 seconds. Force exit anyway?",
-    "CloseDuringOperationForceExit": "Force exit"
+    "CloseDuringOperationForceExit": "Force exit",
+    "ConfirmDeleteSourceTitle": "Confirm source deletion",
+    "ConfirmDeleteSourceBody": "When enabled, successful tasks will permanently delete source files or archives (bypassing the Trash/Recycle Bin). Enable anyway?",
+    "ConfirmDeleteSourceEnable": "Enable"
   }
 }

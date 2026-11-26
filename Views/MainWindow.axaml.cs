@@ -521,6 +521,7 @@ public partial class MainWindow : Window
             viewModel.ShowAboutRequested = ShowAboutAsync;
             viewModel.HideWindowRequested = HideWindowFromViewModel;
             viewModel.ConfirmShutdownCancellationRequested = ConfirmShutdownCancellationAsync;
+            viewModel.ConfirmDeleteSourceRequested = ConfirmDeleteSourceAsync;
         }
     }
 
@@ -585,6 +586,13 @@ public partial class MainWindow : Window
 
     private Task<bool> ConfirmShutdownCancellationAsync() =>
         ShowOkCancelMessageBoxAsync(L.ShutdownScheduledTitle, L.ShutdownConfirmBody, L.CancelShutdown, L.KeepShutdown);
+
+    private Task<bool> ConfirmDeleteSourceAsync() =>
+        ShowOkCancelMessageBoxAsync(
+            L.ConfirmDeleteSourceTitle,
+            L.ConfirmDeleteSourceBody,
+            L.ConfirmDeleteSourceEnable,
+            L.CancelDialog);
     
     private async Task BrowseSourceAsync()
     {

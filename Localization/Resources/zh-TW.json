@@ -362,6 +362,9 @@
     "CloseDuringOperationContinue": "繼續",
     "CloseDuringOperationTimeoutTitle": "清理尚未完成",
     "CloseDuringOperationTimeoutBody": "任務清理超過 10 秒仍未結束。仍要強制退出嗎？",
-    "CloseDuringOperationForceExit": "強制退出"
+    "CloseDuringOperationForceExit": "強制退出",
+    "ConfirmDeleteSourceTitle": "確認刪除來源檔案",
+    "ConfirmDeleteSourceBody": "啟用後，任務成功將永久刪除來源檔案或原封存檔（不經過資源回收筒）。確定要啟用嗎？",
+    "ConfirmDeleteSourceEnable": "啟用"
   }
 }

@@ -38,6 +38,8 @@ public partial class MainWindowViewModel : ViewModelBase
     // WorkBuddy, 2026-11-16：0.8.13——保存语言事件处理器引用，窗口关闭时才能精确退订；
     // 原来用匿名 lambda 订阅静态单例，进程内永远不会释放对该 ViewModel 的引用。
     private readonly PropertyChangedEventHandler _languageChangedHandler;
+    // Gemini 4 Neon, 2026-11-26：批次 34——界面勾选“删除源”前的二次确认保护，防止误删源文件或原归档。
+    private readonly DeleteSourceConfirmationGuard _deleteSourceConfirmationGuard = new();
 
     private readonly OperationTabState _compressionTabState = new();
     private readonly OperationTabState _decompressionTabState = new();
@@ -649,6 +651,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public Func<Task>? ShowAboutRequested { get; set; }
     public Action? HideWindowRequested { get; set; }
     public Func<Task<bool>>? ConfirmShutdownCancellationRequested { get; set; }
+    public Func<Task<bool>>? ConfirmDeleteSourceRequested { get; set; }
 
 
     partial void OnActiveTabChanged(int oldValue, int newValue)
@@ -856,12 +859,38 @@ public partial class MainWindowViewModel : ViewModelBase
 
     partial void OnDeleteSourceAfterChanged(bool value)
     {
-        if (_isSwitchingOperationTab)
+        if (_isSwitchingOperationTab || _deleteSourceConfirmationGuard.IsConfirming)
         {
             return;
         }
 
-        if (value && MoveSourceAfter)
+        if (!value)
+        {
+            return;
+        }
+
+        if (ConfirmDeleteSourceRequested != null)
+        {
+            _ = ConfirmDeleteSourceAfterAsync();
+            return;
+        }
+
+        if (MoveSourceAfter)
+        {
+            MoveSourceAfter = false;
+        }
+    }
+
+    private async Task ConfirmDeleteSourceAfterAsync()
+    {
+        var confirmed = await _deleteSourceConfirmationGuard.ConfirmEnableAsync(ConfirmDeleteSourceRequested);
+        if (!confirmed)
+        {
+            DeleteSourceAfter = false;
+            return;
+        }
+
+        if (MoveSourceAfter)
         {
             MoveSourceAfter = false;
         }

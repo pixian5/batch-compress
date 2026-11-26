@@ -1672,4 +1672,67 @@ internal static partial class Program
             if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
         }
     }
+
+    // Gemini 4 Neon, 2026-11-26：批次 34——macOS/Windows 大小写不敏感文件系统下，
+    // 失败归档写入仅大小写不同的文件名时，解压回滚不得误删原有文件。
+    private static async Task TestFailedExtractionRollbackCaseSensitivity()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"batch-compress-extraction-case-{Guid.NewGuid():N}");
+        var archive = Path.Combine(root, "pack.7z");
+        var outDir = Path.Combine(root, "out");
+        Directory.CreateDirectory(outDir);
+        File.WriteAllText(archive, "archive placeholder");
+        File.WriteAllText(Path.Combine(outDir, "readme.txt"), "existing");
+
+        try
+        {
+            var engine = new CaseVariantFailureArchiveEngine();
+            var snapshots = new List<OperationProgressInfo>();
+            await new BatchOperationService(engine, new TestSystemIntegration()).BatchDecompressAsync(
+                [new FileEntry { FilePath = archive, FileSize = new FileInfo(archive).Length }],
+                new BatchOperationOptions { OutputPath = outDir, Extension = "7z" },
+                new SnapshotProgress(snapshots),
+                CancellationToken.None);
+
+            AssertEqual(1, snapshots.Last().FailCount);
+            Assert(File.Exists(Path.Combine(outDir, "readme.txt")), "大小写不敏感文件系统下解压失败回滚不得误删原有文件");
+            Assert(!File.Exists(Path.Combine(outDir, "partial.tmp")), "真正新增的残片文件必须被清理");
+            if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS())
+            {
+                Assert(!File.Exists(Path.Combine(outDir, "Readme.txt")), "大小写敏感文件系统下应清理新增的大写文件名残片");
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private sealed class CaseVariantFailureArchiveEngine : IArchiveEngine
+    {
+        public bool IsAvailable() => true;
+
+        public Task<ArchiveResult> CompressAsync(
+            string input,
+            string output,
+            ArchiveOptions options,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(new ArchiveResult { Success = true });
+
+        public Task<ArchiveResult> ExtractAsync(
+            string archivePath,
+            string outputDir,
+            ArchiveOptions options,
+            CancellationToken cancellationToken = default)
+        {
+            File.WriteAllText(Path.Combine(outputDir, "Readme.txt"), "overwritten");
+            File.WriteAllText(Path.Combine(outputDir, "partial.tmp"), "partial");
+            return Task.FromResult(new ArchiveResult
+            {
+                Success = false,
+                ExitCode = 2,
+                ErrorMessage = "mock fail"
+            });
+        }
+    }
 }

@@ -362,6 +362,9 @@
     "CloseDuringOperationContinue": "继续",
     "CloseDuringOperationTimeoutTitle": "清理尚未完成",
     "CloseDuringOperationTimeoutBody": "任务清理超过 10 秒仍未结束。仍要强制退出吗？",
-    "CloseDuringOperationForceExit": "强制退出"
+    "CloseDuringOperationForceExit": "强制退出",
+    "ConfirmDeleteSourceTitle": "确认删除源文件",
+    "ConfirmDeleteSourceBody": "启用后，任务成功将永久删除源文件或原归档（不经过回收站）。确定要启用吗？",
+    "ConfirmDeleteSourceEnable": "启用"
   }
 }

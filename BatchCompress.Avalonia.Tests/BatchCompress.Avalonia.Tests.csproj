@@ -42,6 +42,8 @@
     <Compile Include="..\ViewModels\TabVisibility.cs" Link="ViewModels\TabVisibility.cs" />
     <!-- WorkBuddy, 2026-11-17：0.8.15——关窗等待操作完成的纯逻辑。 -->
     <Compile Include="..\ViewModels\OperationCompletionSignal.cs" Link="ViewModels\OperationCompletionSignal.cs" />
+    <!-- Gemini 4 Neon, 2026-11-26：0.8.23——界面“删除源”勾选框二次确认状态协调器。 -->
+    <Compile Include="..\ViewModels\DeleteSourceConfirmationGuard.cs" Link="ViewModels\DeleteSourceConfirmationGuard.cs" />
     <!-- WorkBuddy, 2026-11-17：0.8.15——目录大小计算（符号链接安全）。 -->
     <Compile Include="..\Core\Services\DirectorySizeCalculator.cs" Link="Core\Services\DirectorySizeCalculator.cs" />
     <!-- WorkBuddy, 2026-11-17：0.8.16——共享密码脱敏与 7-Zip 查找安全。 -->

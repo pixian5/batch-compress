@@ -461,4 +461,9 @@ public class LanguageStrings : INotifyPropertyChanged
     public string SevenZipAutoInstalled { get; set; } = "已自动安装 7-Zip：{0}";
     public string SevenZipAutoInstallFailed { get; set; } = "自动安装 7-Zip 失败：{0}";
     public string AboutDirectoryNote { get; set; } = "命令行可通过 --report、--log-file、--export-diagnostics 指定其它路径；此处显示的是界面默认值。";
+
+    // Gemini 4 Neon, 2026-11-26：批次 34——界面“删除源”勾选框二次确认提示。
+    public string ConfirmDeleteSourceTitle { get; set; } = "确认删除源文件";
+    public string ConfirmDeleteSourceBody { get; set; } = "启用后，任务成功将永久删除源文件或原归档（不经过回收站）。确定要启用吗？";
+    public string ConfirmDeleteSourceEnable { get; set; } = "启用";
 }

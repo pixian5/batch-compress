@@ -362,6 +362,9 @@
     "CloseDuringOperationContinue": "Weiter",
     "CloseDuringOperationTimeoutTitle": "Bereinigung läuft noch",
     "CloseDuringOperationTimeoutBody": "Die Bereinigung ist nach 10 Sekunden noch nicht abgeschlossen. Trotzdem erzwingen?",
-    "CloseDuringOperationForceExit": "Erzwingen"
+    "CloseDuringOperationForceExit": "Erzwingen",
+    "ConfirmDeleteSourceTitle": "Löschen der Quelle bestätigen",
+    "ConfirmDeleteSourceBody": "Wenn aktiviert, werden Quelldateien oder Archive nach Erfolg dauerhaft gelöscht (ohne Papierkorb). Trotzdem aktivieren?",
+    "ConfirmDeleteSourceEnable": "Aktivieren"
   }
 }
