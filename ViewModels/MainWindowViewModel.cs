@@ -38,6 +38,12 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly FileLoggerService? _fileLogger;
     // GLM-5.3, 2026-11-04：批次 9——附件配置服务（构造可注入，测试用显式临时路径隔离用户目录）。
     private readonly EnclosureConfigService _enclosureConfig;
+    // Gemini 4 Neon, 2026-11-27：批次 40（v0.8.29）——安全 GUI 用户偏好持久化服务。
+    private readonly UserPreferencesService _preferencesService;
+    private bool _isApplyingInitialLanguage;
+    private bool _isApplyingSavedPreferences;
+    private bool _hasExplicitCliLanguageOverride;
+    private string? _savedLanguageFromDisk;
     // GLM-5.3, 2026-11-04：批次 2 阶段 3——通知节流等会话状态迁至 OperationSession；取消令牌仍由 VM 持有。
     private CancellationTokenSource? _cancellationTokenSource;
     // WorkBuddy, 2026-11-16：0.8.13——保存语言事件处理器引用，窗口关闭时才能精确退订；
@@ -116,6 +122,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
     partial void OnSelectedLanguageChanged(string value)
     {
+        if (!_isApplyingInitialLanguage)
+        {
+            _hasExplicitCliLanguageOverride = false;
+        }
+
         // 修改本地化服务的当前语言；服务会替换全部界面字符串。
         Localization.CurrentLanguage = value;
 
@@ -527,10 +538,13 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    public MainWindowViewModel(EnclosureConfigService? enclosureConfig = null)
+    public MainWindowViewModel(
+        EnclosureConfigService? enclosureConfig = null,
+        UserPreferencesService? preferencesService = null)
     {
         // GLM-5.3, 2026-11-04：批次 9——附件配置服务可注入；默认行为与批次 8 一致。
         _enclosureConfig = enclosureConfig ?? new EnclosureConfigService();
+        _preferencesService = preferencesService ?? new UserPreferencesService();
 
         // GPT-5, 2026-08-06：按归档格式选择 WinRAR/RAR 或官方 7zz，界面不直接依赖具体命令行工具。
         _archiveEngine = new ArchiveEngineRouter();
@@ -564,16 +578,33 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        // WorkBuddy, 2026-11-16：0.8.13——命令行显式给了 --lang 时，界面必须沿用该语言；
-        // 原来的无条件系统语言检测会把命令行指定的语言覆盖掉。
-        if (LocalizationService.Instance.LanguageExplicitlySet)
+        var savedPreferences = _preferencesService.Load();
+        _savedLanguageFromDisk = savedPreferences?.Language;
+
+        _isApplyingInitialLanguage = true;
+        try
         {
-            SelectedLanguage = LocalizationService.Instance.CurrentLanguage;
+            // WorkBuddy, 2026-11-16：0.8.13——命令行显式给了 --lang 时，界面必须沿用该语言；
+            // 原来的无条件系统语言检测会把命令行指定的语言覆盖掉。
+            if (LocalizationService.Instance.LanguageExplicitlySet)
+            {
+                _hasExplicitCliLanguageOverride = true;
+                SelectedLanguage = LocalizationService.Instance.CurrentLanguage;
+            }
+            else if (savedPreferences?.Language is { Length: > 0 } savedLanguage &&
+                     LocalizationService.AvailableLanguages.ContainsKey(savedLanguage))
+            {
+                SelectedLanguage = savedLanguage;
+            }
+            else
+            {
+                // 检测并设置系统语言。
+                DetectSystemLanguage();
+            }
         }
-        else
+        finally
         {
-            // 检测并设置系统语言。
-            DetectSystemLanguage();
+            _isApplyingInitialLanguage = false;
         }
 
         // 设置运行时默认值。
@@ -582,7 +613,15 @@ public partial class MainWindowViewModel : ViewModelBase
         // 优先读用户配置文件（~/.config/batchcompress/enclosures.txt 或应用目录相邻），
         // 不存在或为空时回退默认联系文案模版。
         // GLM-5.3, 2026-11-04：批次 9——改用注入的配置服务实例（测试可隔离）。
-        EnclosureList = _enclosureConfig.LoadEnclosuresText();
+        var loadedEnclosures = _enclosureConfig.LoadEnclosuresText();
+        _compressionTabState.EnclosureList = loadedEnclosures;
+        _decompressionTabState.EnclosureList = loadedEnclosures;
+        EnclosureList = loadedEnclosures;
+
+        if (savedPreferences is not null)
+        {
+            ApplySavedPreferences(savedPreferences);
+        }
 
         // WorkBuddy, 2026-11-16：0.8.12——把界面实际默认值写进运行日志，
         // 便于核对两个入口是否真的统一，也便于排查“为什么这次没有分卷”。
@@ -685,6 +724,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
     partial void OnActiveTabChanged(int oldValue, int newValue)
     {
+        if (_isApplyingSavedPreferences)
+        {
+            return;
+        }
+
         if (oldValue is 0 or 1)
         {
             SaveOperationTabState(oldValue == 0 ? _compressionTabState : _decompressionTabState);
@@ -812,6 +856,107 @@ public partial class MainWindowViewModel : ViewModelBase
         state.EnclosureList = EnclosureList;
     }
 
+    // Gemini 4 Neon, 2026-11-27：批次 40（v0.8.29）——启动恢复与退出保存非敏感 GUI 偏好。
+    private void ApplySavedPreferences(UserPreferencesSnapshot preferences)
+    {
+        ApplyTabPreferences(_compressionTabState, preferences.CompressionTab);
+        ApplyTabPreferences(_decompressionTabState, preferences.DecompressionTab);
+
+        MaxConcurrency = preferences.MaxConcurrency;
+
+        var targetTab = preferences.ActiveOperationTab is 0 or 1 ? preferences.ActiveOperationTab : 0;
+        _lastOperationTab = targetTab;
+        LoadOperationTabState(targetTab);
+
+        if (targetTab != ActiveTab)
+        {
+            _isApplyingSavedPreferences = true;
+            try
+            {
+                ActiveTab = targetTab;
+            }
+            finally
+            {
+                _isApplyingSavedPreferences = false;
+            }
+        }
+    }
+
+    private void SaveUserPreferences()
+    {
+        if (Design.IsDesignMode)
+        {
+            return;
+        }
+
+        SaveOperationTabState(CurrentOperationTab == 0 ? _compressionTabState : _decompressionTabState);
+        var languageToSave = _hasExplicitCliLanguageOverride
+            ? _savedLanguageFromDisk
+            : SelectedLanguage;
+
+        _preferencesService.Save(new UserPreferencesSnapshot
+        {
+            Language = languageToSave,
+            MaxConcurrency = MaxConcurrency,
+            ActiveOperationTab = CurrentOperationTab,
+            CompressionTab = ExtractTabPreferences(_compressionTabState),
+            DecompressionTab = ExtractTabPreferences(_decompressionTabState)
+        });
+    }
+
+    private static void ApplyTabPreferences(OperationTabState target, OperationTabPreferences preferences)
+    {
+        target.SourceMode = preferences.SourceMode;
+        target.Extension = preferences.Extension;
+        target.UseRandomPassword = preferences.UseRandomPassword;
+        target.PasswordNameMode = preferences.PasswordNameMode;
+        target.CompressionLevel = preferences.CompressionLevel;
+        target.SolidArchive = preferences.SolidArchive;
+        target.EnableVolume = preferences.EnableVolume;
+        target.VolumeSize = preferences.VolumeSize;
+        target.VolumeUnit = preferences.VolumeUnit;
+        target.RecoveryRecordPercent = preferences.RecoveryRecordPercent;
+        target.ExistingFileMode = preferences.ExistingFileMode;
+        target.LockArchive = preferences.LockArchive;
+        target.QuickOpen = preferences.QuickOpen;
+        target.TestArchive = preferences.TestArchive;
+        target.EnableComment = preferences.EnableComment;
+        target.CommentFilePath = preferences.CommentFilePath;
+        target.SkipAlreadyProcessed = preferences.SkipAlreadyProcessed;
+        target.MoveSourceAfter = preferences.MoveSourceAfter;
+        target.StrictExtract = preferences.StrictExtract;
+        target.MaxSizeGB = preferences.MaxSizeGB;
+        target.AddEnclosures = preferences.AddEnclosures;
+        target.CustomPassword = string.Empty;
+        target.DeleteSourceAfter = false;
+        target.ShutdownAfterComplete = false;
+    }
+
+    private static OperationTabPreferences ExtractTabPreferences(OperationTabState source) => new()
+    {
+        SourceMode = source.SourceMode,
+        Extension = source.Extension,
+        UseRandomPassword = source.UseRandomPassword,
+        PasswordNameMode = source.PasswordNameMode,
+        CompressionLevel = source.CompressionLevel,
+        SolidArchive = source.SolidArchive,
+        EnableVolume = source.EnableVolume,
+        VolumeSize = source.VolumeSize,
+        VolumeUnit = source.VolumeUnit,
+        RecoveryRecordPercent = source.RecoveryRecordPercent,
+        ExistingFileMode = source.ExistingFileMode,
+        LockArchive = source.LockArchive,
+        QuickOpen = source.QuickOpen,
+        TestArchive = source.TestArchive,
+        EnableComment = source.EnableComment,
+        CommentFilePath = source.CommentFilePath,
+        SkipAlreadyProcessed = source.SkipAlreadyProcessed,
+        MoveSourceAfter = source.MoveSourceAfter,
+        StrictExtract = source.StrictExtract,
+        MaxSizeGB = source.MaxSizeGB,
+        AddEnclosures = source.AddEnclosures
+    };
+
     partial void OnSourceModeChanged(int value)
     {
         if (_isSwitchingOperationTab)
@@ -880,6 +1025,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
     partial void OnCompressionLevelChanged(int value)
     {
+        if (_isSwitchingOperationTab)
+        {
+            return;
+        }
+
         // 选择存储模式时关闭固实压缩，因为该组合没有意义。
         if (value == 0 && SolidArchive)
         {

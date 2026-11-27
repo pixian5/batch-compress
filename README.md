@@ -4,11 +4,13 @@
 
 跨平台桌面批处理工具，使用 Avalonia UI 和 .NET 11 构建。应用通过 RAR/WinRAR 与官方 7-Zip 命令行程序执行压缩和解压，界面与业务逻辑均可运行于 Windows、macOS 和 Linux。
 
-当前版本：`0.8.28`（按卷大小写敏感检测与全平台验证收官）。版本号唯一来源为仓库根目录 `VERSION` 文件，csproj、程序集信息、CLI 版本查询、macOS Info.plist 与打包产物命名均读取它。
+当前版本：`0.8.29`（安全 GUI 用户偏好持久化）。版本号唯一来源为仓库根目录 `VERSION` 文件，csproj、程序集信息、CLI 版本查询、macOS Info.plist 与打包产物命名均读取它。
 
 ## 当前开发进度
 
-最新进度见 [当前开发进度](docs/20261127-1046-当前开发进度-Gemini-4-Neon.md)，当前待办入口见 [下一步待实现](docs/20261127-1046-下一步待实现-Gemini-4-Neon.md)；本轮实现见 [v0.8.28 收官报告](docs/20261127-1046-v0.8.28按卷大小写检测与全平台验证收官报告-Gemini-4-Neon.md)，最新整体分析见 [整体分析与下一步开发建议（0.8.22）](docs/20261126-1350-整体分析与下一步开发建议-Claude-Opus-4.6.md)，上一轮实现见 [v0.8.27 完成报告](docs/20261127-1038-v0.8.27失败项一键重试与校验完善完成报告-Gemini-4-Neon.md)，密码日志决定见 [运行日志明文密码决定与警告行为](docs/20261121-0012-运行日志保留明文密码决定与警告行为说明-Claude-Opus-5.5.md)。
+最新进度见 [当前开发进度](docs/20261127-1056-当前开发进度-Gemini-4-Neon.md)，当前待办入口见 [下一步待实现](docs/20261127-1056-下一步待实现-Gemini-4-Neon.md)；本轮实现见 [v0.8.29 完成报告](docs/20261127-1056-v0.8.29安全用户偏好持久化完成报告-Gemini-4-Neon.md)，最新整体分析见 [整体分析与下一步开发建议（0.8.22）](docs/20261126-1350-整体分析与下一步开发建议-Claude-Opus-4.6.md)，上一轮实现见 [v0.8.28 收官报告](docs/20261127-1046-v0.8.28按卷大小写检测与全平台验证收官报告-Gemini-4-Neon.md)，密码日志决定见 [运行日志明文密码决定与警告行为](docs/20261121-0012-运行日志保留明文密码决定与警告行为说明-Claude-Opus-5.5.md)。
+
+`0.8.29`（2026-11-27）：完成批次 40——新增 `UserPreferencesService`，将图形界面的安全常用设置（语言、并发度、当前操作页签、压缩与解压双页签常规参数）原子持久化至 `<ApplicationData>/BatchCompress.Avalonia/user-preferences.json`；严格排除 `CustomPassword`、`DeleteSourceAfter`、`ShutdownAfterComplete` 与单次会话路径；CLI `--lang` 覆盖保持高优先级且不误覆写磁盘语言偏好；Release 构建 0 警告 0 错误，120 项单元测试、43 项经验实测、158 项端到端夹具、4 项界面冒烟全过，macOS 应用 `0.8.29` 已安装并在后台运行。详见 [v0.8.29 完成报告](docs/20261127-1056-v0.8.29安全用户偏好持久化完成报告-Gemini-4-Neon.md)。
 
 `0.8.28`（2026-11-27）：完成批次 39 收官——① `FileSystemPathIdentity` 新增按卷大小写敏感实时检测（macOS `pathconf(_PC_CASE_SENSITIVE)` + Linux 只读探测），并修复 `AddDuplicateOutputConflicts` 跨卷分组比较缺陷；② 在 macOS 挂载真实 `Case-sensitive APFS` 磁盘映像实测通过全部 **119 项单元测试（0 SKIP）** 后安全卸载清理；③ 新增 Windows 真机一键验证脚本 `scripts/verify-windows.ps1`，并完成 `win-x64`、`linux-x64`、`linux-arm64` 三平台发布构建检查与 `scripts/smoke-test.sh`。43 项经验实测、158 项端到端夹具、4 项界面冒烟全过，macOS 应用 `0.8.28` 已安装并在后台运行。详见 [v0.8.28 收官报告](docs/20261127-1046-v0.8.28按卷大小写检测与全平台验证收官报告-Gemini-4-Neon.md)。
 

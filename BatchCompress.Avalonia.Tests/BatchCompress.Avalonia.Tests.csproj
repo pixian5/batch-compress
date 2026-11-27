@@ -58,6 +58,8 @@
     <!-- WorkBuddy, 2026-11-16：批次 25（P2）——窗口状态持久化回归测试。 -->
     <Compile Include="Program.WindowStateTests.cs" />
     <Compile Include="..\Core\Services\WindowStateService.cs" Link="Core\Services\WindowStateService.cs" />
+    <!-- Gemini 4 Neon, 2026-11-27：批次 40——用户偏好安全持久化服务。 -->
+    <Compile Include="..\Core\Services\UserPreferencesService.cs" Link="Core\Services\UserPreferencesService.cs" />
     <Compile Include="..\ViewModels\LogBuffer.cs" Link="ViewModels\LogBuffer.cs" />
     <Compile Include="Program.EngineTests.cs" />
     <Compile Include="Program.PipelineTests.cs" />

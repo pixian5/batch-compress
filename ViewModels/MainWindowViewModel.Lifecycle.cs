@@ -37,6 +37,9 @@ public partial class MainWindowViewModel : IDisposable
 
         _disposed = true;
 
+        // Gemini 4 Neon, 2026-11-27：批次 40——关闭窗口前先持久化安全用户偏好。
+        SaveUserPreferences();
+
         // 退订静态语言服务，避免关闭后的实例继续收到属性变更。
         LocalizationService.Instance.PropertyChanged -= _languageChangedHandler;
 
