@@ -471,4 +471,10 @@ public class LanguageStrings : INotifyPropertyChanged
     public string StrictExtract { get; set; } = "严格解压";
     public string TooltipStrictExtract { get; set; } = "默认已拦截写入/路径等重大警告；开启后连同符号链接、权限、尾部数据等可忽略警告也判失败并回滚";
     public string LogSearchWatermark { get; set; } = "搜索日志（Ctrl+F）...";
+
+    // Gemini 4 Neon, 2026-11-27：批次 38——失败项一键加载重试。
+    public string LoadFailedItems { get; set; } = "加载失败项";
+    public string TooltipLoadFailedItems { get; set; } = "将上一次批处理失败的条目重新载入待处理列表，方便修正问题后一键重试";
+    public string RetryFailedNoData { get; set; } = "上一次批处理没有可重试的失败项";
+    public string RetryFailedLoaded { get; set; } = "已载入 {0} 个失败项到待处理列表，可直接重新开始";
 }

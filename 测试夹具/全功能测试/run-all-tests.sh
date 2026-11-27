@@ -332,6 +332,11 @@ check_contains ndjson-summary "$GEN/compress-ndjson.stdout" '"type":"summary"'
 
 # 参数 --shutdown 只做帮助/解析和静态日志检查，禁止真实请求关机。
 check_contains shutdown-option-help "$GEN/cli-help.stdout" "--shutdown"
+check_contains strict-extract-option-help "$GEN/cli-help.stdout" "--strict-extract"
+
+# 严格解压模式：正常归档通过、内容落地。
+run_case extract-strict-ok 0 "${APP[@]}" extract -i "$OUT/7z-nopw/普通文本.txt.7z" -o "$OUT/extract-strict" -e 7z --no-random-password --strict-extract
+check_file extract-strict-file "$OUT/extract-strict/普通文本.txt"
 
 print "\nTOTAL PASS=$PASS_COUNT FAIL=$FAIL_COUNT"
 [[ "$FAIL_COUNT" == 0 ]]

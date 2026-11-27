@@ -368,6 +368,10 @@
     "ConfirmDeleteSourceEnable": "Aktivieren",
     "StrictExtract": "Strenges Entpacken",
     "TooltipStrictExtract": "Schwerwiegende Schreib-/Pfadwarnungen gelten bereits standardmäßig als Fehler; aktivieren, um auch ignorierbare Metadaten-/Symlink-Warnungen zurückzusetzen",
-    "LogSearchWatermark": "Protokolle durchsuchen (Ctrl+F)..."
+    "LogSearchWatermark": "Protokolle durchsuchen (Ctrl+F)...",
+    "LoadFailedItems": "Fehler laden",
+    "TooltipLoadFailedItems": "Fehlgeschlagene Einträge des letzten Durchlaufs zum erneuten Ausführen in die Liste laden",
+    "RetryFailedNoData": "Keine fehlgeschlagenen Einträge aus dem letzten Durchlauf vorhanden",
+    "RetryFailedLoaded": "{0} fehlgeschlagene Einträge in die Liste geladen; bereit zum erneuten Start"
   }
 }

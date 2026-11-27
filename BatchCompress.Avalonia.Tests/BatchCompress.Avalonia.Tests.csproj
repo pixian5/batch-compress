@@ -46,6 +46,8 @@
     <Compile Include="..\ViewModels\DeleteSourceConfirmationGuard.cs" Link="ViewModels\DeleteSourceConfirmationGuard.cs" />
     <!-- Gemini 4 Neon, 2026-11-26：0.8.25——界面日志实时搜索过滤纯逻辑。 -->
     <Compile Include="..\ViewModels\LogSearchFilter.cs" Link="ViewModels\LogSearchFilter.cs" />
+    <!-- Gemini 4 Neon, 2026-11-27：0.8.27——失败项一键加载重试列表纯逻辑。 -->
+    <Compile Include="..\ViewModels\FailedItemRetryList.cs" Link="ViewModels\FailedItemRetryList.cs" />
     <!-- WorkBuddy, 2026-11-17：0.8.15——目录大小计算（符号链接安全）。 -->
     <Compile Include="..\Core\Services\DirectorySizeCalculator.cs" Link="Core\Services\DirectorySizeCalculator.cs" />
     <!-- WorkBuddy, 2026-11-17：0.8.16——共享密码脱敏与 7-Zip 查找安全。 -->

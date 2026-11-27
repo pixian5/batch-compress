@@ -43,4 +43,47 @@ public partial class MainWindowViewModel
             _systemIntegration.ShowNotification(L.ExportBatchReport, error);
         }
     }
+
+    // Gemini 4 Neon, 2026-11-27：批次 38——一键加载上一次批处理的失败项到待处理列表并跳转开始页重试。
+    [RelayCommand]
+    private void LoadFailedItems()
+    {
+        if (IsOperating)
+        {
+            return;
+        }
+
+        var failedPaths = LastFailedRetryList?.GetFailedPaths() ?? [];
+        if (failedPaths.Count == 0)
+        {
+            AppendCommandLog($"[{L.LoadFailedItems}] {L.RetryFailedNoData}\n");
+            _systemIntegration.ShowNotification(L.LoadFailedItems, L.RetryFailedNoData);
+            return;
+        }
+
+        var retryText = FailedItemRetryList.BuildRetrySourceText(
+            failedPaths,
+            _lastOperationOriginalSourceList,
+            !_lastOperationWasCompression && _lastOperationWasPasswordBook);
+
+        var targetTab = _lastOperationWasCompression ? 0 : 1;
+        var targetState = _lastOperationWasCompression ? _compressionTabState : _decompressionTabState;
+        targetState.SourceFileList = retryText;
+
+        if (CurrentOperationTab != targetTab)
+        {
+            SetLastOperationTab(targetTab);
+            LoadOperationTabState(targetTab);
+        }
+        else
+        {
+            SourceFileList = retryText;
+        }
+
+        ActiveTab = 2;
+
+        var message = string.Format(L.RetryFailedLoaded, failedPaths.Count);
+        AppendCommandLog($"[{L.LoadFailedItems}] {message}\n");
+        _systemIntegration.ShowNotification(L.LoadFailedItems, message);
+    }
 }

@@ -368,6 +368,10 @@
     "ConfirmDeleteSourceEnable": "啟用",
     "StrictExtract": "嚴格解壓",
     "TooltipStrictExtract": "預設已攔截寫入/路徑等重大警告；開啟後連同符號連結、權限、尾部資料等可忽略警告也判失敗並回滾",
-    "LogSearchWatermark": "搜尋日誌（Ctrl+F）..."
+    "LogSearchWatermark": "搜尋日誌（Ctrl+F）...",
+    "LoadFailedItems": "載入失敗項",
+    "TooltipLoadFailedItems": "將上一次批次處理失敗的項目重新載入待處理清單，方便修正問題後一鍵重試",
+    "RetryFailedNoData": "上一次批次處理沒有可重試的失敗項",
+    "RetryFailedLoaded": "已載入 {0} 個失敗項到待處理清單，可直接重新開始"
   }
 }

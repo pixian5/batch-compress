@@ -44,6 +44,10 @@ public partial class MainWindowViewModel
         var session = new OperationSession(this, _systemIntegration);
         // WorkBuddy, 2026-11-15：批次 20（P4-3）——保留本批次收集器供「导出本次结果」使用。
         LastReportCollector = session.ReportCollector;
+        LastFailedRetryList = session.FailedRetryList;
+        _lastOperationWasCompression = true;
+        _lastOperationWasPasswordBook = false;
+        _lastOperationOriginalSourceList = SourceFileList;
         // WorkBuddy, 2026-11-16：审查修复——界面侧此前从未设置操作类型，
         // 解压批次导出的报告「操作」列会全部误标成压缩。
         session.ReportCollector.SetOperation(true);
@@ -72,6 +76,8 @@ public partial class MainWindowViewModel
                         return null;
                     }
                 }
+
+                _lastOperationOriginalSourceList = SourceFileList;
 
                 // GPT-5, 2026-08-05：在操作开始时快照选项，避免处理中修改影响在途任务。
                 var options = BuildBatchOperationOptions();
@@ -104,6 +110,10 @@ public partial class MainWindowViewModel
         var session = new OperationSession(this, _systemIntegration);
         // WorkBuddy, 2026-11-15：批次 20（P4-3）——保留本批次收集器供「导出本次结果」使用。
         LastReportCollector = session.ReportCollector;
+        LastFailedRetryList = session.FailedRetryList;
+        _lastOperationWasCompression = false;
+        _lastOperationWasPasswordBook = SourceMode == 0;
+        _lastOperationOriginalSourceList = SourceFileList;
         session.ReportCollector.SetOperation(false);
         await session.RunAsync(
             () => L.Decompress,
@@ -124,6 +134,8 @@ public partial class MainWindowViewModel
                         return null;
                     }
                 }
+
+                _lastOperationOriginalSourceList = SourceFileList;
 
                 List<FileEntry> entries = SourceMode == 0
                     // 密码本模式按文件行、密码行交替解析（SourceCollector 保留配对语义并统一路径规范化）。

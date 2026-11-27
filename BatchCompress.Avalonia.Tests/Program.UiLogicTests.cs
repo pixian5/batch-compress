@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using BatchCompress.Avalonia.Core.Models;
 using BatchCompress.Avalonia.Core.Services;
 using BatchCompress.Avalonia.ViewModels;
 
@@ -217,6 +218,40 @@ internal static partial class Program
         var codeBehind = File.ReadAllText(Path.Combine(root, "Views", "MainWindow.axaml.cs"));
         Assert(codeBehind.Contains("FocusLogSearchRequested = FocusCurrentLogSearchBox", StringComparison.Ordinal),
             "MainWindow.axaml.cs 未接线 FocusLogSearchRequested");
+
+        return Task.CompletedTask;
+    }
+
+    // Gemini 4 Neon, 2026-11-27：批次 38——失败项一键加载重试纯逻辑与界面接线守护。
+    private static Task TestFailedItemRetryList()
+    {
+        var retry = new FailedItemRetryList();
+        retry.Record(new OperationProgressInfo { FailCount = 0, CurrentSourcePath = "/tmp/ok.txt" });
+        retry.Record(new OperationProgressInfo { FailCount = 1, CurrentSourcePath = "/tmp/fail1.txt", IsCommandOutput = true });
+        retry.Record(new OperationProgressInfo { FailCount = 1, CurrentSourcePath = "/tmp/fail1.txt" });
+        retry.Record(new OperationProgressInfo { FailCount = 1, CurrentSourcePath = "/tmp/fail1.txt" }); // 重复增量不重复加
+        retry.Record(new OperationProgressInfo { FailCount = 2, CurrentSourcePath = "   " }); // 空路径跳过
+        retry.Record(new OperationProgressInfo { FailCount = 3, CurrentSourcePath = "/tmp/fail2.txt" });
+
+        var failed = retry.GetFailedPaths();
+        AssertEqual(2, failed.Count);
+        AssertEqual("/tmp/fail1.txt", failed[0]);
+        AssertEqual("/tmp/fail2.txt", failed[1]);
+
+        var plainText = FailedItemRetryList.BuildRetrySourceText(failed, null, isPasswordBookMode: false);
+        AssertEqual($"/tmp/fail1.txt{Environment.NewLine}/tmp/fail2.txt", plainText);
+
+        var book = "/tmp/ok.7z\npw_ok\n/tmp/fail1.7z\npw_one\n/tmp/fail2.7z\npw_two";
+        var bookRetry = FailedItemRetryList.BuildRetrySourceText(
+            ["/tmp/fail1.7z", "/tmp/fail2.7z"], book, isPasswordBookMode: true);
+        AssertEqual($"/tmp/fail1.7z{Environment.NewLine}pw_one{Environment.NewLine}/tmp/fail2.7z{Environment.NewLine}pw_two", bookRetry);
+
+        var root = FindRepositoryRoot();
+        var axaml = File.ReadAllText(Path.Combine(root, "Views", "MainWindow.axaml"));
+        Assert(axaml.Split("LoadFailedItemsCommand").Length - 1 >= 2,
+            "MainWindow.axaml 应在开始页和失败记录页都提供 LoadFailedItemsCommand 按钮");
+        Assert(axaml.Contains("L.LoadFailedItems", StringComparison.Ordinal), "MainWindow.axaml 缺少 L.LoadFailedItems");
+        Assert(axaml.Contains("L.TooltipLoadFailedItems", StringComparison.Ordinal), "MainWindow.axaml 缺少 L.TooltipLoadFailedItems");
 
         return Task.CompletedTask;
     }

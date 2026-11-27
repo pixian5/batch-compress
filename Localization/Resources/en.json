@@ -368,6 +368,10 @@
     "ConfirmDeleteSourceEnable": "Enable",
     "StrictExtract": "Strict extract",
     "TooltipStrictExtract": "Critical write/path warnings already fail by default; enable to also fail and roll back on ignorable metadata/symlink warnings",
-    "LogSearchWatermark": "Search logs (Ctrl+F)..."
+    "LogSearchWatermark": "Search logs (Ctrl+F)...",
+    "LoadFailedItems": "Load failed",
+    "TooltipLoadFailedItems": "Reload failed items from the last batch into the source list for one-click retry",
+    "RetryFailedNoData": "No failed items from the last batch to reload",
+    "RetryFailedLoaded": "Loaded {0} failed item(s) into the source list; ready to retry"
   }
 }

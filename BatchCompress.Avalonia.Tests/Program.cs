@@ -159,7 +159,9 @@ internal static partial class Program
             ("严格解压策略与CLI解析", TestStrictExtractPolicyAndCli),
             ("界面日志实时搜索过滤", TestLogSearchFilter),
             // Gemini 4 Neon, 2026-11-27：0.8.26——解压返回码 1 智能分级判定。
-            ("解压警告智能分级判定", TestExtractionWarningClassificationAndPipeline)
+            ("解压警告智能分级判定", TestExtractionWarningClassificationAndPipeline),
+            // Gemini 4 Neon, 2026-11-27：0.8.27——失败项一键加载重试列表。
+            ("失败项一键重试列表", TestFailedItemRetryList)
         };
 
         // GLM-5.3, 2026-11-03：跑完全部测试后统一输出失败汇总，CI 中一次可见所有失败项；

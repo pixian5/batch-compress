@@ -368,6 +368,10 @@
     "ConfirmDeleteSourceEnable": "有効にする",
     "StrictExtract": "厳格解凍",
     "TooltipStrictExtract": "書き込み・パス等の重大な警告は既定で失敗になります。有効にするとシンボリックリンク・権限・末尾データ等の軽微な警告も失敗としてロールバックします",
-    "LogSearchWatermark": "ログを検索 (Ctrl+F)..."
+    "LogSearchWatermark": "ログを検索 (Ctrl+F)...",
+    "LoadFailedItems": "失敗項目を読込",
+    "TooltipLoadFailedItems": "前回のバッチで失敗した項目を処理リストへ再読み込みし、修正後に再実行できるようにします",
+    "RetryFailedNoData": "前回のバッチに再試行できる失敗項目はありません",
+    "RetryFailedLoaded": "{0} 件の失敗項目をリストに読み込みました。すぐに再実行できます"
   }
 }

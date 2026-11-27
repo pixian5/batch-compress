@@ -284,6 +284,8 @@
                             <Button Content="{Binding L.ExportDiagnostics}" Command="{Binding ExportDiagnosticsCommand}" Height="32" ToolTip.Tip="{Binding L.TooltipExportDiagnostics}" Margin="0,2,10,8"/>
                             <!-- WorkBuddy, 2026-11-15：批次 20（P4-3）——导出本次批处理的逐项结果。 -->
                             <Button Content="{Binding L.ExportBatchReport}" Command="{Binding ExportBatchReportCommand}" Height="32" ToolTip.Tip="{Binding L.TooltipExportBatchReport}" Margin="0,2,10,8"/>
+                            <!-- Gemini 4 Neon, 2026-11-27：批次 38——一键重新载入上次批处理失败的条目。 -->
+                            <Button Content="{Binding L.LoadFailedItems}" Command="{Binding LoadFailedItemsCommand}" IsEnabled="{Binding !IsOperating}" Height="32" ToolTip.Tip="{Binding L.TooltipLoadFailedItems}" Margin="0,2,10,8"/>
                             <Button Content="{Binding L.OpenOutput}" Command="{Binding OpenOutputFolderCommand}" Width="90" Height="32" ToolTip.Tip="{Binding L.TooltipOpenOutput}" Margin="0,2,10,8"/>
                             <Button Content="{Binding L.OpenSource}" Command="{Binding OpenSourceFolderCommand}" Width="90" Height="32" ToolTip.Tip="{Binding L.TooltipOpenSource}" Margin="0,2,10,8"/>
                             <Button Content="{Binding L.Help}" Command="{Binding ShowHelpCommand}" Width="70" Height="32" ToolTip.Tip="{Binding L.TooltipHelp}" Margin="0,2,10,8"/>
@@ -385,6 +387,8 @@
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
                     <Button Content="{Binding L.ClearFail}" Command="{Binding ClearFailLogCommand}"
                             Width="90" Height="32" ToolTip.Tip="{Binding L.ClearFailTooltip}"/>
+                    <Button Content="{Binding L.LoadFailedItems}" Command="{Binding LoadFailedItemsCommand}"
+                            IsEnabled="{Binding !IsOperating}" Height="32" ToolTip.Tip="{Binding L.TooltipLoadFailedItems}"/>
                     <TextBox x:Name="FailLogSearchBox" Text="{Binding FailLogFilter}" Width="260"
                              PlaceholderText="{Binding L.LogSearchWatermark}" VerticalAlignment="Center"/>
                 </StackPanel>

@@ -368,6 +368,10 @@
     "ConfirmDeleteSourceEnable": "启用",
     "StrictExtract": "严格解压",
     "TooltipStrictExtract": "默认已拦截写入/路径等重大警告；开启后连同符号链接、权限、尾部数据等可忽略警告也判失败并回滚",
-    "LogSearchWatermark": "搜索日志（Ctrl+F）..."
+    "LogSearchWatermark": "搜索日志（Ctrl+F）...",
+    "LoadFailedItems": "加载失败项",
+    "TooltipLoadFailedItems": "将上一次批处理失败的条目重新载入待处理列表，方便修正问题后一键重试",
+    "RetryFailedNoData": "上一次批处理没有可重试的失败项",
+    "RetryFailedLoaded": "已载入 {0} 个失败项到待处理列表，可直接重新开始"
   }
 }

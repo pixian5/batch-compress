@@ -37,6 +37,9 @@ internal sealed class OperationSession
     // 与命令行共用同一个 BatchReportCollector，报告内容只来自结构化进度字段。
     public BatchReportCollector ReportCollector { get; } = new();
 
+    // Gemini 4 Neon, 2026-11-27：批次 38——收集失败项路径供界面一键载入重试。
+    public FailedItemRetryList FailedRetryList { get; } = new();
+
     public OperationSession(MainWindowViewModel owner, ISystemIntegration systemIntegration)
     {
         _owner = owner;
@@ -127,6 +130,7 @@ internal sealed class OperationSession
     {
         // WorkBuddy, 2026-11-15：批次 20（P4-3）——在任何界面状态更新前先收集原始快照。
         ReportCollector.Report(info);
+        FailedRetryList.Record(info);
         _owner.CurrentFile = info.CurrentFile;
         _owner.CurrentSourcePath = info.CurrentSourcePath;
         _owner.SuccessCount = info.SuccessCount;
