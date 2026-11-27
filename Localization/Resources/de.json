@@ -239,7 +239,7 @@
     "DiagnosticsExportFailed": "Fehler beim Exportieren des Diagnoseberichts: {0}",
     "SubProgress": "Teilfortschritt",
     "BatchProgress": "Gesamtfortschritt",
-    "HelpBody": "Tastenkürzel: F5 Liste aktualisieren, Esc Vorgang abbrechen, Ctrl+L Protokolle löschen, Ctrl+H in den Tray ausblenden.\n\nRAR verwendet RAR, ZIP und 7z verwenden 7-Zip; der Wiederherstellungsdatensatz gilt nur für RAR. Ein Anhangsordner pro Zeile, oder mehrere Ordner über die Schaltfläche Durchsuchen auswählen.\n\nSystembenachrichtigungen, Tray und Herunterfahren werden vom aktuellen Betriebssystem bereitgestellt; unter Linux ist notify-send erforderlich, und das Herunterfahren erfordert möglicherweise Administratorrechte.\n\nDas Schließen des Fensters beendet die App wirklich; für den Hintergrundbetrieb \"In Tray ausblenden\" verwenden und dann über das Tray-Menü ein-/ausblenden oder beenden.",
+    "HelpBody": "Tastenkürzel: F5 Liste aktualisieren, Esc Vorgang abbrechen, Ctrl+F Protokolle durchsuchen, Ctrl+L Protokolle löschen, Ctrl+H in den Tray ausblenden.\n\nEngines & Optionen: RAR nutzt RAR, ZIP/7z nutzen 7-Zip; Wiederherstellungsdaten gelten nur für RAR. Ein Anhangsordner pro Zeile oder mehrere über Durchsuchen hinzufügen.\n\nSicherheit & Wiederholung: Komprimierungswarnungen führen standardmäßig zum Abbruch mit Rollback. Beim Entpacken werden kritische Schreib-/Pfadwarnungen abgewiesen, während geringfügige Metadaten-Warnungen toleriert werden (mit \"Strenges Entpacken\" schlagen alle Warnungen fehl). Nach Fehlern lädt \"Fehler laden\" im Start- oder Fehlerprotokoll-Tab betroffene Einträge erneut.\n\nEinstellungen & Beenden: Sichere Einstellungen (Sprache, Parallelität, allgemeine Tab-Optionen) werden automatisch gespeichert – eigene Passwörter, Quelle-löschen und Herunterfahren werden niemals gespeichert. Oben rechts lassen sich die Standards zurücksetzen. Schließen beendet die App; für den Hintergrundbetrieb \"In Tray ausblenden\" nutzen.",
     "ShutdownConfirmBody": "Das System wird in einer Minute heruntergefahren. Abbrechen?",
     "KeepShutdown": "Abschaltung beibehalten",
     "SelectCompressionList": "Komprimierungspfadliste auswählen",
@@ -372,6 +372,11 @@
     "LoadFailedItems": "Fehler laden",
     "TooltipLoadFailedItems": "Fehlgeschlagene Einträge des letzten Durchlaufs zum erneuten Ausführen in die Liste laden",
     "RetryFailedNoData": "Keine fehlgeschlagenen Einträge aus dem letzten Durchlauf vorhanden",
-    "RetryFailedLoaded": "{0} fehlgeschlagene Einträge in die Liste geladen; bereit zum erneuten Start"
+    "RetryFailedLoaded": "{0} fehlgeschlagene Einträge in die Liste geladen; bereit zum erneuten Start",
+    "ResetPreferences": "Zurücksetzen",
+    "TooltipResetPreferences": "Sprache, Parallelität und Komprimierungs-/Entpack-Optionen auf Standard zurücksetzen (Anhänge und Fensterposition bleiben erhalten)",
+    "ConfirmResetPreferencesTitle": "Einstellungen zurücksetzen",
+    "ConfirmResetPreferencesBody": "Sprache, Parallelität und alle Komprimierungs-/Entpack-Optionen auf die Standardwerte zurücksetzen und die gespeicherte Konfigurationsdatei löschen?",
+    "PreferencesResetLog": "Standardeinstellungen wiederhergestellt und gespeicherte Konfigurationsdatei entfernt."
   }
 }

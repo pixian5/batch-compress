@@ -311,7 +311,7 @@ public class LanguageStrings : INotifyPropertyChanged
     public string BatchProgress { get; set; } = "批次进度";
 
     // 帮助对话框与关机确认。
-    public string HelpBody { get; set; } = "快捷键：F5 刷新列表，Esc 取消操作，Ctrl+L 清空日志，Ctrl+H 隐藏到托盘。\n\nRAR 使用 RAR，ZIP 和 7z 使用 7-Zip；恢复记录仅对 RAR 生效。附件目录每行一个，也可以使用浏览按钮选择多个目录。\n\n系统通知、托盘和关机功能由当前操作系统提供，Linux 需要 notify-send，关机可能需要管理员权限。\n\n关闭窗口会真正退出程序；需要后台运行时请使用“隐藏到托盘”，再通过托盘菜单显示/隐藏或退出。";
+    public string HelpBody { get; set; } = "快捷键：F5 刷新列表，Esc 取消操作，Ctrl+F 搜索日志，Ctrl+L 清空日志，Ctrl+H 隐藏到托盘。\n\n引擎与参数：RAR 使用 RAR，ZIP/7z 使用 7-Zip；恢复记录仅对 RAR 生效。附件目录支持每行一个或通过浏览添加多个。\n\n安全策略与重试：压缩返回警告默认判失败并回滚；解压默认拦截写入/路径等重大警告并放行轻度跨平台元数据警告（勾选“严格解压”可将全部警告判失败）；失败后可在开始页或失败记录页点击“加载失败项”一键重试。\n\n偏好与退出：程序会自动记住语言、并发度及安全的常规参数（不保存明文密码、删除源和完成后关机开关），可通过右上角“重置偏好”恢复默认。关闭窗口会退出程序，后台运行请点击“隐藏到托盘”。";
     public string ShutdownConfirmBody { get; set; } = "系统将在一分钟后关机，是否取消？";
     public string KeepShutdown { get; set; } = "继续关机";
     public string SelectCompressionList { get; set; } = "选择压缩路径清单";
@@ -477,4 +477,11 @@ public class LanguageStrings : INotifyPropertyChanged
     public string TooltipLoadFailedItems { get; set; } = "将上一次批处理失败的条目重新载入待处理列表，方便修正问题后一键重试";
     public string RetryFailedNoData { get; set; } = "上一次批处理没有可重试的失败项";
     public string RetryFailedLoaded { get; set; } = "已载入 {0} 个失败项到待处理列表，可直接重新开始";
+
+    // Gemini 4 Hydrogen, 2026-11-27：批次 41——重置安全偏好快捷入口与确认提示。
+    public string ResetPreferences { get; set; } = "重置偏好";
+    public string TooltipResetPreferences { get; set; } = "将语言、并发度及压缩/解压页常用参数恢复为默认值（不影响附件配置和窗口位置）";
+    public string ConfirmResetPreferencesTitle { get; set; } = "确认重置偏好";
+    public string ConfirmResetPreferencesBody { get; set; } = "确定将语言、并发度以及压缩/解压配置恢复为默认设置并清除已保存偏好吗？";
+    public string PreferencesResetLog { get; set; } = "已恢复默认偏好设置并清除本地偏好文件。";
 }

@@ -188,6 +188,22 @@ public sealed class UserPreferencesService
         }
     }
 
+    /// <summary>删除已保存的用户偏好文件；文件不存在或删除失败时不抛异常。</summary>
+    public void Reset()
+    {
+        try
+        {
+            if (File.Exists(SettingsPath))
+            {
+                File.Delete(SettingsPath);
+            }
+        }
+        catch
+        {
+            // 重置偏好失败不应阻塞界面交互。
+        }
+    }
+
     private static OperationTabPreferences NormalizeTab(OperationTabPreferences? tab)
     {
         var source = tab ?? OperationTabPreferences.CreateDefault();

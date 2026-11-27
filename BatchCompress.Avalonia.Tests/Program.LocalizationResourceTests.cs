@@ -67,6 +67,8 @@ internal static partial class Program
             var strings = LocalizationService.Instance.Strings;
             Assert(strings.WindowTitle.Contains("v", StringComparison.Ordinal),
                 $"{language} 的窗口标题缺少版本");
+            Assert(strings.HelpBody.Contains("Ctrl+F", StringComparison.Ordinal),
+                $"{language} 的 HelpBody 应包含 Ctrl+F 日志搜索说明");
             titles.Add(strings.WindowTitle);
         }
 

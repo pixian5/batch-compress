@@ -227,7 +227,15 @@ internal static partial class Program
             File.WriteAllText(prefsPath, "{ corrupt-json");
             Assert(service.Load() is null, "损坏的用户偏好文件应安全返回 null");
 
-            // 6. 源码接线守护：MainWindowViewModel 与 Lifecycle 必须正确加载/保存且尊重 --lang。
+            // 6. Reset 清除已保存偏好且重复调用不抛异常。
+            service.Save(expected);
+            Assert(File.Exists(prefsPath), "Reset 测试前文件应存在");
+            service.Reset();
+            Assert(!File.Exists(prefsPath), "Reset 应删除已保存的偏好文件");
+            Assert(service.Load() is null, "Reset 后再读取应返回 null");
+            service.Reset();
+
+            // 7. 源码接线守护：MainWindowViewModel、Lifecycle、MainWindow 必须正确加载/保存/重置且尊重 --lang。
             var root = FindRepositoryRoot();
             var vmText = File.ReadAllText(Path.Combine(root, "ViewModels", "MainWindowViewModel.cs"));
             Assert(vmText.Contains("UserPreferencesService", StringComparison.Ordinal),
@@ -236,12 +244,26 @@ internal static partial class Program
                 "MainWindowViewModel 缺少 ApplySavedPreferences");
             Assert(vmText.Contains("SaveUserPreferences", StringComparison.Ordinal),
                 "MainWindowViewModel 缺少 SaveUserPreferences");
+            Assert(vmText.Contains("ResetPreferencesAsync", StringComparison.Ordinal),
+                "MainWindowViewModel 缺少 ResetPreferencesAsync");
             Assert(vmText.Contains("LocalizationService.Instance.LanguageExplicitlySet", StringComparison.Ordinal),
                 "MainWindowViewModel 必须保留 --lang 覆盖优先判断");
 
             var lifecycleText = File.ReadAllText(Path.Combine(root, "ViewModels", "MainWindowViewModel.Lifecycle.cs"));
             Assert(lifecycleText.Contains("SaveUserPreferences();", StringComparison.Ordinal),
                 "MainWindowViewModel.Dispose 未保存用户偏好");
+
+            var axamlText = File.ReadAllText(Path.Combine(root, "Views", "MainWindow.axaml"));
+            Assert(axamlText.Contains("ResetPreferencesCommand", StringComparison.Ordinal),
+                "MainWindow.axaml 缺少 ResetPreferencesCommand 按钮");
+            Assert(axamlText.Contains("L.ResetPreferences", StringComparison.Ordinal),
+                "MainWindow.axaml 缺少 L.ResetPreferences");
+
+            var codeBehindText = File.ReadAllText(Path.Combine(root, "Views", "MainWindow.axaml.cs"));
+            Assert(codeBehindText.Contains("ConfirmResetPreferencesRequested = ConfirmResetPreferencesAsync", StringComparison.Ordinal),
+                "MainWindow.axaml.cs 未接线 ConfirmResetPreferencesRequested");
+            Assert(codeBehindText.Contains("ScrollViewer", StringComparison.Ordinal),
+                "ShowHelpAsync 应使用可滚动容器展示多语言帮助正文");
         }
         finally
         {

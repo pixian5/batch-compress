@@ -239,7 +239,7 @@
     "DiagnosticsExportFailed": "Failed to export diagnostics report: {0}",
     "SubProgress": "Sub-progress",
     "BatchProgress": "Batch progress",
-    "HelpBody": "Shortcuts: F5 refresh list, Esc cancel operation, Ctrl+L clear logs, Ctrl+H hide to tray.\n\nRAR uses RAR, ZIP and 7z use 7-Zip; the recovery record only applies to RAR. Enter one attachment folder per line, or use the Browse button to select multiple folders.\n\nSystem notifications, tray and shutdown are provided by the current operating system; Linux needs notify-send, and shutdown may require administrator rights.\n\nClosing the window really exits the app; to keep it running in the background, use \"Hide to Tray\" and then show/hide or exit from the tray menu.",
+    "HelpBody": "Shortcuts: F5 refresh list, Esc cancel operation, Ctrl+F search logs, Ctrl+L clear logs, Ctrl+H hide to tray.\n\nEngines & options: RAR uses RAR, ZIP/7z use 7-Zip; recovery records apply to RAR only. Enter one attachment folder per line or add multiple via Browse.\n\nSafety & retry: Compression warnings fail and roll back by default. Extraction fails on critical write/path warnings while allowing minor cross-platform metadata warnings (check \"Strict extract\" to fail all warnings). After failures, click \"Load failed\" on the Start or Fail Log tab to retry.\n\nPreferences & exit: Safe settings (language, concurrency, and general tab options) are saved automatically across restarts—custom passwords, delete-source, and shutdown switches are never saved. Use \"Reset Preferences\" at the top right to restore defaults. Closing the window exits the app; use \"Hide to Tray\" for background execution.",
     "ShutdownConfirmBody": "The system will shut down in one minute. Cancel it?",
     "KeepShutdown": "Keep shutdown",
     "SelectCompressionList": "Select compression path list",
@@ -372,6 +372,11 @@
     "LoadFailedItems": "Load failed",
     "TooltipLoadFailedItems": "Reload failed items from the last batch into the source list for one-click retry",
     "RetryFailedNoData": "No failed items from the last batch to reload",
-    "RetryFailedLoaded": "Loaded {0} failed item(s) into the source list; ready to retry"
+    "RetryFailedLoaded": "Loaded {0} failed item(s) into the source list; ready to retry",
+    "ResetPreferences": "Reset Preferences",
+    "TooltipResetPreferences": "Restore default language, concurrency, and compression/extraction options (keeps enclosures and window bounds)",
+    "ConfirmResetPreferencesTitle": "Confirm Reset Preferences",
+    "ConfirmResetPreferencesBody": "Reset language, concurrency, and compression/extraction options to defaults and remove saved preferences?",
+    "PreferencesResetLog": "Preferences restored to defaults and saved preference file removed."
   }
 }

@@ -522,6 +522,7 @@ public partial class MainWindow : Window
             viewModel.HideWindowRequested = HideWindowFromViewModel;
             viewModel.ConfirmShutdownCancellationRequested = ConfirmShutdownCancellationAsync;
             viewModel.ConfirmDeleteSourceRequested = ConfirmDeleteSourceAsync;
+            viewModel.ConfirmResetPreferencesRequested = ConfirmResetPreferencesAsync;
             viewModel.FocusLogSearchRequested = FocusCurrentLogSearchBox;
         }
     }
@@ -597,7 +598,51 @@ public partial class MainWindow : Window
     private async Task ShowHelpAsync()
     {
         // GPT-5, 2026-09-30：帮助对话框标题与正文改用本地化词条。
-        await ShowMessageBoxAsync(L.Help, L.HelpBody);
+        // Gemini 4 Hydrogen, 2026-11-27：改用可滚动自适应高度对话框，避免五语言帮助正文被截断。
+        var dialog = new Window
+        {
+            Title = L.Help,
+            Width = 580,
+            MaxHeight = 520,
+            SizeToContent = SizeToContent.Height,
+            CanResize = true,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+
+        var closeButton = new Button
+        {
+            Content = L.Ok,
+            Width = 100,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        closeButton.Click += (_, _) => dialog.Close(true);
+
+        dialog.Content = new Grid
+        {
+            Margin = new Thickness(20),
+            RowDefinitions = new RowDefinitions("*,Auto"),
+            RowSpacing = 16,
+            Children =
+            {
+                new ScrollViewer
+                {
+                    MaxHeight = 400,
+                    VerticalScrollBarVisibility = global::Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                    Content = new TextBlock
+                    {
+                        Text = L.HelpBody,
+                        FontSize = 14,
+                        TextWrapping = TextWrapping.Wrap,
+                        Margin = new Thickness(0, 0, 8, 0)
+                    }
+                },
+                closeButton
+            }
+        };
+        Grid.SetRow((Control)((Grid)dialog.Content).Children[0], 0);
+        Grid.SetRow(closeButton, 1);
+
+        await dialog.ShowDialog<bool>(this);
     }
 
     // WorkBuddy, 2026-11-16：批次 27——模态展示只读的「关于」窗口；
@@ -620,6 +665,13 @@ public partial class MainWindow : Window
             L.ConfirmDeleteSourceTitle,
             L.ConfirmDeleteSourceBody,
             L.ConfirmDeleteSourceEnable,
+            L.CancelDialog);
+
+    private Task<bool> ConfirmResetPreferencesAsync() =>
+        ShowOkCancelMessageBoxAsync(
+            L.ConfirmResetPreferencesTitle,
+            L.ConfirmResetPreferencesBody,
+            L.Ok,
             L.CancelDialog);
     
     private async Task BrowseSourceAsync()
@@ -801,8 +853,9 @@ public partial class MainWindow : Window
         dialog = new Window
         {
             Title = title,
-            Width = 400,
-            Height = 200,
+            Width = 440,
+            MinHeight = 190,
+            SizeToContent = SizeToContent.Height,
             Content = new StackPanel
             {
                 Margin = new Thickness(20),
@@ -838,8 +891,9 @@ public partial class MainWindow : Window
         dialog = new Window
         {
             Title = title,
-            Width = 400,
-            Height = 200,
+            Width = 440,
+            MinHeight = 190,
+            SizeToContent = SizeToContent.Height,
             Content = new StackPanel
             {
                 Margin = new Thickness(20),

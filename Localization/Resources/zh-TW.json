@@ -239,7 +239,7 @@
     "DiagnosticsExportFailed": "匯出診斷日誌失敗：{0}",
     "SubProgress": "子項進度",
     "BatchProgress": "批次進度",
-    "HelpBody": "快速鍵：F5 重新整理列表，Esc 取消操作，Ctrl+L 清空日誌，Ctrl+H 隱藏到系統匣。\n\nRAR 使用 RAR，ZIP 和 7z 使用 7-Zip；恢復記錄僅對 RAR 生效。附件目錄每行一個，也可以使用瀏覽按鈕選擇多個目錄。\n\n系統通知、系統匣和關機功能由目前作業系統提供，Linux 需要 notify-send，關機可能需要管理員權限。\n\n關閉視窗會真正結束程式；需要背景執行時請使用「隱藏到系統匣」，再透過系統匣選單顯示/隱藏或結束。",
+    "HelpBody": "快速鍵：F5 重新整理列表，Esc 取消操作，Ctrl+F 搜尋日誌，Ctrl+L 清空日誌，Ctrl+H 隱藏到系統匣。\n\n引擎與參數：RAR 使用 RAR，ZIP/7z 使用 7-Zip；恢復記錄僅對 RAR 生效。附件目錄支援每行一個或透過瀏覽新增多個。\n\n安全策略與重試：壓縮回傳警告預設判失敗並回滾；解壓預設攔截寫入/路徑等重大警告並放行輕度跨平台中繼資料警告（勾選「嚴格解壓」可將全部警告判失敗）；失敗後可在開始頁或失敗記錄頁點擊「載入失敗項」一鍵重試。\n\n偏好與結束：程式會自動記住語言、並行度及安全的常規參數（不儲存明文密碼、刪除來源和完成後關機開關），可透過右上角「重設偏好」恢復預設。關閉視窗會結束程式，背景執行請點擊「隱藏到系統匣」。",
     "ShutdownConfirmBody": "系統將在一分鐘後關機，是否取消？",
     "KeepShutdown": "繼續關機",
     "SelectCompressionList": "選擇壓縮路徑清單",
@@ -372,6 +372,11 @@
     "LoadFailedItems": "載入失敗項",
     "TooltipLoadFailedItems": "將上一次批次處理失敗的項目重新載入待處理清單，方便修正問題後一鍵重試",
     "RetryFailedNoData": "上一次批次處理沒有可重試的失敗項",
-    "RetryFailedLoaded": "已載入 {0} 個失敗項到待處理清單，可直接重新開始"
+    "RetryFailedLoaded": "已載入 {0} 個失敗項到待處理清單，可直接重新開始",
+    "ResetPreferences": "重設偏好",
+    "TooltipResetPreferences": "將語言、並行度及壓縮/解壓頁常用參數恢復為預設值（不影響附件設定和視窗位置）",
+    "ConfirmResetPreferencesTitle": "確認重設偏好",
+    "ConfirmResetPreferencesBody": "確定將語言、並行度以及壓縮/解壓設定恢復為預設並清除已儲存偏好嗎？",
+    "PreferencesResetLog": "已恢復預設偏好設定並清除本機偏好檔案。"
   }
 }

@@ -719,6 +719,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public Action? HideWindowRequested { get; set; }
     public Func<Task<bool>>? ConfirmShutdownCancellationRequested { get; set; }
     public Func<Task<bool>>? ConfirmDeleteSourceRequested { get; set; }
+    public Func<Task<bool>>? ConfirmResetPreferencesRequested { get; set; }
     public Action? FocusLogSearchRequested { get; set; }
 
 
@@ -902,6 +903,46 @@ public partial class MainWindowViewModel : ViewModelBase
             CompressionTab = ExtractTabPreferences(_compressionTabState),
             DecompressionTab = ExtractTabPreferences(_decompressionTabState)
         });
+    }
+
+    // Gemini 4 Hydrogen, 2026-11-27：批次 41（v0.8.30）——一键重置安全偏好并清除磁盘偏好文件。
+    [RelayCommand]
+    private async Task ResetPreferencesAsync()
+    {
+        if (IsOperating)
+        {
+            return;
+        }
+
+        if (ConfirmResetPreferencesRequested != null && !await ConfirmResetPreferencesRequested())
+        {
+            return;
+        }
+
+        _preferencesService.Reset();
+        _savedLanguageFromDisk = null;
+
+        _isApplyingInitialLanguage = true;
+        try
+        {
+            if (LocalizationService.Instance.LanguageExplicitlySet)
+            {
+                _hasExplicitCliLanguageOverride = true;
+                SelectedLanguage = LocalizationService.Instance.CurrentLanguage;
+            }
+            else
+            {
+                _hasExplicitCliLanguageOverride = false;
+                DetectSystemLanguage();
+            }
+        }
+        finally
+        {
+            _isApplyingInitialLanguage = false;
+        }
+
+        ApplySavedPreferences(UserPreferencesSnapshot.CreateDefault());
+        AppendCommandLog(L.PreferencesResetLog + "\n");
     }
 
     private static void ApplyTabPreferences(OperationTabState target, OperationTabPreferences preferences)

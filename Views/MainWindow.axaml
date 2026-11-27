@@ -28,7 +28,7 @@
 
             <!-- 一级导航：配置、开始和三类日志均为独立页面。 -->
             <Border Background="#F4F6F8" BorderBrush="#D8DEE4" BorderThickness="1" Padding="4" CornerRadius="6">
-                <Grid ColumnDefinitions="*,Auto,8,Auto">
+                <Grid ColumnDefinitions="*,Auto,8,Auto,8,Auto">
                     <TabControl Grid.Column="0" SelectedIndex="{Binding ActiveTab}" Background="Transparent" BorderThickness="0"
                                 HorizontalContentAlignment="Stretch">
                         <TabItem Header="{Binding L.CompressionTab}" Padding="24,9" FontWeight="SemiBold" />
@@ -44,6 +44,12 @@
                               SelectedValueBinding="{Binding Key}"
                               DisplayMemberBinding="{Binding Value}"
                               Width="120" VerticalAlignment="Center" ToolTip.Tip="{Binding L.TooltipLanguageSwitch}"/>
+                    <!-- Gemini 4 Hydrogen, 2026-11-27：批次 41——一键恢复默认偏好并清理本地偏好文件。 -->
+                    <Button Grid.Column="5" Content="{Binding L.ResetPreferences}"
+                            Command="{Binding ResetPreferencesCommand}"
+                            IsEnabled="{Binding !IsOperating}"
+                            VerticalAlignment="Center" Padding="10,5"
+                            ToolTip.Tip="{Binding L.TooltipResetPreferences}"/>
                 </Grid>
             </Border>
 
