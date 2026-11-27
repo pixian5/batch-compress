@@ -70,6 +70,7 @@
     <Compile Include="Program.LoggingAndConfigTests.cs" />
     <Compile Include="Program.LocalizationTests.cs" />
     <Compile Include="..\CommandLineHandler.cs" Link="CommandLineHandler.cs" />
+    <Compile Include="..\CommandLineHandler.Validation.cs" Link="CommandLineHandler.Validation.cs" />
     <Compile Include="..\CommandLineHandler.HelpTexts.cs" Link="CommandLineHandler.HelpTexts.cs" />
     <Compile Include="..\HeadlessBatchRunner.cs" Link="HeadlessBatchRunner.cs" />
     <Compile Include="..\Core\Interfaces\IArchiveEngine.cs" Link="Core\Interfaces\IArchiveEngine.cs" />

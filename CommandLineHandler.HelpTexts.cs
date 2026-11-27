@@ -1,10 +1,188 @@
+using System;
+using System.Collections.Generic;
+
 namespace BatchCompress.Avalonia;
 
-// GLM-5.3, 2026-11-04 / Antigravity, 2026-11-07：
-// 命令行多语言帮助文本定义（zh-CN, zh-TW, en, ja, de）。
-// 拆分自 CommandLineHandler.cs（降低单文件行数，并补齐日德两语言帮助文本）。
+// GLM-5.3, 2026-11-04 / Antigravity, 2026-11-07 / Gemini 4 Hydrogen, 2026-11-27：
+// 命令行多语言帮助文本定义（zh-CN, zh-TW, en, ja, de）及控制台自适应折行展示逻辑。
 public static partial class CommandLineHandler
 {
+    public static void ShowHelp()
+    {
+        ShowHelp(null);
+    }
+
+    /// <summary>
+    /// 获取指定语言的原始帮助文本。language 为 LocalizationService 语言键（zh-CN/zh-TW/en/ja/de），
+    /// 提供简体、繁体、英文、日文、德文五份帮助文本；未指定（null）默认简体中文。
+    /// </summary>
+    public static string GetHelpText(string? language)
+    {
+        return language switch
+        {
+            "zh-TW" => TraditionalChineseHelpText,
+            "ja" => JapaneseHelpText,
+            "de" => GermanHelpText,
+            null or "zh-CN" => HelpText,
+            _ => EnglishHelpText
+        };
+    }
+
+    /// <summary>
+    /// 计算字符串在标准控制台中的显示宽度（ASCII/半角为 1 列，中日韩常用汉字/假名/全角标点为 2 列）。
+    /// </summary>
+    public static int GetDisplayWidth(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return 0;
+        var width = 0;
+        foreach (var c in s)
+        {
+            if ((c >= 0x4e00 && c <= 0x9fff) ||
+                (c >= 0x3400 && c <= 0x4dbf) ||
+                (c >= 0x3000 && c <= 0x30ff) ||
+                (c >= 0xff01 && c <= 0xff60))
+            {
+                width += 2;
+            }
+            else
+            {
+                width += 1;
+            }
+        }
+        return width;
+    }
+
+    /// <summary>
+    /// 根据终端最大宽度将多语言帮助文本自动折行。
+    /// 保留空行、段落标题与用法示例；对超出宽度的选项描述，按单词/汉字边界折行并保持描述列对齐。
+    /// </summary>
+    public static string WrapHelpText(string text, int maxWidth)
+    {
+        if (string.IsNullOrEmpty(text) || maxWidth < 40)
+        {
+            return text;
+        }
+
+        var lines = text.Replace("\r\n", "\n").Split('\n');
+        var result = new List<string>(lines.Length);
+
+        foreach (var rawLine in lines)
+        {
+            if (string.IsNullOrWhiteSpace(rawLine) || GetDisplayWidth(rawLine) <= maxWidth)
+            {
+                result.Add(rawLine);
+                continue;
+            }
+
+            var indentCount = 0;
+            while (indentCount < rawLine.Length && rawLine[indentCount] == ' ')
+            {
+                indentCount++;
+            }
+
+            var continuationIndentCount = indentCount >= maxWidth - 12
+                ? Math.Max(4, maxWidth / 4)
+                : indentCount;
+            var continuationIndent = new string(' ', continuationIndentCount);
+
+            var content = rawLine[indentCount..];
+            var tokens = TokenizeForWrapping(content);
+
+            var currentLine = new System.Text.StringBuilder(new string(' ', indentCount));
+            var currentWidth = indentCount;
+
+            foreach (var token in tokens)
+            {
+                var tokenWidth = GetDisplayWidth(token);
+                if (currentWidth + tokenWidth > maxWidth && currentWidth > continuationIndentCount)
+                {
+                    result.Add(currentLine.ToString().TrimEnd());
+                    currentLine.Clear();
+                    currentLine.Append(continuationIndent);
+                    currentWidth = continuationIndentCount;
+
+                    if (string.IsNullOrWhiteSpace(token))
+                    {
+                        continue;
+                    }
+                }
+
+                currentLine.Append(token);
+                currentWidth += tokenWidth;
+            }
+
+            if (currentLine.Length > 0 && !string.IsNullOrWhiteSpace(currentLine.ToString()))
+            {
+                result.Add(currentLine.ToString().TrimEnd());
+            }
+        }
+
+        return string.Join(Environment.NewLine, result);
+    }
+
+    private static List<string> TokenizeForWrapping(string content)
+    {
+        var tokens = new List<string>();
+        var sb = new System.Text.StringBuilder();
+
+        for (var i = 0; i < content.Length; i++)
+        {
+            var c = content[i];
+            if (char.IsWhiteSpace(c))
+            {
+                if (sb.Length > 0)
+                {
+                    tokens.Add(sb.ToString());
+                    sb.Clear();
+                }
+                tokens.Add(" ");
+            }
+            else if ((c >= 0x4e00 && c <= 0x9fff) ||
+                     (c >= 0x3400 && c <= 0x4dbf) ||
+                     (c >= 0x3000 && c <= 0x30ff) ||
+                     (c >= 0xff01 && c <= 0xff60))
+            {
+                if (sb.Length > 0)
+                {
+                    tokens.Add(sb.ToString());
+                    sb.Clear();
+                }
+                tokens.Add(c.ToString());
+            }
+            else
+            {
+                sb.Append(c);
+            }
+        }
+
+        if (sb.Length > 0)
+        {
+            tokens.Add(sb.ToString());
+        }
+
+        return tokens;
+    }
+
+    public static void ShowHelp(string? language)
+    {
+        var text = GetHelpText(language);
+        if (!Console.IsOutputRedirected)
+        {
+            try
+            {
+                var width = Console.WindowWidth;
+                if (width >= 40)
+                {
+                    text = WrapHelpText(text, width);
+                }
+            }
+            catch
+            {
+                // 忽略非交互控制台（虚拟终端/重定向环境）获取 WindowWidth 的异常
+            }
+        }
+        Console.Out.WriteLine(text);
+    }
     private const string HelpText =
         """
         批量压缩解压工具

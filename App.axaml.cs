@@ -58,9 +58,33 @@ public partial class App : Application
             ApplyTrayLanguage(LocalizationService.Instance.Strings);
             // GPT-5, 2026-09-30：语言在运行中切换时同步刷新托盘/状态栏菜单文案。
             LocalizationService.Instance.PropertyChanged += OnLocalizationServicePropertyChanged;
+            // Gemini 4 Hydrogen, 2026-11-27：批次 45（v0.8.35）——应用退出时确定性退订静态语言事件并清理状态栏进程。
+            desktop.Exit += OnDesktopExit;
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private void OnDesktopExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
+    {
+        LocalizationService.Instance.PropertyChanged -= OnLocalizationServicePropertyChanged;
+
+        try
+        {
+            if (_statusBarHelper is { HasExited: false })
+            {
+                _statusBarHelper.Kill();
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"退出清理状态栏帮助进程失败: {ex.Message}");
+        }
+        finally
+        {
+            _statusBarHelper?.Dispose();
+            _statusBarHelper = null;
+        }
     }
 
     /// <summary>

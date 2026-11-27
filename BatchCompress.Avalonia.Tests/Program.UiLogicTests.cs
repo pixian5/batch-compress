@@ -78,6 +78,14 @@ internal static partial class Program
         var app = File.ReadAllText(Path.Combine(root, "App.axaml.cs"));
         Assert(app.Contains("window.Close()", StringComparison.Ordinal),
             "托盘退出未走窗口关闭保护路径");
+        Assert(app.Contains("desktop.Exit += OnDesktopExit", StringComparison.Ordinal) &&
+               app.Contains("PropertyChanged -= OnLocalizationServicePropertyChanged", StringComparison.Ordinal),
+            "App.axaml.cs 应在桌面退出时退订静态语言监听");
+
+        var cliHandler = Path.Combine(root, "CommandLineHandler.cs");
+        var cliValidation = Path.Combine(root, "CommandLineHandler.Validation.cs");
+        Assert(File.Exists(cliValidation), "缺少 CommandLineHandler.Validation.cs 拆解文件");
+        Assert(File.ReadAllLines(cliHandler).Length < 700, "CommandLineHandler.cs 应保持拆解后精简（< 700 行）");
 
         return Task.CompletedTask;
     }

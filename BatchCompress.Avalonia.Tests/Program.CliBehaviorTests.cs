@@ -18,6 +18,7 @@ internal static partial class Program
             var withLanguage = CommandLineHandler.ParseArguments(
                 ["compress", "--lang", "de", "-i", "/tmp/a", "-o", "/tmp/b"]);
             Assert(withLanguage.Success, "带 --lang 的参数应解析成功");
+            Assert(withLanguage.LanguageExplicitlySet, "解析结果必须携带显式语言标记");
             Assert(service.LanguageExplicitlySet, "显式 --lang 必须置位 LanguageExplicitlySet");
             AssertEqual("de", service.CurrentLanguage);
 
@@ -25,6 +26,7 @@ internal static partial class Program
             var withoutLanguage = CommandLineHandler.ParseArguments(
                 ["compress", "-i", "/tmp/a", "-o", "/tmp/b"]);
             Assert(withoutLanguage.Success, "不带 --lang 的参数应解析成功");
+            Assert(!withoutLanguage.LanguageExplicitlySet, "未指定 --lang 时解析结果不得置位显式语言标记");
             Assert(!service.LanguageExplicitlySet, "未指定 --lang 时不得保留上一次的显式标记");
 
             // 界面构造函数必须读取该标记；否则系统语言检测会覆盖命令行指定的语言。

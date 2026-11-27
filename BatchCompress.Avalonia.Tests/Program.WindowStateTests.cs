@@ -235,16 +235,21 @@ internal static partial class Program
             Assert(service.Load() is null, "Reset 后再读取应返回 null");
             service.Reset();
 
-            // 7. 源码接线守护：MainWindowViewModel、Lifecycle、MainWindow 必须正确加载/保存/重置且尊重 --lang。
+            // 7. 源码接线守护：MainWindowViewModel(.Preferences)、Lifecycle、MainWindow 必须正确加载/保存/重置且尊重 --lang。
             var root = FindRepositoryRoot();
-            var vmText = File.ReadAllText(Path.Combine(root, "ViewModels", "MainWindowViewModel.cs"));
-            Assert(vmText.Contains("UserPreferencesService", StringComparison.Ordinal),
+            var vmPath = Path.Combine(root, "ViewModels", "MainWindowViewModel.cs");
+            var vmPrefPath = Path.Combine(root, "ViewModels", "MainWindowViewModel.Preferences.cs");
+            Assert(File.Exists(vmPrefPath), "缺少 MainWindowViewModel.Preferences.cs 分部类");
+            var vmText = File.ReadAllText(vmPath);
+            var vmCombinedText = vmText + Environment.NewLine + File.ReadAllText(vmPrefPath);
+            Assert(vmText.Split('\n').Length < 850, "MainWindowViewModel.cs 应保持拆解后精简（< 850 行）");
+            Assert(vmCombinedText.Contains("UserPreferencesService", StringComparison.Ordinal),
                 "MainWindowViewModel 缺少 UserPreferencesService");
-            Assert(vmText.Contains("ApplySavedPreferences", StringComparison.Ordinal),
+            Assert(vmCombinedText.Contains("ApplySavedPreferences", StringComparison.Ordinal),
                 "MainWindowViewModel 缺少 ApplySavedPreferences");
-            Assert(vmText.Contains("SaveUserPreferences", StringComparison.Ordinal),
+            Assert(vmCombinedText.Contains("SaveUserPreferences", StringComparison.Ordinal),
                 "MainWindowViewModel 缺少 SaveUserPreferences");
-            Assert(vmText.Contains("ResetPreferencesAsync", StringComparison.Ordinal),
+            Assert(vmCombinedText.Contains("ResetPreferencesAsync", StringComparison.Ordinal),
                 "MainWindowViewModel 缺少 ResetPreferencesAsync");
             Assert(vmText.Contains("LocalizationService.Instance.LanguageExplicitlySet", StringComparison.Ordinal),
                 "MainWindowViewModel 必须保留 --lang 覆盖优先判断");
