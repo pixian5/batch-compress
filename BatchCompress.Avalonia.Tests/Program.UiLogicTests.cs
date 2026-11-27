@@ -372,8 +372,12 @@ internal static partial class Program
                 $"压缩 TXT 模式生成参数必须合法：{string.Join(" | ", parsedTxtCompress.Errors)}");
             AssertEqual(2, parsedTxtCompress.Options.InputPaths.Length);
 
-            // 4. 界面接线与 Tooltip 补齐守护。
+            // 4. 默认 CommentFilePath="注释.txt" 不存在时，ViewModel 接线不可把不存在的注释路径传给 --comment 导致退出码 2。
             var root = FindRepositoryRoot();
+            var execText = File.ReadAllText(Path.Combine(root, "ViewModels", "MainWindowViewModel.Execution.cs"));
+            Assert(execText.Contains("EnableComment && File.Exists(CommentFilePath)", StringComparison.Ordinal),
+                "CopyCliCommandAsync 必须与 BuildBatchOperationOptions 一致校验注释文件存在性，避免生成无效 --comment");
+
             var axaml = File.ReadAllText(Path.Combine(root, "Views", "MainWindow.axaml"));
             Assert(axaml.Contains("CopyCliCommandCommand", StringComparison.Ordinal), "MainWindow.axaml 缺少 CopyCliCommandCommand");
             Assert(axaml.Contains("L.CopyCliCommand", StringComparison.Ordinal), "MainWindow.axaml 缺少 L.CopyCliCommand");

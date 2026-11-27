@@ -700,7 +700,7 @@ public class HeadlessBatchRunner
                     .Concat((_options.EnclosureList ?? string.Empty)
                         .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
                     .Where(path => !string.IsNullOrWhiteSpace(path))
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Distinct(VolumeAwarePathComparer.Instance)
                     .ToArray()
                 : null
         };
