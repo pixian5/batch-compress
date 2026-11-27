@@ -50,7 +50,7 @@ public static partial class CommandLineHandler
           --existing <skip|update|overwrite>
                                         已有文件策略
           --lock                         锁定 RAR 归档（不能与 --existing update 同时使用）
-          --strict-extract               严格解压模式：解压返回警告码 1 时也判失败并回滚残留
+          --strict-extract               严格解压模式：连同符号链接/属性/尾部数据等可忽略警告也判失败并回滚（写入/路径等重大警告默认已判失败）
           --skip-processed / --no-skip-processed
                                         启用或关闭跳过已处理项目
           --delete-source                成功后删除源文件
@@ -135,7 +135,7 @@ public static partial class CommandLineHandler
           --existing <skip|update|overwrite>
                                         既有檔案策略
           --lock                         鎖定 RAR 封存（不能與 --existing update 同時使用）
-          --strict-extract               嚴格解壓模式：解壓縮回傳警告碼 1 時也判失敗並回滾殘留
+          --strict-extract               嚴格解壓模式：連同符號連結/屬性/尾部資料等可忽略警告也判失敗並回滾（寫入/路徑等重大警告預設已判失敗）
           --skip-processed / --no-skip-processed
                                         啟用或關閉跳過已處理項目
           --delete-source                成功後刪除來源檔案
@@ -224,7 +224,7 @@ public static partial class CommandLineHandler
           --existing <skip|update|overwrite>
                                         Existing file policy
           --lock                         Lock RAR archives (conflicts with --existing update)
-          --strict-extract               Strict extract: treat warning exit code 1 as failure and roll back partial output
+          --strict-extract               Strict extract: also fail and roll back on ignorable symlink/metadata warnings (write/path warnings already fail by default)
           --skip-processed / --no-skip-processed
                                         Enable or disable skipping processed items
           --delete-source                Delete sources after success
@@ -314,7 +314,7 @@ public static partial class CommandLineHandler
           --existing <skip|update|overwrite>
                                         既存ファイル処理ポリシー
           --lock                        RAR アーカイブをロック（--existing update との併用不可）
-          --strict-extract              厳格解凍：解凍の警告コード 1 も失敗として扱い残留物をロールバック
+          --strict-extract              厳格解凍：シンボリックリンク・属性・末尾データ等の軽微な警告も失敗としてロールバック（書込・パス警告は既定で失敗）
           --skip-processed / --no-skip-processed
                                         処理済み項目のスキップを有効化または無効化
           --delete-source               成功後にソースファイルを削除
@@ -403,7 +403,7 @@ public static partial class CommandLineHandler
           --existing <skip|update|overwrite>
                                         Strategie fuer vorhandene Dateien
           --lock                        RAR-Archiv sperren (nicht kompatibel mit --existing update)
-          --strict-extract              Strenges Entpacken: Warncode 1 beim Entpacken als Fehler werten und Teilausgaben zurücksetzen
+          --strict-extract              Strenges Entpacken: auch ignorierbare Symlink-/Metadatenwarnungen als Fehler zurücksetzen (Schreib-/Pfadfehler scheitern immer)
           --skip-processed / --no-skip-processed
                                         Ueberspringen bereits verarbeiteter Elemente aktivieren/deaktivieren
           --delete-source               Quelldateien nach erfolgreichem Abschluss loeschen

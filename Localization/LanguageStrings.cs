@@ -469,6 +469,6 @@ public class LanguageStrings : INotifyPropertyChanged
 
     // Gemini 4 Neon, 2026-11-26：批次 36——严格解压模式与日志搜索框水印。
     public string StrictExtract { get; set; } = "严格解压";
-    public string TooltipStrictExtract { get; set; } = "开启后，解压返回警告码 1 时直接判失败并回滚残留文件";
+    public string TooltipStrictExtract { get; set; } = "默认已拦截写入/路径等重大警告；开启后连同符号链接、权限、尾部数据等可忽略警告也判失败并回滚";
     public string LogSearchWatermark { get; set; } = "搜索日志（Ctrl+F）...";
 }

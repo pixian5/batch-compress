@@ -367,7 +367,7 @@
     "ConfirmDeleteSourceBody": "启用后，任务成功将永久删除源文件或原归档（不经过回收站）。确定要启用吗？",
     "ConfirmDeleteSourceEnable": "启用",
     "StrictExtract": "严格解压",
-    "TooltipStrictExtract": "开启后，解压返回警告码 1 时直接判失败并回滚残留文件",
+    "TooltipStrictExtract": "默认已拦截写入/路径等重大警告；开启后连同符号链接、权限、尾部数据等可忽略警告也判失败并回滚",
     "LogSearchWatermark": "搜索日志（Ctrl+F）..."
   }
 }

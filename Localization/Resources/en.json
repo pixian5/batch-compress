@@ -367,7 +367,7 @@
     "ConfirmDeleteSourceBody": "When enabled, successful tasks will permanently delete source files or archives (bypassing the Trash/Recycle Bin). Enable anyway?",
     "ConfirmDeleteSourceEnable": "Enable",
     "StrictExtract": "Strict extract",
-    "TooltipStrictExtract": "When enabled, extraction warning exit code 1 is treated as failure and partial output is rolled back",
+    "TooltipStrictExtract": "Critical write/path warnings already fail by default; enable to also fail and roll back on ignorable metadata/symlink warnings",
     "LogSearchWatermark": "Search logs (Ctrl+F)..."
   }
 }

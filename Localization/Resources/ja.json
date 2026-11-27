@@ -367,7 +367,7 @@
     "ConfirmDeleteSourceBody": "有効にすると、成功時に元のファイルやアーカイブがゴミ箱を経由せず完全に削除されます。有効にしますか？",
     "ConfirmDeleteSourceEnable": "有効にする",
     "StrictExtract": "厳格解凍",
-    "TooltipStrictExtract": "有効にすると、解凍で警告コード 1 が返った場合に失敗として扱い、残留ファイルをロールバックします",
+    "TooltipStrictExtract": "書き込み・パス等の重大な警告は既定で失敗になります。有効にするとシンボリックリンク・権限・末尾データ等の軽微な警告も失敗としてロールバックします",
     "LogSearchWatermark": "ログを検索 (Ctrl+F)..."
   }
 }

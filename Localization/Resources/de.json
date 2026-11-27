@@ -367,7 +367,7 @@
     "ConfirmDeleteSourceBody": "Wenn aktiviert, werden Quelldateien oder Archive nach Erfolg dauerhaft gelöscht (ohne Papierkorb). Trotzdem aktivieren?",
     "ConfirmDeleteSourceEnable": "Aktivieren",
     "StrictExtract": "Strenges Entpacken",
-    "TooltipStrictExtract": "Wenn aktiviert, wird der Entpack-Warncode 1 als Fehler gewertet und Teilausgaben werden zurückgesetzt",
+    "TooltipStrictExtract": "Schwerwiegende Schreib-/Pfadwarnungen gelten bereits standardmäßig als Fehler; aktivieren, um auch ignorierbare Metadaten-/Symlink-Warnungen zurückzusetzen",
     "LogSearchWatermark": "Protokolle durchsuchen (Ctrl+F)..."
   }
 }

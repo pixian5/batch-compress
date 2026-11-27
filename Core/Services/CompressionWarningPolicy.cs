@@ -32,25 +32,39 @@ public static class CompressionWarningPolicy
     }
 
     /// <summary>
-    /// Gemini 4 Neon, 2026-11-26：0.8.25——严格解压模式下，解压返回码 1（警告）同样判失败并走既有残片回滚。
-    /// 默认关闭（strictExtract == false），以保持既有向后兼容语义。
+    /// Gemini 4 Neon, 2026-11-26 / 2026-11-27：0.8.26——解压返回码 1 分级策略（方案 A）：
+    /// - 写入失败、权限不足、路径/文件名受限或未知警告：默认也直接判失败并回滚本次残留；
+    /// - 仅含跨平台属性或轻微元数据警告：默认放行（保留已解出文件，管线仍凭 HasWarnings 拦截删除/移动原包）；
+    /// - 严格解压模式（strictExtract == true）：所有返回码 1（含可忽略警告）一律判失败。
     /// </summary>
     public static ArchiveResult ApplyForExtraction(ArchiveResult result, string toolName, bool strictExtract)
     {
-        if (!strictExtract || !result.HasWarnings)
+        if (!result.HasWarnings)
         {
             return result;
         }
 
-        var detail = string.IsNullOrWhiteSpace(result.StandardError)
-            ? result.StandardOutput.Trim()
-            : result.StandardError.Trim();
+        var assessment = ExtractionWarningClassifier.Assess(result);
+        if (!strictExtract && assessment.Severity == ExtractionWarningSeverity.Ignorable)
+        {
+            return result;
+        }
+
+        var detail = assessment.DiagnosticLines.Count > 0
+            ? string.Join(" | ", assessment.DiagnosticLines)
+            : (string.IsNullOrWhiteSpace(result.StandardError)
+                ? result.StandardOutput.Trim()
+                : result.StandardError.Trim());
+        var modeNote = strictExtract && assessment.Severity == ExtractionWarningSeverity.Ignorable
+            ? "严格模式"
+            : assessment.Reason;
+
         return result with
         {
             Success = false,
             ErrorMessage = string.IsNullOrWhiteSpace(detail)
-                ? $"解压不完整：{toolName} 返回警告（返回码 {result.ExitCode}），部分文件可能未完整解出，已按严格模式判失败"
-                : $"解压不完整：{toolName} 返回警告（返回码 {result.ExitCode}），部分文件可能未完整解出，已按严格模式判失败: {detail}"
+                ? $"解压不完整（{modeNote}）：{toolName} 返回警告（返回码 {result.ExitCode}），已按失败处理"
+                : $"解压不完整（{modeNote}）：{toolName} 返回警告（返回码 {result.ExitCode}），已按失败处理: {detail}"
         };
     }
 }

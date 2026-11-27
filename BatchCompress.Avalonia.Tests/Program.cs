@@ -157,7 +157,9 @@ internal static partial class Program
             ("ArchiveResult不可变性与警告策略", TestArchiveResultImmutability),
             // Gemini 4 Neon, 2026-11-26：0.8.25——严格解压模式与界面日志搜索过滤。
             ("严格解压策略与CLI解析", TestStrictExtractPolicyAndCli),
-            ("界面日志实时搜索过滤", TestLogSearchFilter)
+            ("界面日志实时搜索过滤", TestLogSearchFilter),
+            // Gemini 4 Neon, 2026-11-27：0.8.26——解压返回码 1 智能分级判定。
+            ("解压警告智能分级判定", TestExtractionWarningClassificationAndPipeline)
         };
 
         // GLM-5.3, 2026-11-03：跑完全部测试后统一输出失败汇总，CI 中一次可见所有失败项；
