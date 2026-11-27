@@ -50,7 +50,7 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
     private readonly ArchiveFormatDefinition _formatDefinition;
     private readonly ILogger? _logger;
     // 同一输出目录在一次批处理里只扫描一次备份残片。
-    private readonly HashSet<string> _recoveredOutputDirectories = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _recoveredOutputDirectories = new(VolumeAwarePathComparer.Instance);
     private readonly object _recoveryGate = new();
 
     // 报告给界面与命令行的逐项状态消息跟随当前界面语言。
@@ -218,7 +218,7 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
             }
 
             // 旧文件已移到备份名；失败清理应删除本次写出的最终路径，而不是把它们当成“原有文件”保护。
-            prepared.PreExistingOutputFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            prepared.PreExistingOutputFiles = new HashSet<string>(FileSystemPathIdentity.GetComparer(prepared.OutputPath));
         }
 
         try
@@ -415,11 +415,11 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
                 }
             }
 
-            return files.Where(File.Exists).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            return files.Where(File.Exists).ToHashSet(FileSystemPathIdentity.GetComparer(outputPath));
         }
         catch
         {
-            return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            return new HashSet<string>(FileSystemPathIdentity.GetComparer(outputPath));
         }
     }
 
@@ -454,7 +454,7 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
 
             var currentFiles = filesToCheck
                 .Where(File.Exists)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Distinct(FileSystemPathIdentity.GetComparer(outputPath))
                 .ToArray();
 
             foreach (var file in currentFiles)
@@ -515,7 +515,7 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
             result.Add(emptyDirectory);
         }
 
-        inputs = result.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        inputs = result.Distinct(VolumeAwarePathComparer.Instance).ToArray();
         return stagingDirectory;
     }
 
@@ -525,7 +525,7 @@ internal sealed class CompressionItemAdapter : IBatchItemAdapter<string>
         {
             var files = ArchiveVolumeResolver.ResolveOutputFiles(outputPath)
                 .Where(File.Exists)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Distinct(FileSystemPathIdentity.GetComparer(outputPath))
                 .ToArray();
             if (files.Length > 0)
             {

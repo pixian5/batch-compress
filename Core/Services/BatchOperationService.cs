@@ -117,8 +117,8 @@ public class BatchOperationService
         }
 
         var archives = new List<string>();
-        // 路径去重只折叠字面相同的路径；Linux 上大小写不同的归档可能是不同文件。
-        var seen = new HashSet<string>(StringComparer.Ordinal);
+        // Gemini 4 Hydrogen, 2026-11-27：批次 43——改用按卷大小写敏感比较器，同时兼容 Linux、Windows 与 macOS 区分大小写卷。
+        var seen = new HashSet<string>(FileSystemPathIdentity.GetComparer(folderPath));
         try
         {
             foreach (var path in Directory.EnumerateFiles(folderPath, "*", SearchOption.TopDirectoryOnly))
@@ -302,7 +302,7 @@ public class BatchOperationService
         var matched = result.Entries
             .SelectMany(entry => ArchiveVolumeResolver.Resolve(entry.FilePath).FilesForPostProcessing)
             .Select(Path.GetFullPath)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            .ToHashSet(FileSystemPathIdentity.GetComparer(sourceFolder));
         foreach (var archive in Directory.EnumerateFiles(sourceFolder, "*", SearchOption.TopDirectoryOnly))
         {
             if (SystemMetadataFileFilter.ShouldSkip(archive) ||

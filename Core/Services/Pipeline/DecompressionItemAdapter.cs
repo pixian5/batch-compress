@@ -49,7 +49,7 @@ internal sealed class DecompressionItemAdapter : IBatchItemAdapter<FileEntry>
     private readonly IArchiveEngine _archiveEngine;
     private readonly BatchOperationOptions _options;
     private readonly ILogger? _logger;
-    private readonly HashSet<string> _processedArchives = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _processedArchives = new(VolumeAwarePathComparer.Instance);
 
     // 报告给界面与命令行的逐项状态消息跟随当前界面语言。
     private static LanguageStrings L => LocalizationService.Instance.Strings;

@@ -200,21 +200,6 @@ public static class BatchPreflightService
         }
     }
 
-    private sealed class VolumeAwarePathComparer : IEqualityComparer<string>
-    {
-        public static readonly VolumeAwarePathComparer Instance = new();
-
-        public bool Equals(string? x, string? y)
-        {
-            if (ReferenceEquals(x, y)) return true;
-            if (x is null || y is null) return false;
-            return FileSystemPathIdentity.GetComparer(x).Equals(x, y);
-        }
-
-        public int GetHashCode(string obj) =>
-            FileSystemPathIdentity.GetComparer(obj).GetHashCode(obj);
-    }
-
     private static string GetCollisionIdentity(string targetPath, bool volumeEnabled)
     {
         var resolvedTarget = FileSystemPathIdentity.ResolveBestEffort(targetPath);
@@ -251,6 +236,22 @@ public static class BatchPreflightService
         public int GetHashCode((BatchPreflightIssueKind Kind, string TargetPath) value) =>
             HashCode.Combine(value.Kind, FileSystemPathIdentity.GetComparer(value.TargetPath).GetHashCode(value.TargetPath));
     }
+}
+
+/// <summary>按各路径所在卷动态选用大小写比较器的比较器实现。</summary>
+internal sealed class VolumeAwarePathComparer : IEqualityComparer<string>
+{
+    public static readonly VolumeAwarePathComparer Instance = new();
+
+    public bool Equals(string? x, string? y)
+    {
+        if (ReferenceEquals(x, y)) return true;
+        if (x is null || y is null) return false;
+        return FileSystemPathIdentity.GetComparer(x).Equals(x, y);
+    }
+
+    public int GetHashCode(string obj) =>
+        obj is null ? 0 : FileSystemPathIdentity.GetComparer(obj).GetHashCode(obj);
 }
 
 /// <summary>跨平台路径身份辅助方法，支持按卷检测大小写敏感能力与符号链接解析。</summary>

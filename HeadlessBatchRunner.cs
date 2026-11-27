@@ -402,7 +402,7 @@ public class HeadlessBatchRunner
         // 避免用户把“试运行成功”误当成“真实执行也会成功”。
         var missing = paths
             .Where(path => !File.Exists(path) && !Directory.Exists(path))
-            .Distinct(OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase)
+            .Distinct(VolumeAwarePathComparer.Instance)
             .ToList();
         if (missing.Count > 0)
         {
@@ -500,7 +500,7 @@ public class HeadlessBatchRunner
     {
         var known = new HashSet<string>(
             entries.Select(entry => entry.FilePath),
-            OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
+            VolumeAwarePathComparer.Instance);
 
         foreach (var path in import.MissingEntries
                      .Concat(import.IncompleteVolumes)
@@ -518,7 +518,7 @@ public class HeadlessBatchRunner
     {
         var known = new HashSet<string>(
             entries.Select(entry => entry.FilePath),
-            OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
+            VolumeAwarePathComparer.Instance);
 
         foreach (var rawPath in rawPaths)
         {

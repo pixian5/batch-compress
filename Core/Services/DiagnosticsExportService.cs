@@ -49,7 +49,7 @@ public sealed class DiagnosticsExportService
         ArgumentNullException.ThrowIfNull(logsDirectories);
         _logsDirectories = logsDirectories
             .Where(path => !string.IsNullOrWhiteSpace(path))
-            .Distinct(OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase)
+            .Distinct(VolumeAwarePathComparer.Instance)
             .ToArray();
         _rarEngine = rarEngine;
         _sevenZipEngine = sevenZipEngine;
@@ -107,10 +107,7 @@ public sealed class DiagnosticsExportService
                             @"\.log(\.\d+)?(\.gz)?$", RegexOptions.CultureInvariant)));
             }
 
-            var pathComparer = OperatingSystem.IsLinux()
-                ? StringComparer.Ordinal
-                : StringComparer.OrdinalIgnoreCase;
-            var allLogs = logFiles.Distinct(pathComparer).ToList();
+            var allLogs = logFiles.Distinct(VolumeAwarePathComparer.Instance).ToList();
 
             // WorkBuddy, 2026-11-16：复查修复——崩溃日志通常比界面运行日志旧，
             // 统一按时间倒序取 10 份会被大量常规日志完全挤出包外，而它恰是最关键的排障线索。
@@ -121,7 +118,7 @@ public sealed class DiagnosticsExportService
                 .OrderByDescending(File.GetLastWriteTimeUtc)
                 .Take(MaxCrashLogs)
                 .ToList();
-            var selectedCrash = new HashSet<string>(crashLogs, pathComparer);
+            var selectedCrash = new HashSet<string>(crashLogs, VolumeAwarePathComparer.Instance);
             var regularLogs = allLogs
                 .Where(path => !selectedCrash.Contains(path))
                 .OrderByDescending(File.GetLastWriteTimeUtc)

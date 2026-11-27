@@ -11,12 +11,9 @@ namespace BatchCompress.Avalonia.ViewModels;
 /// </summary>
 public sealed class FailedItemRetryList
 {
-    private static readonly StringComparer PathComparer =
-        OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
-
     private readonly object _gate = new();
     private readonly List<string> _failedPaths = [];
-    private readonly HashSet<string> _seen = new(PathComparer);
+    private readonly HashSet<string> _seen = new(VolumeAwarePathComparer.Instance);
     private int _failCount;
 
     public void Record(OperationProgressInfo info)
@@ -91,7 +88,7 @@ public sealed class FailedItemRetryList
 
     private static Dictionary<string, string> ParsePasswordBookMap(string originalSourceList)
     {
-        var map = new Dictionary<string, string>(PathComparer);
+        var map = new Dictionary<string, string>(VolumeAwarePathComparer.Instance);
         var nonEmptyLines = SourceCollector.SplitLines(originalSourceList);
         for (var i = 0; i + 1 < nonEmptyLines.Count; i += 2)
         {

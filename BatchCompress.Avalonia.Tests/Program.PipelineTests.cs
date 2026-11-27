@@ -7,6 +7,7 @@ using BatchCompress.Avalonia.Core.Interfaces;
 using BatchCompress.Avalonia.Core.Models;
 using BatchCompress.Avalonia.Core.Services;
 using BatchCompress.Avalonia.Localization;
+using BatchCompress.Avalonia.ViewModels;
 
 internal static partial class Program
 {
@@ -1760,6 +1761,81 @@ internal static partial class Program
         }
 
         return Task.CompletedTask;
+    }
+
+    // Gemini 4 Hydrogen, 2026-11-27：批次 43——全仓路径比较按卷大小写敏感一致性回归测试。
+    private static async Task TestCrossVolumePathIdentityConsistency()
+    {
+        // 1. VolumeAwarePathComparer 在默认卷下应符合该卷的大小写敏感规则。
+        var tempRoot = Path.GetTempPath();
+        var defaultSensitive = FileSystemPathIdentity.IsCaseSensitive(tempRoot);
+        var pathA = Path.Combine(tempRoot, "Alpha.txt");
+        var patha = Path.Combine(tempRoot, "alpha.txt");
+        AssertEqual(!defaultSensitive, VolumeAwarePathComparer.Instance.Equals(pathA, patha));
+
+        // 2. MainWindow.axaml.cs 的 PathsMatch 必须走 FileSystemPathIdentity，而非硬编码平台判断。
+        var repoRoot = FindRepositoryRoot();
+        var mainWindowCode = File.ReadAllText(Path.Combine(repoRoot, "Views", "MainWindow.axaml.cs"));
+        Assert(mainWindowCode.Contains("FileSystemPathIdentity.GetComparer", StringComparison.Ordinal),
+            "MainWindow.axaml.cs 应改用 FileSystemPathIdentity.GetComparer");
+
+        // 3. 在真实大小写敏感卷上验证解压去重、目录扫描与失败回滚都区分大小写变体。
+        var caseSensitiveDir = ResolveCaseSensitiveBaseDirectory();
+        if (caseSensitiveDir == null)
+        {
+            Console.WriteLine("SKIP 跨卷路径比较深测: 需要区分大小写的文件系统（可设置 BATCHCOMPRESS_CASE_SENSITIVE_DIR）");
+            return;
+        }
+
+        var root = Path.Combine(caseSensitiveDir, $"bc-vol-consistency-{Guid.NewGuid():N}");
+        var srcDir = Path.Combine(root, "src");
+        var outDir = Path.Combine(root, "out");
+        Directory.CreateDirectory(srcDir);
+        Directory.CreateDirectory(outDir);
+        try
+        {
+            var lowerArchive = Path.Combine(srcDir, "pack.7z");
+            var upperArchive = Path.Combine(srcDir, "Pack.7z");
+            File.WriteAllText(lowerArchive, "lower");
+            File.WriteAllText(upperArchive, "upper");
+
+            var service = new BatchOperationService(new ScriptedArchiveEngine(), new RecordingSystemIntegration());
+            var scanned = service.LoadArchivesFromFolder(srcDir, "7z", skipProcessed: false);
+            AssertEqual(2, scanned.Count);
+
+            var engine = new ScriptedArchiveEngine();
+            var snapshots = new List<OperationProgressInfo>();
+            await new BatchOperationService(engine, new RecordingSystemIntegration()).BatchDecompressAsync(
+                [
+                    new FileEntry { FilePath = lowerArchive, FileSize = 5 },
+                    new FileEntry { FilePath = upperArchive, FileSize = 5 }
+                ],
+                new BatchOperationOptions
+                {
+                    OutputPath = outDir,
+                    Extension = "7z",
+                    ExistingFileMode = ExistingFileMode.Overwrite
+                },
+                new SnapshotProgress(snapshots),
+                CancellationToken.None);
+
+            // 大小写敏感卷下 pack.7z 与 Pack.7z 是两个不同文件，不能被 _processedArchives 误跳过。
+            AssertEqual(2, engine.ExtractionInputs.Count);
+            AssertEqual(0, snapshots.Last().IgnoreCount);
+
+            // FailedItemRetryList 在大小写敏感卷上也必须保留两个大小写变体。
+            var retry = new FailedItemRetryList();
+            retry.Record(new OperationProgressInfo { FailCount = 1, CurrentSourcePath = lowerArchive });
+            retry.Record(new OperationProgressInfo { FailCount = 2, CurrentSourcePath = upperArchive });
+            AssertEqual(2, retry.GetFailedPaths().Count);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
     }
 
     private static string? ResolveCaseSensitiveBaseDirectory()

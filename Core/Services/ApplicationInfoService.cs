@@ -79,10 +79,6 @@ public static class ApplicationInfoService
     /// </summary>
     public static IReadOnlyList<string> ResolveDiagnosticsLogDirectories()
     {
-        var comparer = OperatingSystem.IsLinux()
-            ? StringComparer.Ordinal
-            : StringComparer.OrdinalIgnoreCase;
-
         return new[]
             {
                 ResolveGuiLogDirectory(),
@@ -90,7 +86,7 @@ public static class ApplicationInfoService
                 ResolveCliLogDirectory()
             }
             .Where(path => !string.IsNullOrWhiteSpace(path))
-            .Distinct(comparer)
+            .Distinct(VolumeAwarePathComparer.Instance)
             .ToArray();
     }
 

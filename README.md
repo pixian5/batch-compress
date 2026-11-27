@@ -4,11 +4,13 @@
 
 跨平台桌面批处理工具，使用 Avalonia UI 和 .NET 11 构建。应用通过 RAR/WinRAR 与官方 7-Zip 命令行程序执行压缩和解压，界面与业务逻辑均可运行于 Windows、macOS 和 Linux。
 
-当前版本：`0.8.31`（等价命令行生成复制与悬停提示补全）。版本号唯一来源为仓库根目录 `VERSION` 文件，csproj、程序集信息、CLI 版本查询、macOS Info.plist 与打包产物命名均读取它。
+当前版本：`0.8.32`（全仓路径比较按卷大小写敏感一致性收敛）。版本号唯一来源为仓库根目录 `VERSION` 文件，csproj、程序集信息、CLI 版本查询、macOS Info.plist 与打包产物命名均读取它。
 
 ## 当前开发进度
 
-最新进度见 [当前开发进度](docs/20261127-1241-当前开发进度-Gemini-4-Hydrogen.md)，当前待办入口见 [下一步待实现](docs/20261127-1241-下一步待实现-Gemini-4-Hydrogen.md)；本轮实现见 [v0.8.31 完成报告](docs/20261127-1241-v0.8.31等价命令行生成与悬停提示补全完成报告-Gemini-4-Hydrogen.md)，最新整体分析见 [整体分析与下一步开发建议（0.8.22）](docs/20261126-1350-整体分析与下一步开发建议-Claude-Opus-4.6.md)，上一轮实现见 [v0.8.30 完成报告](docs/20261127-1115-v0.8.30重置偏好快捷操作与帮助窗口升级完成报告-Gemini-4-Hydrogen.md)，密码日志决定见 [运行日志明文密码决定与警告行为](docs/20261121-0012-运行日志保留明文密码决定与警告行为说明-Claude-Opus-5.5.md)。
+最新进度见 [当前开发进度](docs/20261127-1247-当前开发进度-Gemini-4-Hydrogen.md)，当前待办入口见 [下一步待实现](docs/20261127-1247-下一步待实现-Gemini-4-Hydrogen.md)；本轮实现见 [v0.8.32 完成报告](docs/20261127-1247-v0.8.32全仓路径比较按卷大小写敏感一致性收敛完成报告-Gemini-4-Hydrogen.md)，最新整体分析见 [整体分析与下一步开发建议（0.8.22）](docs/20261126-1350-整体分析与下一步开发建议-Claude-Opus-4.6.md)，上一轮实现见 [v0.8.31 完成报告](docs/20261127-1241-v0.8.31等价命令行生成与悬停提示补全完成报告-Gemini-4-Hydrogen.md)，密码日志决定见 [运行日志明文密码决定与警告行为](docs/20261121-0012-运行日志保留明文密码决定与警告行为说明-Claude-Opus-5.5.md)。
+
+`0.8.32`（2026-11-27）：完成批次 43——将 `VolumeAwarePathComparer` 提升为共享内部比较器，全面替换 `CompressionItemAdapter`、`DecompressionItemAdapter`、`BatchOperationService`、`MainWindow.axaml.cs`、`FailedItemRetryList`、`HeadlessBatchRunner`、`DiagnosticsExportService`、`ApplicationInfoService` 中残留的静态大小写硬编码比较，同时兼容 Linux 挂载不区分大小写卷与 macOS 外接区分大小写 APFS 卷；新增 `TestCrossVolumePathIdentityConsistency` 并在真实 `Case-sensitive APFS` 磁盘映像上 **0-SKIP 通过全部 122 项单元测试**（镜像已安全卸载清理）；Release 构建 0 警告 0 错误，43 项经验实测、158 项端到端夹具、4 项界面冒烟全过，macOS 应用 `0.8.32` 已安装并在后台运行。详见 [v0.8.32 完成报告](docs/20261127-1247-v0.8.32全仓路径比较按卷大小写敏感一致性收敛完成报告-Gemini-4-Hydrogen.md)。
 
 `0.8.31`（2026-11-27）：完成批次 42——① 新增 `CliCommandBuilder` 与开始页「复制 CLI」按钮，将当前压缩/解压界面选项一键转换为等价 CLI 参数并写入剪贴板（明文自定义密码自动改用 `--password-stdin` 防泄露，生成结果通过 `CommandLineHandler` 往返解析闭环测试）；② 补齐双页签 8 处遗漏的 `ToolTip.Tip` 及 `TooltipExistingFiles`（五语言 376 键）；Release 构建 0 警告 0 错误，121 项单元测试、43 项经验实测、158 项端到端夹具、4 项界面冒烟全过，macOS 应用 `0.8.31` 已安装并在后台运行。详见 [v0.8.31 完成报告](docs/20261127-1241-v0.8.31等价命令行生成与悬停提示补全完成报告-Gemini-4-Hydrogen.md)。
 

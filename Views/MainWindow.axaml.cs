@@ -443,10 +443,9 @@ public partial class MainWindow : Window
     {
         try
         {
-            return string.Equals(
+            return FileSystemPathIdentity.GetComparer(sourcePath).Equals(
                 Path.GetFullPath(candidate),
-                Path.GetFullPath(sourcePath),
-                OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+                Path.GetFullPath(sourcePath));
         }
         catch
         {
@@ -587,7 +586,7 @@ public partial class MainWindow : Window
             .Select(path => path.Trim())
             .Where(path => path.Length > 0)
             .ToList();
-        foreach (var path in paths.Where(path => !existing.Contains(path, StringComparer.OrdinalIgnoreCase)))
+        foreach (var path in paths.Where(path => !existing.Contains(path, FileSystemPathIdentity.GetComparer(path))))
         {
             existing.Add(path);
         }
