@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using BatchCompress.Avalonia.Core.Models;
 using BatchCompress.Avalonia.Core.Services.Pipeline;
 
@@ -183,19 +185,34 @@ public static class BatchPreflightService
         string? volumeSize,
         ICollection<BatchPreflightIssue> issues)
     {
-        var comparer = FileSystemPathIdentity.GetComparer(Directory.GetCurrentDirectory());
         var groups = outputPlans.GroupBy(
             plan => GetCollisionIdentity(plan.TargetPath, !string.IsNullOrWhiteSpace(volumeSize)),
-            comparer);
+            VolumeAwarePathComparer.Instance);
 
         foreach (var group in groups.Where(group => group.Count() > 1))
         {
             var plans = group.ToArray();
+            var targetComparer = FileSystemPathIdentity.GetComparer(plans[0].TargetPath);
             issues.Add(new BatchPreflightIssue(
                 BatchPreflightIssueKind.OutputCollision,
                 plans[0].TargetPath,
-                plans.Select(plan => plan.SourcePath).Distinct(comparer).ToArray()));
+                plans.Select(plan => plan.SourcePath).Distinct(targetComparer).ToArray()));
         }
+    }
+
+    private sealed class VolumeAwarePathComparer : IEqualityComparer<string>
+    {
+        public static readonly VolumeAwarePathComparer Instance = new();
+
+        public bool Equals(string? x, string? y)
+        {
+            if (ReferenceEquals(x, y)) return true;
+            if (x is null || y is null) return false;
+            return FileSystemPathIdentity.GetComparer(x).Equals(x, y);
+        }
+
+        public int GetHashCode(string obj) =>
+            FileSystemPathIdentity.GetComparer(obj).GetHashCode(obj);
     }
 
     private static string GetCollisionIdentity(string targetPath, bool volumeEnabled)
@@ -236,17 +253,177 @@ public static class BatchPreflightService
     }
 }
 
-/// <summary>跨平台路径身份辅助方法，尽量解析已有符号链接后再做包含关系判断。</summary>
+/// <summary>跨平台路径身份辅助方法，支持按卷检测大小写敏感能力与符号链接解析。</summary>
 internal static class FileSystemPathIdentity
 {
-    public static StringComparer GetComparer(string path)
+    // POSIX macOS pathconf(_PC_CASE_SENSITIVE) = 11 (/usr/include/sys/unistd.h)
+    private const int MacOsPathConfCaseSensitive = 11;
+    private const int MaxCacheEntries = 256;
+    private static readonly ConcurrentDictionary<string, bool> CaseSensitivityCache = new(StringComparer.Ordinal);
+
+    [DllImport("libSystem.dylib", EntryPoint = "pathconf", SetLastError = true)]
+    private static extern nint MacOsPathConf(string path, int name);
+
+    public static bool IsCaseSensitive(string? path)
     {
-        // Windows 与 macOS 默认卷按忽略大小写处理；Linux 保留大小写区别。
-        // 来源收集仍使用 Ordinal，确保大小写不同的来源不会被静默丢弃。
-        _ = path;
-        return OperatingSystem.IsWindows() || OperatingSystem.IsMacOS()
-            ? StringComparer.OrdinalIgnoreCase
-            : StringComparer.Ordinal;
+        var probeDir = FindNearestExistingDirectory(path);
+        if (probeDir == null)
+        {
+            return GetPlatformDefaultCaseSensitivity();
+        }
+
+        if (CaseSensitivityCache.TryGetValue(probeDir, out var cached))
+        {
+            return cached;
+        }
+
+        var detected = DetectCaseSensitivityForDirectory(probeDir);
+        if (CaseSensitivityCache.Count >= MaxCacheEntries)
+        {
+            CaseSensitivityCache.Clear();
+        }
+
+        CaseSensitivityCache[probeDir] = detected;
+        return detected;
+    }
+
+    public static StringComparer GetComparer(string path) =>
+        IsCaseSensitive(path) ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+
+    private static bool GetPlatformDefaultCaseSensitivity() =>
+        !OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS();
+
+    private static string? FindNearestExistingDirectory(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            var current = Path.GetFullPath(path);
+            if (File.Exists(current))
+            {
+                current = Path.GetDirectoryName(current);
+            }
+
+            while (!string.IsNullOrEmpty(current))
+            {
+                if (Directory.Exists(current))
+                {
+                    return current;
+                }
+
+                var parent = Path.GetDirectoryName(current);
+                if (string.Equals(parent, current, StringComparison.Ordinal))
+                {
+                    break;
+                }
+
+                current = parent;
+            }
+        }
+        catch
+        {
+            return null;
+        }
+
+        return null;
+    }
+
+    private static bool DetectCaseSensitivityForDirectory(string probeDir)
+    {
+        if (OperatingSystem.IsMacOS())
+        {
+            try
+            {
+                var value = MacOsPathConf(probeDir, MacOsPathConfCaseSensitive);
+                if (value == 1)
+                {
+                    return true;
+                }
+
+                if (value == 0)
+                {
+                    return false;
+                }
+            }
+            catch
+            {
+                // P/Invoke 不可用时安全回退默认策略。
+            }
+
+            return false;
+        }
+
+        if (OperatingSystem.IsWindows())
+        {
+            return false;
+        }
+
+        return ProbeUnixDirectoryCaseSensitivity(probeDir);
+    }
+
+    private static bool ProbeUnixDirectoryCaseSensitivity(string probeDir)
+    {
+        try
+        {
+            var entries = Directory.EnumerateFileSystemEntries(probeDir).Take(64).ToArray();
+            var literalNames = entries
+                .Select(Path.GetFileName)
+                .Where(name => !string.IsNullOrEmpty(name))
+                .ToHashSet(StringComparer.Ordinal);
+
+            foreach (var entryPath in entries)
+            {
+                var name = Path.GetFileName(entryPath);
+                if (string.IsNullOrEmpty(name) || !TryFlipFirstAsciiLetter(name, out var flippedName))
+                {
+                    continue;
+                }
+
+                // 目录内若本来就同时存在该大小写变体，无法单独用来判断，继续看下一项。
+                if (literalNames.Contains(flippedName))
+                {
+                    return true;
+                }
+
+                var flippedPath = Path.Combine(probeDir, flippedName);
+                return !File.Exists(flippedPath) && !Directory.Exists(flippedPath);
+            }
+        }
+        catch
+        {
+            // 枚举失败时回退 Linux 默认大小写敏感。
+        }
+
+        return true;
+    }
+
+    private static bool TryFlipFirstAsciiLetter(string name, out string flipped)
+    {
+        var chars = name.ToCharArray();
+        for (var i = 0; i < chars.Length; i++)
+        {
+            var ch = chars[i];
+            if (ch is >= 'a' and <= 'z')
+            {
+                chars[i] = char.ToUpperInvariant(ch);
+                flipped = new string(chars);
+                return true;
+            }
+
+            if (ch is >= 'A' and <= 'Z')
+            {
+                chars[i] = char.ToLowerInvariant(ch);
+                flipped = new string(chars);
+                return true;
+            }
+        }
+
+        flipped = string.Empty;
+        return false;
     }
 
     public static string ResolveBestEffort(string path)
@@ -313,9 +490,9 @@ internal static class FileSystemPathIdentity
         var prefix = ancestor.EndsWith(Path.DirectorySeparatorChar)
             ? ancestor
             : ancestor + Path.DirectorySeparatorChar;
-        var comparison = OperatingSystem.IsWindows() || OperatingSystem.IsMacOS()
-            ? StringComparison.OrdinalIgnoreCase
-            : StringComparison.Ordinal;
+        var comparison = IsCaseSensitive(volumePath)
+            ? StringComparison.Ordinal
+            : StringComparison.OrdinalIgnoreCase;
         return candidate.StartsWith(prefix, comparison);
     }
 

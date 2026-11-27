@@ -627,17 +627,18 @@ internal static partial class Program
     }
 
     // GLM-5.3, 2026-11-03：大小写歧义只在区分大小写的文件系统（Linux CI）可构造，
-    // 其余平台输出 SKIP。锁定：歧义计 Ambiguous+Ignore、消息一致、引擎零调用。
+    // 其余平台未挂载大小写敏感卷时输出 SKIP；若设置 BATCHCOMPRESS_CASE_SENSITIVE_DIR 则直接实测。
     private static async Task TestCaseAmbiguitySkip()
     {
-        if (!OperatingSystem.IsLinux())
+        var baseDir = ResolveCaseSensitiveBaseDirectory();
+        if (baseDir == null)
         {
-            Console.WriteLine("SKIP 大小写歧义跳过: 需要区分大小写的文件系统");
+            Console.WriteLine("SKIP 大小写歧义跳过: 需要区分大小写的文件系统（可设置 BATCHCOMPRESS_CASE_SENSITIVE_DIR）");
             return;
         }
 
         var L = LocalizationService.Instance.Strings;
-        var root = Path.Combine(Path.GetTempPath(), $"batch-compress-char-a-{Guid.NewGuid():N}");
+        var root = Path.Combine(baseDir, $"batch-compress-char-a-{Guid.NewGuid():N}");
         Directory.CreateDirectory(root);
         try
         {
@@ -1673,11 +1674,22 @@ internal static partial class Program
         }
     }
 
-    // Gemini 4 Neon, 2026-11-26：批次 34——macOS/Windows 大小写不敏感文件系统下，
-    // 失败归档写入仅大小写不同的文件名时，解压回滚不得误删原有文件。
+    // Gemini 4 Neon, 2026-11-26 / 2026-11-27：批次 34 & 39——按卷大小写敏感能力验证解压失败回滚。
     private static async Task TestFailedExtractionRollbackCaseSensitivity()
     {
-        var root = Path.Combine(Path.GetTempPath(), $"batch-compress-extraction-case-{Guid.NewGuid():N}");
+        await RunCaseVariantRollbackScenario(Path.GetTempPath());
+
+        var caseSensitiveDir = ResolveCaseSensitiveBaseDirectory();
+        if (caseSensitiveDir != null &&
+            !string.Equals(Path.GetFullPath(caseSensitiveDir), Path.GetFullPath(Path.GetTempPath()), StringComparison.Ordinal))
+        {
+            await RunCaseVariantRollbackScenario(caseSensitiveDir);
+        }
+    }
+
+    private static async Task RunCaseVariantRollbackScenario(string baseDir)
+    {
+        var root = Path.Combine(baseDir, $"batch-compress-extraction-case-{Guid.NewGuid():N}");
         var archive = Path.Combine(root, "pack.7z");
         var outDir = Path.Combine(root, "out");
         Directory.CreateDirectory(outDir);
@@ -1686,6 +1698,7 @@ internal static partial class Program
 
         try
         {
+            var isCaseSensitive = FileSystemPathIdentity.IsCaseSensitive(outDir);
             var engine = new CaseVariantFailureArchiveEngine();
             var snapshots = new List<OperationProgressInfo>();
             await new BatchOperationService(engine, new TestSystemIntegration()).BatchDecompressAsync(
@@ -1695,17 +1708,76 @@ internal static partial class Program
                 CancellationToken.None);
 
             AssertEqual(1, snapshots.Last().FailCount);
-            Assert(File.Exists(Path.Combine(outDir, "readme.txt")), "大小写不敏感文件系统下解压失败回滚不得误删原有文件");
+            Assert(File.Exists(Path.Combine(outDir, "readme.txt")), "解压失败回滚不得误删原有文件");
             Assert(!File.Exists(Path.Combine(outDir, "partial.tmp")), "真正新增的残片文件必须被清理");
-            if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS())
+            if (isCaseSensitive)
             {
-                Assert(!File.Exists(Path.Combine(outDir, "Readme.txt")), "大小写敏感文件系统下应清理新增的大写文件名残片");
+                Assert(!File.Exists(Path.Combine(outDir, "Readme.txt")), "大小写敏感卷下应清理新增的大小写不同残片");
             }
         }
         finally
         {
             if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
         }
+    }
+
+    // Gemini 4 Neon, 2026-11-27：批次 39——验证按卷检测大小写敏感能力及预检行为。
+    private static Task TestVolumeCaseSensitivityDetection()
+    {
+        var tempPath = Path.GetTempPath();
+        var expectedDefault = !OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS();
+        AssertEqual(expectedDefault, FileSystemPathIdentity.IsCaseSensitive(tempPath));
+        AssertEqual(
+            expectedDefault ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase,
+            FileSystemPathIdentity.GetComparer(tempPath));
+
+        var caseSensitiveDir = ResolveCaseSensitiveBaseDirectory();
+        if (caseSensitiveDir != null)
+        {
+            Assert(FileSystemPathIdentity.IsCaseSensitive(caseSensitiveDir), "真实大小写敏感卷必须被检测为 true");
+            AssertEqual(StringComparer.Ordinal, FileSystemPathIdentity.GetComparer(caseSensitiveDir));
+
+            var subRoot = Path.Combine(caseSensitiveDir, $"bc-case-preflight-{Guid.NewGuid():N}");
+            var outDir = Path.Combine(subRoot, "out");
+            Directory.CreateDirectory(subRoot);
+            Directory.CreateDirectory(outDir);
+            try
+            {
+                var lower = Path.Combine(subRoot, "item.txt");
+                var upper = Path.Combine(subRoot, "Item.txt");
+                File.WriteAllText(lower, "lower");
+                File.WriteAllText(upper, "upper");
+
+                var preflight = BatchPreflightService.InspectCompression(
+                    [lower, upper],
+                    new BatchOperationOptions { OutputPath = outDir, Extension = "7z" });
+                Assert(preflight.CanExecute, "大小写敏感卷上 item.txt 与 Item.txt 输出到 item.txt.7z / Item.txt.7z 不应误报冲突");
+            }
+            finally
+            {
+                if (Directory.Exists(subRoot)) Directory.Delete(subRoot, recursive: true);
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private static string? ResolveCaseSensitiveBaseDirectory()
+    {
+        var configured = Environment.GetEnvironmentVariable("BATCHCOMPRESS_CASE_SENSITIVE_DIR");
+        if (!string.IsNullOrWhiteSpace(configured) &&
+            Directory.Exists(configured) &&
+            FileSystemPathIdentity.IsCaseSensitive(configured))
+        {
+            return configured;
+        }
+
+        if (OperatingSystem.IsLinux() && FileSystemPathIdentity.IsCaseSensitive(Path.GetTempPath()))
+        {
+            return Path.GetTempPath();
+        }
+
+        return null;
     }
 
     private sealed class CaseVariantFailureArchiveEngine : IArchiveEngine
