@@ -391,6 +391,27 @@ internal static partial class Program
             Assert(axaml.Contains("L.CopyCliCommand", StringComparison.Ordinal), "MainWindow.axaml 缺少 L.CopyCliCommand");
             Assert(axaml.Contains("L.TooltipCopyCliCommand", StringComparison.Ordinal), "MainWindow.axaml 缺少 L.TooltipCopyCliCommand");
             Assert(axaml.Contains("L.TooltipExistingFiles", StringComparison.Ordinal), "MainWindow.axaml 缺少 L.TooltipExistingFiles");
+            Assert(axaml.Contains("L.AddAttachments", StringComparison.Ordinal) &&
+                   axaml.Contains("TooltipAttachmentList", StringComparison.Ordinal),
+                "MainWindow.axaml AddAttachments 复选框应绑定 TooltipAttachmentList");
+
+            var aboutAxaml = File.ReadAllText(Path.Combine(root, "Views", "AboutWindow.axaml"));
+            Assert(aboutAxaml.Contains("TooltipExportDiagnostics", StringComparison.Ordinal),
+                "AboutWindow.axaml ExportDiagnostics 按钮应绑定 TooltipExportDiagnostics");
+
+            // 批次 47：解压校验统一收敛至 BatchPreflightService.InspectDecompressionPath。
+            var preflightCs = File.ReadAllText(Path.Combine(root, "Core", "Services", "BatchPreflightService.cs"));
+            var guiPreflightCs = File.ReadAllText(Path.Combine(root, "Core", "Services", "GuiPreflightService.cs"));
+            var adapterCs = File.ReadAllText(Path.Combine(root, "Core", "Services", "Pipeline", "DecompressionItemAdapter.cs"));
+            var runnerCs = File.ReadAllText(Path.Combine(root, "HeadlessBatchRunner.cs"));
+            Assert(preflightCs.Contains("InspectDecompressionPath", StringComparison.Ordinal),
+                "BatchPreflightService 必须暴露统一解压预检方法 InspectDecompressionPath");
+            Assert(guiPreflightCs.Contains("InspectDecompressionPath", StringComparison.Ordinal),
+                "GuiPreflightService 应复用 BatchPreflightService.InspectDecompressionPath");
+            Assert(adapterCs.Contains("InspectDecompressionPath", StringComparison.Ordinal),
+                "DecompressionItemAdapter 应复用 BatchPreflightService.InspectDecompressionPath");
+            Assert(runnerCs.Contains("InspectDecompressionPath", StringComparison.Ordinal),
+                "HeadlessBatchRunner --dry-run 应复用 BatchPreflightService.InspectDecompressionPath");
         }
         finally
         {

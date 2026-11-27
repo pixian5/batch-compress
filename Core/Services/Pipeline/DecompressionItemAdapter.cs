@@ -88,70 +88,8 @@ internal sealed class DecompressionItemAdapter : IBatchItemAdapter<FileEntry>
             return Task.FromResult<PreparedBatchItem?>(null);
         }
 
-        // WorkBuddy, 2026-11-17：0.8.17——完全不存在且没有同组分卷的条目按 NotFound 计，
-        // 不要被 VolumeResolver 的“单名推断分卷组”误判成 IncompleteVolumes。
-        var missingResolution = !File.Exists(entry.FilePath)
-            ? ArchiveVolumeResolver.Resolve(entry.FilePath)
-            : null;
-        if (missingResolution is { HasCaseAmbiguity: false, Volumes.Count: 0 })
-        {
-            progressInfo.NonExistCount++;
-            progressInfo.Message = string.Format(L.ItemNotFound, entry.FilePath);
-            progressInfo.IsError = true;
-            progress.Report(progressInfo);
-            return Task.FromResult<PreparedBatchItem?>(null);
-        }
-
-        ArchiveVolumeResolveResult resolved;
-        try
-        {
-            resolved = ArchiveVolumeResolver.Resolve(entry.FilePath);
-        }
-        catch (Exception ex)
-        {
-            Log(LogLevel.Warning, $"无法解析归档：{entry.FilePath}：{ex.Message}");
-            progressInfo.NonExistCount++;
-            progressInfo.Message = string.Format(L.CannotResolveArchive, entry.FilePath, ex.Message);
-            progressInfo.IsError = true;
-            progress.Report(progressInfo);
-            return Task.FromResult<PreparedBatchItem?>(null);
-        }
-
-        if (resolved.HasCaseAmbiguity)
-        {
-            progressInfo.AmbiguousArchiveCount++;
-            progressInfo.IgnoreCount++;
-            progressInfo.Message = string.Format(L.CaseAmbiguitySkipped, entry.FilePath);
-            progressInfo.IsError = true;
-            Log(LogLevel.Warning, progressInfo.Message);
-            progress.Report(progressInfo);
-            return Task.FromResult<PreparedBatchItem?>(null);
-        }
-
-        if (resolved.HasDuplicateNumbers)
-        {
-            progressInfo.AmbiguousArchiveCount++;
-            progressInfo.IgnoreCount++;
-            progressInfo.Message = string.Format(L.DuplicateVolumeSkipped, entry.FilePath);
-            progressInfo.IsError = true;
-            Log(LogLevel.Warning, progressInfo.Message);
-            progress.Report(progressInfo);
-            return Task.FromResult<PreparedBatchItem?>(null);
-        }
-
-        if (resolved.IsMultiVolume && (!resolved.HasRequiredFirstVolume || !resolved.IsSequenceContiguous))
-        {
-            progressInfo.IncompleteVolumeCount++;
-            progressInfo.IgnoreCount++;
-            progressInfo.Message = BatchOperationService.BuildIncompleteVolumeMessage(resolved);
-            progressInfo.IsError = true;
-            Log(LogLevel.Warning, progressInfo.Message);
-            progress.Report(progressInfo);
-            return Task.FromResult<PreparedBatchItem?>(null);
-        }
-
-        var archivePath = resolved.FirstVolumePath;
-        if (archivePath == null || !File.Exists(archivePath))
+        var inspection = BatchPreflightService.InspectDecompressionPath(entry.FilePath);
+        if (inspection.Status == DecompressionPathStatus.Missing)
         {
             Log(LogLevel.Warning, $"Archive not found: {entry.FilePath}");
             progressInfo.NonExistCount++;
@@ -160,6 +98,41 @@ internal sealed class DecompressionItemAdapter : IBatchItemAdapter<FileEntry>
             progress.Report(progressInfo);
             return Task.FromResult<PreparedBatchItem?>(null);
         }
+
+        if (inspection.Status == DecompressionPathStatus.ResolutionError)
+        {
+            Log(LogLevel.Warning, $"无法解析归档：{entry.FilePath}：{inspection.ErrorMessage}");
+            progressInfo.NonExistCount++;
+            progressInfo.Message = BatchOperationService.FormatDecompressionIssue(inspection, entry.FilePath);
+            progressInfo.IsError = true;
+            progress.Report(progressInfo);
+            return Task.FromResult<PreparedBatchItem?>(null);
+        }
+
+        if (inspection.Status is DecompressionPathStatus.CaseAmbiguity or DecompressionPathStatus.DuplicateVolumes)
+        {
+            progressInfo.AmbiguousArchiveCount++;
+            progressInfo.IgnoreCount++;
+            progressInfo.Message = BatchOperationService.FormatDecompressionIssue(inspection, entry.FilePath);
+            progressInfo.IsError = true;
+            Log(LogLevel.Warning, progressInfo.Message);
+            progress.Report(progressInfo);
+            return Task.FromResult<PreparedBatchItem?>(null);
+        }
+
+        if (inspection.Status == DecompressionPathStatus.IncompleteVolumes)
+        {
+            progressInfo.IncompleteVolumeCount++;
+            progressInfo.IgnoreCount++;
+            progressInfo.Message = BatchOperationService.FormatDecompressionIssue(inspection, entry.FilePath);
+            progressInfo.IsError = true;
+            Log(LogLevel.Warning, progressInfo.Message);
+            progress.Report(progressInfo);
+            return Task.FromResult<PreparedBatchItem?>(null);
+        }
+
+        var resolved = inspection.Resolved!;
+        var archivePath = inspection.ArchivePath!;
 
         if (!_processedArchives.Add(Path.GetFullPath(archivePath)))
         {

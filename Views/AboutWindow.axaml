@@ -55,7 +55,8 @@
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,20,0,0">
             <Button Content="{Binding L.AboutOpenLogDirectory}" Command="{Binding OpenAboutLogDirectoryCommand}" MinWidth="140" MinHeight="32"
                     ToolTip.Tip="{Binding AboutInfo.GuiLogDirectory}"/>
-            <Button Content="{Binding L.ExportDiagnostics}" Command="{Binding ExportDiagnosticsCommand}" MinWidth="140" MinHeight="32"/>
+            <Button Content="{Binding L.ExportDiagnostics}" Command="{Binding ExportDiagnosticsCommand}" MinWidth="140" MinHeight="32"
+                    ToolTip.Tip="{Binding L.TooltipExportDiagnostics}"/>
             <Button Content="{Binding L.AboutClose}" Click="CloseButton_Click" MinWidth="90" MinHeight="32"/>
         </StackPanel>
     </Grid>

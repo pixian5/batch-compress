@@ -381,9 +381,13 @@ public class RarArchiveEngine : IArchiveEngine
     {
         try
         {
-            var baseDir = Path.GetFullPath(AppContext.BaseDirectory);
+            var baseDir = Path.TrimEndingDirectorySeparator(Path.GetFullPath(AppContext.BaseDirectory)) +
+                          Path.DirectorySeparatorChar;
             var full = Path.GetFullPath(path);
-            return full.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase);
+            var comparison = FileSystemPathIdentity.IsCaseSensitive(baseDir)
+                ? StringComparison.Ordinal
+                : StringComparison.OrdinalIgnoreCase;
+            return full.StartsWith(baseDir, comparison);
         }
         catch
         {

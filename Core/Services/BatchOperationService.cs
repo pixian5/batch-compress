@@ -218,7 +218,7 @@ public class BatchOperationService
                     continue;
                 }
 
-                if (result.Entries.Any(entry => entry.FilePath.Equals(fullPath, StringComparison.Ordinal)))
+                if (result.Entries.Any(entry => VolumeAwarePathComparer.Instance.Equals(entry.FilePath, fullPath)))
                 {
                     continue;
                 }
@@ -267,7 +267,7 @@ public class BatchOperationService
                     continue;
                 }
 
-                if (!result.Paths.Contains(path, StringComparer.Ordinal))
+                if (!result.Paths.Contains(path, VolumeAwarePathComparer.Instance))
                 {
                     result.Paths.Add(path);
                     result.MatchedBytes += File.Exists(path) ? new FileInfo(path).Length : 0;
@@ -434,7 +434,7 @@ public class BatchOperationService
 
         var affectedSources = result.Issues
             .SelectMany(issue => issue.SourcePaths)
-            .Distinct(StringComparer.Ordinal)
+            .Distinct(VolumeAwarePathComparer.Instance)
             .ToArray();
         progress.Report(new OperationProgressInfo
         {
@@ -483,6 +483,21 @@ public class BatchOperationService
             _logger);
         await pipeline.RunAsync(archives, options, progress, cancellationToken);
     }
+
+    /// <summary>
+    /// 格式化单个待解压条目校验发现的非 Missing 阻塞问题，供解压适配器、GUI 预检与 CLI --dry-run 共用。
+    /// </summary>
+    internal static string FormatDecompressionIssue(DecompressionPathInspection inspection, string requestedPath) =>
+        inspection.Status switch
+        {
+            DecompressionPathStatus.ResolutionError => string.Format(
+                L.CannotResolveArchive, requestedPath, inspection.ErrorMessage ?? string.Empty),
+            DecompressionPathStatus.CaseAmbiguity => string.Format(L.CaseAmbiguitySkipped, requestedPath),
+            DecompressionPathStatus.DuplicateVolumes => string.Format(L.DuplicateVolumeSkipped, requestedPath),
+            DecompressionPathStatus.IncompleteVolumes when inspection.Resolved is not null =>
+                BuildIncompleteVolumeMessage(inspection.Resolved),
+            _ => requestedPath
+        };
 
     /// <summary>
     /// 构建缺卷跳过消息（解压适配器与 TXT 密码本导入共用）。

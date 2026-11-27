@@ -141,50 +141,20 @@ public static class GuiPreflightService
                 continue;
             }
 
-            var missingCheck = !File.Exists(entry.FilePath)
-                ? ArchiveVolumeResolver.Resolve(entry.FilePath)
-                : null;
-            if (missingCheck is { HasCaseAmbiguity: false, Volumes.Count: 0 })
+            var inspection = BatchPreflightService.InspectDecompressionPath(entry.FilePath);
+            if (inspection.Status == DecompressionPathStatus.Missing)
             {
                 missingPaths.Add(entry.FilePath);
                 continue;
             }
 
-            ArchiveVolumeResolveResult resolved;
-            try
+            if (inspection.Status != DecompressionPathStatus.Valid || inspection.ArchivePath is null)
             {
-                resolved = ArchiveVolumeResolver.Resolve(entry.FilePath);
-            }
-            catch (Exception ex)
-            {
-                issueLines.Add(string.Format(L.CannotResolveArchive, entry.FilePath, ex.Message));
+                issueLines.Add(BatchOperationService.FormatDecompressionIssue(inspection, entry.FilePath));
                 continue;
             }
 
-            if (resolved.HasCaseAmbiguity)
-            {
-                issueLines.Add(string.Format(L.CaseAmbiguitySkipped, entry.FilePath));
-                continue;
-            }
-
-            if (resolved.HasDuplicateNumbers)
-            {
-                issueLines.Add(string.Format(L.DuplicateVolumeSkipped, entry.FilePath));
-                continue;
-            }
-
-            if (resolved.IsMultiVolume && (!resolved.HasRequiredFirstVolume || !resolved.IsSequenceContiguous))
-            {
-                issueLines.Add(BatchOperationService.BuildIncompleteVolumeMessage(resolved));
-                continue;
-            }
-
-            var archivePath = resolved.FirstVolumePath;
-            if (archivePath == null || !File.Exists(archivePath))
-            {
-                missingPaths.Add(entry.FilePath);
-                continue;
-            }
+            var archivePath = inspection.ArchivePath;
 
             if (!seenArchives.Add(Path.GetFullPath(archivePath)))
             {

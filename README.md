@@ -4,11 +4,13 @@
 
 跨平台桌面批处理工具，使用 Avalonia UI 和 .NET 11 构建。应用通过 RAR/WinRAR 与官方 7-Zip 命令行程序执行压缩和解压，界面与业务逻辑均可运行于 Windows、macOS 和 Linux。
 
-当前版本：`0.8.36`（测试工程通配治理、架构隔离守护与余留大文件拆解）。版本号唯一来源为仓库根目录 `VERSION` 文件，csproj、程序集信息、CLI 版本查询、macOS Info.plist 与打包产物命名均读取它。
+当前版本：`0.8.37`（解压试运行预检对齐与按卷路径比较收口）。版本号唯一来源为仓库根目录 `VERSION` 文件，csproj、程序集信息、CLI 版本查询、macOS Info.plist 与打包产物命名均读取它。
 
 ## 当前开发进度
 
-最新进度见 [当前开发进度](docs/20261127-1822-当前开发进度-Gemini-4-Hydrogen.md)，当前待办入口见 [下一步待实现](docs/20261127-1822-下一步待实现-Gemini-4-Hydrogen.md)；**最新整体分析**见 [整体分析与下一步开发建议（0.8.33）](docs/20261127-1255-整体分析与下一步开发建议-Gemini-4-Hydrogen.md)，本轮实现见 [v0.8.36 完成报告](docs/20261127-1822-v0.8.36工程通配治理架构隔离与余留大文件拆解完成报告-Gemini-4-Hydrogen.md)，上一轮实现见 [v0.8.35 完成报告](docs/20261127-1308-v0.8.35核心大文件拆解与退出生命周期完善完成报告-Gemini-4-Hydrogen.md)，密码日志决定见 [运行日志明文密码决定与警告行为](docs/20261121-0012-运行日志保留明文密码决定与警告行为说明-Claude-Opus-5.5.md)。
+最新进度见 [当前开发进度](docs/20261127-1915-当前开发进度-Gemini-4-Hydrogen.md)，当前待办入口见 [下一步待实现](docs/20261127-1915-下一步待实现-Gemini-4-Hydrogen.md)；**最新整体分析**见 [整体分析与下一步开发建议（0.8.33）](docs/20261127-1255-整体分析与下一步开发建议-Gemini-4-Hydrogen.md)，本轮实现见 [v0.8.37 完成报告](docs/20261127-1915-v0.8.37解压试运行预检对齐与按卷路径比较收口完成报告-Gemini-4-Hydrogen.md)，上一轮实现见 [v0.8.36 完成报告](docs/20261127-1822-v0.8.36工程通配治理架构隔离与余留大文件拆解完成报告-Gemini-4-Hydrogen.md)，密码日志决定见 [运行日志明文密码决定与警告行为](docs/20261121-0012-运行日志保留明文密码决定与警告行为说明-Claude-Opus-5.5.md)。
+
+`0.8.37`（2026-11-27）：完成批次 47——① 新增 `BatchPreflightService.InspectDecompressionPath` 统一单条目解压预检并由 `GuiPreflightService`、`DecompressionItemAdapter` 与 `HeadlessBatchRunner.RunDryRun()` 共用，使 CLI `extract --dry-run` 准确拦截缺卷/缺首卷/重复编号/歧义（退出码 `2` 且零目录创建）；② 收口 `ArchiveVolumeResolver.ResolveOutputFiles`、`BatchOperationService` 密码本与清单去重、`CliCommandBuilder` `--temp-dir` 比对及 `RarArchiveEngine.IsUnderBaseDirectory` 的按卷大小写比较一致性；③ 补全主窗口「添加附件」复选框与「关于」弹窗「导出诊断」按钮的 `ToolTip.Tip`；Release 编译 0 警告 0 错误，真实 `Case-sensitive APFS` 卷 **0-SKIP 通过全部 125 项单元测试**，43 项经验实测、158 项端到端夹具、5 项冒烟检查及 4 项界面冒烟全过，macOS 应用 `0.8.37` 已安装并在后台运行。详见 [v0.8.37 完成报告](docs/20261127-1915-v0.8.37解压试运行预检对齐与按卷路径比较收口完成报告-Gemini-4-Hydrogen.md)。
 
 `0.8.36`（2026-11-27）：完成批次 46——① 将 `BatchCompress.Avalonia.Tests.csproj` 演进为按目录通配引入全部 `Core/`、`Localization/`、`CommandLineHandler*.cs` 与 `Program*.cs`（仅显式排除 `SystemIntegrationService.cs`），并新增 `TestCoreIsolationAndProjectHygiene` 强制守护核心层零 Avalonia/UI 反向依赖与全仓 `.cs` 单文件 `< 1000` 行上限；② `DiagnosticsExportService.Create` 复用注入的 `_archiveEngine`（支持 `ArchiveEngineRouter` 解包），`Program.cs` 显式同步 `parseOutcome.LanguageExplicitlySet`；③ 拆出 `Views/MainWindow.WindowState.cs` 并将 `Program.PipelineTests.cs` 拆分为 3 份 `< 700` 行文件，清理陈旧本机未跟踪构建缓存；Release 编译 0 警告 0 错误，真实 `Case-sensitive APFS` 卷 **0-SKIP 通过全部 124 项单元测试**，43 项经验实测、158 项端到端夹具、5 项冒烟检查及 4 项界面冒烟全过，macOS 应用 `0.8.36` 已安装并在后台运行。详见 [v0.8.36 完成报告](docs/20261127-1822-v0.8.36工程通配治理架构隔离与余留大文件拆解完成报告-Gemini-4-Hydrogen.md)。
 

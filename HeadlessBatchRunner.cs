@@ -384,6 +384,30 @@ public class HeadlessBatchRunner
                 return 2;
             }
         }
+        else
+        {
+            // Gemini 4 Hydrogen, 2026-11-27：批次 47——解压 --dry-run 同样校验缺卷、重复分卷编号与大小写歧义，与压缩试运行及 GUI 预检保持一致。
+            var extractIssues = new List<string>();
+            foreach (var path in paths)
+            {
+                var inspection = BatchPreflightService.InspectDecompressionPath(path);
+                if (inspection.Status != DecompressionPathStatus.Valid &&
+                    inspection.Status != DecompressionPathStatus.Missing)
+                {
+                    extractIssues.Add(BatchOperationService.FormatDecompressionIssue(inspection, path));
+                }
+            }
+
+            foreach (var issue in extractIssues)
+            {
+                WriteLine(issue);
+            }
+
+            if (extractIssues.Count > 0)
+            {
+                return 2;
+            }
+        }
 
         WriteLine($"DRY-RUN mode={(_options.Compress ? "compress" : "extract")} format={_options.Extension}");
         WriteLine($"Output: {_options.OutputPath}");

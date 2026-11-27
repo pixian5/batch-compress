@@ -522,6 +522,40 @@ internal static partial class Program
         Assert(mainWindowCode.Contains("FileSystemPathIdentity.GetComparer", StringComparison.Ordinal),
             "MainWindow.axaml.cs 应改用 FileSystemPathIdentity.GetComparer");
 
+        // 2b. 默认卷上的 ArchiveVolumeResolver / CliCommandBuilder / TXT 导入须遵循卷大小写语义。
+        var tempVerifyDir = Path.Combine(tempRoot, $"bc-default-vol-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempVerifyDir);
+        try
+        {
+            var lowerTempFile = Path.Combine(tempVerifyDir, "casecheck.7z");
+            var upperTempFile = Path.Combine(tempVerifyDir, "CaseCheck.7z");
+            File.WriteAllText(lowerTempFile, "stub");
+
+            var batchHelper = new BatchOperationService(new ScriptedArchiveEngine(), new RecordingSystemIntegration());
+            var bookPath = Path.Combine(tempVerifyDir, "book.txt");
+            File.WriteAllLines(bookPath, [lowerTempFile, "pw1", upperTempFile, "pw2"]);
+            var importedBook = batchHelper.LoadFilesFromTextFileWithDiagnostics(bookPath, tempVerifyDir, "7z");
+            AssertEqual(1, importedBook.Entries.Count);
+
+            var cliTempArgs = CliCommandBuilder.BuildArguments(new CliCommandBuildRequest
+            {
+                IsCompression = true,
+                SourceMode = 1,
+                SaveFilePath = tempVerifyDir,
+                OutputPath = Path.Combine(tempVerifyDir, "OutDir"),
+                TempDirectory = Path.Combine(tempVerifyDir, "outdir")
+            });
+            var hasTempDirFlag = cliTempArgs.Contains("--temp-dir");
+            AssertEqual(defaultSensitive, hasTempDirFlag);
+        }
+        finally
+        {
+            if (Directory.Exists(tempVerifyDir))
+            {
+                Directory.Delete(tempVerifyDir, recursive: true);
+            }
+        }
+
         // 3. 在真实大小写敏感卷上验证解压去重、目录扫描与失败回滚都区分大小写变体。
         var caseSensitiveDir = ResolveCaseSensitiveBaseDirectory();
         if (caseSensitiveDir == null)
@@ -571,6 +605,23 @@ internal static partial class Program
             retry.Record(new OperationProgressInfo { FailCount = 1, CurrentSourcePath = lowerArchive });
             retry.Record(new OperationProgressInfo { FailCount = 2, CurrentSourcePath = upperArchive });
             AssertEqual(2, retry.GetFailedPaths().Count);
+
+            // SourceCollector 与 ArchiveVolumeResolver.ResolveOutputFiles 在大小写敏感卷上也必须保留大小写变体。
+            AssertEqual(2, SourceCollector.CollectCompressionSources([lowerArchive, upperArchive]).Count);
+            AssertEqual(2, SourceCollector.CollectDecompressionEntries(
+                null, [lowerArchive, upperArchive], "7z", skipProcessed: false, batchService: service).Count);
+
+            var volLower = Path.Combine(outDir, "split.7z.001");
+            var volUpper = Path.Combine(outDir, "Split.7z.001");
+            File.WriteAllText(volLower, "v1");
+            File.WriteAllText(volUpper, "V1");
+            var resolvedOutputs = ArchiveVolumeResolver.ResolveOutputFiles(Path.Combine(outDir, "split.7z"));
+            AssertEqual(2, resolvedOutputs.Count);
+
+            var sensitiveBookPath = Path.Combine(root, "sensitive-book.txt");
+            File.WriteAllLines(sensitiveBookPath, [lowerArchive, "pw1", upperArchive, "pw2"]);
+            var sensitiveBook = service.LoadFilesFromTextFileWithDiagnostics(sensitiveBookPath, srcDir, "7z");
+            AssertEqual(2, sensitiveBook.Entries.Count);
         }
         finally
         {

@@ -31,11 +31,79 @@ public sealed class BatchPreflightResult
     public bool CanExecute => Issues.Count == 0;
 }
 
+/// <summary>单个待解压路径的统一结构化校验状态（零磁盘副作用）。</summary>
+public enum DecompressionPathStatus
+{
+    Valid,
+    Missing,
+    ResolutionError,
+    CaseAmbiguity,
+    DuplicateVolumes,
+    IncompleteVolumes
+}
+
+/// <summary>单个待解压路径的结构化校验结果。</summary>
+public sealed record DecompressionPathInspection(
+    DecompressionPathStatus Status,
+    ArchiveVolumeResolveResult? Resolved,
+    string? ArchivePath,
+    string? ErrorMessage);
+
 /// <summary>
 /// 压缩批次执行前统一检查输出目标，避免同名覆盖、输出递归进入来源和覆盖来源文件。
 /// </summary>
 public static class BatchPreflightService
 {
+    /// <summary>
+    /// 统一校验单个解压入口：缺失、解析异常、大小写歧义、重复编号、缺卷与合法首卷。
+    /// Gemini 4 Hydrogen, 2026-11-27：批次 47——解压适配器、GUI 预检与 CLI --dry-run 共用同一套分卷完整度判定。
+    /// </summary>
+    public static DecompressionPathInspection InspectDecompressionPath(string path)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+
+        // 完全不存在且无同组分卷时直接判 Missing，避免被单名推断误报成缺卷。
+        var missingResolution = !File.Exists(path)
+            ? ArchiveVolumeResolver.Resolve(path)
+            : null;
+        if (missingResolution is { HasCaseAmbiguity: false, Volumes.Count: 0 })
+        {
+            return new DecompressionPathInspection(DecompressionPathStatus.Missing, null, null, null);
+        }
+
+        ArchiveVolumeResolveResult resolved;
+        try
+        {
+            resolved = ArchiveVolumeResolver.Resolve(path);
+        }
+        catch (Exception ex)
+        {
+            return new DecompressionPathInspection(DecompressionPathStatus.ResolutionError, null, null, ex.Message);
+        }
+
+        if (resolved.HasCaseAmbiguity)
+        {
+            return new DecompressionPathInspection(DecompressionPathStatus.CaseAmbiguity, resolved, null, null);
+        }
+
+        if (resolved.HasDuplicateNumbers)
+        {
+            return new DecompressionPathInspection(DecompressionPathStatus.DuplicateVolumes, resolved, null, null);
+        }
+
+        if (resolved.IsMultiVolume && (!resolved.HasRequiredFirstVolume || !resolved.IsSequenceContiguous))
+        {
+            return new DecompressionPathInspection(DecompressionPathStatus.IncompleteVolumes, resolved, null, null);
+        }
+
+        var archivePath = resolved.FirstVolumePath;
+        if (archivePath == null || !File.Exists(archivePath))
+        {
+            return new DecompressionPathInspection(DecompressionPathStatus.Missing, resolved, null, null);
+        }
+
+        return new DecompressionPathInspection(DecompressionPathStatus.Valid, resolved, archivePath, null);
+    }
     public static BatchPreflightResult InspectCompression(
         IEnumerable<string>? sourcePaths,
         BatchOperationOptions options)

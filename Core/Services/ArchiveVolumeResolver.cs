@@ -284,7 +284,7 @@ public static class ArchiveVolumeResolver
             }
         }
 
-        return files.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        return files.Distinct(VolumeAwarePathComparer.Instance).ToArray();
     }
 
     /// <summary>

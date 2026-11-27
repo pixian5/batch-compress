@@ -292,7 +292,9 @@ public static class CliCommandBuilder
         }
 
         if (!string.IsNullOrWhiteSpace(request.TempDirectory) &&
-            !string.Equals(request.TempDirectory.Trim(), request.OutputPath.Trim(), StringComparison.Ordinal))
+            !VolumeAwarePathComparer.Instance.Equals(
+                SourceCollector.NormalizePath(request.TempDirectory),
+                SourceCollector.NormalizePath(request.OutputPath)))
         {
             args.Add("--temp-dir");
             args.Add(request.TempDirectory.Trim());

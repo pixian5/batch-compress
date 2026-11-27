@@ -173,7 +173,9 @@ internal static partial class Program
             // Gemini 4 Hydrogen, 2026-11-27：0.8.34——GUI 预检试运行与自定义密码掩码保护。
             ("界面预检与密码掩码保护", TestGuiPreflightServiceAndPasswordMasking),
             // Gemini 4 Hydrogen, 2026-11-27：0.8.36——核心分层隔离、通配符编译治理与代码规模守护。
-            ("核心UI隔离与工程结构守护", TestCoreIsolationAndProjectHygiene)
+            ("核心UI隔离与工程结构守护", TestCoreIsolationAndProjectHygiene),
+            // Gemini 4 Hydrogen, 2026-11-27：0.8.37——CLI 解压试运行分卷预检一致性。
+            ("CLI解压试运行分卷预检", TestExtractDryRunPreflightValidation)
         };
 
         // GLM-5.3, 2026-11-03：跑完全部测试后统一输出失败汇总，CI 中一次可见所有失败项；
