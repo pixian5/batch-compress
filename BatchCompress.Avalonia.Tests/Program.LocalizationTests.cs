@@ -164,7 +164,12 @@ internal static partial class Program
             }
         }
 
-        foreach (var relativePath in new[] { Path.Combine("Views", "MainWindow.axaml.cs"), "App.axaml.cs" })
+        foreach (var relativePath in new[]
+                 {
+                     Path.Combine("Views", "MainWindow.axaml.cs"),
+                     Path.Combine("Views", "MainWindow.WindowState.cs"),
+                     "App.axaml.cs"
+                 })
         {
             var path = Path.Combine(repoRoot, relativePath);
             if (!File.Exists(path))

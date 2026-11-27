@@ -13,6 +13,10 @@ public sealed class ArchiveEngineRouter : IArchiveEngine
     private readonly IArchiveEngine _rarEngine;
     private readonly IArchiveEngine _sevenZipEngine;
 
+    // Gemini 4 Hydrogen, 2026-11-27：批次 46——暴露已路由引擎供诊断导出复用，避免调用方重复 new 实例。
+    internal IArchiveEngine RarEngine => _rarEngine;
+    internal IArchiveEngine SevenZipEngine => _sevenZipEngine;
+
     public ArchiveEngineRouter()
         : this(new RarArchiveEngine(), new SevenZipArchiveEngine())
     {

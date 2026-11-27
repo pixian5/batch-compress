@@ -85,10 +85,7 @@ public class HeadlessBatchRunner
                 diagnosticsDirectories.Add(currentLogDirectory);
             }
 
-            var exporter = new DiagnosticsExportService(
-                diagnosticsDirectories,
-                new RarArchiveEngine(),
-                new SevenZipArchiveEngine());
+            var exporter = DiagnosticsExportService.Create(diagnosticsDirectories, _archiveEngine);
             try
             {
                 var zip = await exporter.ExportAsync(_options.ExportDiagnosticsPath).ConfigureAwait(false);

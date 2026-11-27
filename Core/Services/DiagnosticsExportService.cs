@@ -56,6 +56,37 @@ public sealed class DiagnosticsExportService
     }
 
     /// <summary>
+    /// 复用已注入的归档引擎（支持从 <see cref="ArchiveEngineRouter"/> 解包）构造诊断导出器。
+    /// Gemini 4 Hydrogen, 2026-11-27：批次 46——统一诊断入口引擎来源，避免各调用方绕过注入直接实例化。
+    /// </summary>
+    public static DiagnosticsExportService Create(
+        IEnumerable<string> logsDirectories,
+        IArchiveEngine? archiveEngine = null)
+    {
+        if (archiveEngine is ArchiveEngineRouter router)
+        {
+            return new DiagnosticsExportService(logsDirectories, router.RarEngine, router.SevenZipEngine);
+        }
+
+        if (archiveEngine is RarArchiveEngine rarEngine)
+        {
+            return new DiagnosticsExportService(logsDirectories, rarEngine, new SevenZipArchiveEngine());
+        }
+
+        if (archiveEngine is SevenZipArchiveEngine sevenZipEngine)
+        {
+            return new DiagnosticsExportService(logsDirectories, new RarArchiveEngine(), sevenZipEngine);
+        }
+
+        if (archiveEngine is not null)
+        {
+            return new DiagnosticsExportService(logsDirectories, archiveEngine, archiveEngine);
+        }
+
+        return new DiagnosticsExportService(logsDirectories, new RarArchiveEngine(), new SevenZipArchiveEngine());
+    }
+
+    /// <summary>
     /// 对日志文本中的密码凭据进行脱敏替换（-p、-hp、--password 后续值替换为 ***）。
     /// </summary>
     public static string RedactSensitiveText(string input) => CredentialRedactor.Redact(input);

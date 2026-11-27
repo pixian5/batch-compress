@@ -404,10 +404,9 @@ public partial class MainWindowViewModel
             var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
             var zipPath = Path.Combine(exportDirectory, $"batchcompress-diagnostics-{timestamp}.zip");
 
-            var exporter = new DiagnosticsExportService(
+            var exporter = DiagnosticsExportService.Create(
                 ApplicationInfoService.ResolveDiagnosticsLogDirectories(),
-                new RarArchiveEngine(),
-                new SevenZipArchiveEngine());
+                _archiveEngine);
 
             var exportedPath = await exporter.ExportAsync(zipPath);
             var message = string.Format(L.DiagnosticsExportSuccess, exportedPath);

@@ -89,6 +89,8 @@ sealed class Program
         // GLM-5.3, 2026-11-04：批次 7——`--lang en` 等纯语言调用（无模式动词、无批处理
         // 来源/输出）在 CommandLineHandler 中已放宽为默认 GUI，因此此处语言同步完成后
         // 自然落入下方 GUI 分支，桌面程序以指定语言启动（gui --lang en 语义保持不变）。
+        // Gemini 4 Hydrogen, 2026-11-27：批次 46——同步显式语言元数据，与解析结果的纯数据字段保持一致。
+        LocalizationService.Instance.LanguageExplicitlySet = parseOutcome.LanguageExplicitlySet;
         LocalizationService.Instance.CurrentLanguage = options.Language;
 
         // GPT-5, 2026-08-05：无界面模式同步等待异步任务，确保 Main 返回真实的批处理退出码。

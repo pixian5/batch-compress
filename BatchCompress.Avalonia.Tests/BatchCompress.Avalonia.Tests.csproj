@@ -8,120 +8,21 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
 
-  <!-- GPT-5, 2026-08-05：直接链接生产源码，以测试应用实际交付的同一套命令和进程代码。 -->
-  <!-- Antigravity, 2026-11-08：批次 15——将超三千行测试程序按领域拆分为 partial class。 -->
+  <!-- Gemini 4 Hydrogen, 2026-11-27：批次 46——改为按目录通配符引入全部 Core/Localization/CLI/测试源码，仅显式排除依赖 Avalonia 窗口系统的 SystemIntegrationService，防止新增核心服务时遗漏编译项触发 CS0246。 -->
   <ItemGroup>
-    <Compile Include="Program.cs" />
-    <Compile Include="Program.CliTests.cs" />
-    <!-- WorkBuddy, 2026-11-15：批次 18（P4-2）——并发推荐与 auto 参数回归测试。 -->
-    <Compile Include="Program.ConcurrencyTests.cs" />
-    <!-- WorkBuddy, 2026-11-15：批次 19（P4-1）——致命输出解析回归测试。 -->
-    <Compile Include="Program.FatalErrorTests.cs" />
-    <!-- WorkBuddy, 2026-11-15：批次 20（P4-3）——批处理结果报告回归测试。 -->
-    <Compile Include="Program.BatchReportTests.cs" />
-    <!-- WorkBuddy, 2026-11-16：批次 21（P0）——崩溃兜底日志回归测试。 -->
-    <Compile Include="Program.CrashLogTests.cs" />
-    <!-- WorkBuddy, 2026-11-16：批次 22（P1）——界面日志缓冲回归测试。 -->
-    <Compile Include="Program.LogBufferTests.cs" />
-    <!-- WorkBuddy, 2026-11-16：批次 24（P2）——本地化资源一致性守护测试。 -->
-    <Compile Include="Program.LocalizationResourceTests.cs" />
-    <!-- WorkBuddy, 2026-11-16：审查修复回归测试（报告本地化、CSV 防护、崩溃日志强制写入、日志空行）。 -->
-    <Compile Include="Program.ReviewFixTests.cs" />
-    <!-- WorkBuddy, 2026-11-16：批次 27（P4-4）——「关于」弹窗与路径口径回归测试。 -->
-    <Compile Include="Program.AboutInfoTests.cs" />
-    <!-- WorkBuddy, 2026-11-16：0.8.12——统一默认参数、真实关机与 Windows 自动安装 7-Zip。 -->
-    <Compile Include="Program.DecisionTests.cs" />
-    <!-- WorkBuddy, 2026-11-16：0.8.13——诊断包脱敏的引号边界回归测试。 -->
-    <Compile Include="Program.RedactionTests.cs" />
-    <!-- WorkBuddy, 2026-11-16：0.8.13——命令行显式语言标记回归测试。 -->
-    <Compile Include="Program.CliBehaviorTests.cs" />
-    <!-- WorkBuddy, 2026-11-16：0.8.13——界面派生逻辑（页签显隐）与生命周期守护。 -->
-    <Compile Include="Program.UiLogicTests.cs" />
-    <!-- Claude Opus 5.5, 2026-11-20：0.8.20 归档警告保留来源回归测试 -->
-    <Compile Include="Program.ArchiveWarningTests.cs" />
-    <Compile Include="..\ViewModels\TabVisibility.cs" Link="ViewModels\TabVisibility.cs" />
-    <!-- WorkBuddy, 2026-11-17：0.8.15——关窗等待操作完成的纯逻辑。 -->
-    <Compile Include="..\ViewModels\OperationCompletionSignal.cs" Link="ViewModels\OperationCompletionSignal.cs" />
-    <!-- Gemini 4 Neon, 2026-11-26：0.8.23——界面“删除源”勾选框二次确认状态协调器。 -->
-    <Compile Include="..\ViewModels\DeleteSourceConfirmationGuard.cs" Link="ViewModels\DeleteSourceConfirmationGuard.cs" />
-    <!-- Gemini 4 Neon, 2026-11-26：0.8.25——界面日志实时搜索过滤纯逻辑。 -->
-    <Compile Include="..\ViewModels\LogSearchFilter.cs" Link="ViewModels\LogSearchFilter.cs" />
-    <!-- Gemini 4 Neon, 2026-11-27：0.8.27——失败项一键加载重试列表纯逻辑。 -->
-    <Compile Include="..\ViewModels\FailedItemRetryList.cs" Link="ViewModels\FailedItemRetryList.cs" />
-    <!-- WorkBuddy, 2026-11-17：0.8.15——目录大小计算（符号链接安全）。 -->
-    <Compile Include="..\Core\Services\DirectorySizeCalculator.cs" Link="Core\Services\DirectorySizeCalculator.cs" />
-    <!-- WorkBuddy, 2026-11-17：0.8.16——共享密码脱敏与 7-Zip 查找安全。 -->
-    <Compile Include="..\Core\Services\CredentialRedactor.cs" Link="Core\Services\CredentialRedactor.cs" />
-    <!-- WorkBuddy, 2026-11-17：0.8.17——覆盖备份的启动恢复。 -->
-    <Compile Include="..\Core\Services\Pipeline\OutputBackupRecovery.cs" Link="Core\Services\Pipeline\OutputBackupRecovery.cs" />
-    <Compile Include="Program.SecurityTests.cs" />
-    <!-- WorkBuddy, 2026-11-16：批次 25（P2）——窗口状态持久化回归测试。 -->
-    <Compile Include="Program.WindowStateTests.cs" />
-    <Compile Include="..\Core\Services\WindowStateService.cs" Link="Core\Services\WindowStateService.cs" />
-    <!-- Gemini 4 Neon, 2026-11-27：批次 40——用户偏好安全持久化服务。 -->
-    <Compile Include="..\Core\Services\UserPreferencesService.cs" Link="Core\Services\UserPreferencesService.cs" />
-    <!-- Gemini 4 Hydrogen, 2026-11-27：批次 42——等价命令行生成器。 -->
-    <Compile Include="..\Core\Services\CliCommandBuilder.cs" Link="Core\Services\CliCommandBuilder.cs" />
-    <!-- Gemini 4 Hydrogen, 2026-11-27：批次 44——GUI 无副作用预检试运行服务。 -->
-    <Compile Include="..\Core\Services\GuiPreflightService.cs" Link="Core\Services\GuiPreflightService.cs" />
-    <Compile Include="..\ViewModels\LogBuffer.cs" Link="ViewModels\LogBuffer.cs" />
-    <Compile Include="Program.EngineTests.cs" />
-    <Compile Include="Program.PipelineTests.cs" />
-    <Compile Include="Program.LoggingAndConfigTests.cs" />
-    <Compile Include="Program.LocalizationTests.cs" />
-    <Compile Include="..\CommandLineHandler.cs" Link="CommandLineHandler.cs" />
-    <Compile Include="..\CommandLineHandler.Validation.cs" Link="CommandLineHandler.Validation.cs" />
-    <Compile Include="..\CommandLineHandler.HelpTexts.cs" Link="CommandLineHandler.HelpTexts.cs" />
+    <Compile Include="Program*.cs" />
+    <Compile Include="..\Core\**\*.cs" Link="Core\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Remove="..\Core\**\bin\**\*.cs;..\Core\**\obj\**\*.cs;..\Core\Services\SystemIntegrationService.cs" />
+    <Compile Include="..\Localization\*.cs" Link="Localization\%(Filename)%(Extension)" />
+    <Compile Include="..\CommandLineHandler*.cs" Link="%(Filename)%(Extension)" />
     <Compile Include="..\HeadlessBatchRunner.cs" Link="HeadlessBatchRunner.cs" />
-    <Compile Include="..\Core\Interfaces\IArchiveEngine.cs" Link="Core\Interfaces\IArchiveEngine.cs" />
-    <Compile Include="..\Core\Services\WinRarCommandBuilder.cs" Link="Core\Services\WinRarCommandBuilder.cs" />
-    <Compile Include="..\Core\Services\WinRarProcessRunner.cs" Link="Core\Services\WinRarProcessRunner.cs" />
-    <Compile Include="..\Core\Services\ArchiveProcessRunner.cs" Link="Core\Services\ArchiveProcessRunner.cs" />
-    <Compile Include="..\Core\Services\SevenZipCommandBuilder.cs" Link="Core\Services\SevenZipCommandBuilder.cs" />
-    <Compile Include="..\Core\Services\SevenZipArchiveEngine.cs" Link="Core\Services\SevenZipArchiveEngine.cs" />
-    <Compile Include="..\Core\Services\CompressionWarningPolicy.cs" Link="Core\Services\CompressionWarningPolicy.cs" />
-    <Compile Include="..\Core\Services\ExtractionWarningClassifier.cs" Link="Core\Services\ExtractionWarningClassifier.cs" />
-    <Compile Include="..\Core\Services\ArchiveEngineRouter.cs" Link="Core\Services\ArchiveEngineRouter.cs" />
-    <Compile Include="..\Core\Services\ArchiveVolumeResolver.cs" Link="Core\Services\ArchiveVolumeResolver.cs" />
-    <Compile Include="..\Core\Services\RarArchiveEngine.cs" Link="Core\Services\RarArchiveEngine.cs" />
-    <Compile Include="..\Core\Services\OutputPathResolver.cs" Link="Core\Services\OutputPathResolver.cs" />
-    <Compile Include="..\Core\Services\BatchPreflightService.cs" Link="Core\Services\BatchPreflightService.cs" />
-    <Compile Include="..\Core\Services\PasswordUtility.cs" Link="Core\Services\PasswordUtility.cs" />
-    <Compile Include="..\Core\Services\SystemMetadataFileFilter.cs" Link="Core\Services\SystemMetadataFileFilter.cs" />
-    <Compile Include="..\Core\Services\BatchOperationService.cs" Link="Core\Services\BatchOperationService.cs" />
-    <Compile Include="..\Core\Services\PostProcessService.cs" Link="Core\Services\PostProcessService.cs" />
-    <Compile Include="..\Core\Services\SourceCollector.cs" Link="Core\Services\SourceCollector.cs" />
     <Compile Include="..\WindowsConsoleBootstrap.cs" Link="WindowsConsoleBootstrap.cs" />
-    <Compile Include="..\Core\Services\NdjsonOutputWriter.cs" Link="Core\Services\NdjsonOutputWriter.cs" />
-    <Compile Include="..\Core\Services\FileLoggerService.cs" Link="Core\Services\FileLoggerService.cs" />
-    <!-- GLM-5.3, 2026-11-04：批次 8——附件联系方式配置外置服务（EnableDefaultCompileItems=false，须显式链接）。 -->
-    <Compile Include="..\Core\Services\EnclosureConfigService.cs" Link="Core\Services\EnclosureConfigService.cs" />
-    <Compile Include="..\Core\Services\DiagnosticsExportService.cs" Link="Core\Services\DiagnosticsExportService.cs" />
-    <Compile Include="..\Core\Services\ArchiveSubProgressParser.cs" Link="Core\Services\ArchiveSubProgressParser.cs" />
-    <!-- WorkBuddy, 2026-11-15：批次 20（P4-3）——测试工程显式链接结果报告服务。 -->
-    <Compile Include="..\Core\Services\BatchReportService.cs" Link="Core\Services\BatchReportService.cs" />
-    <!-- WorkBuddy, 2026-11-16：批次 21（P0）——测试工程显式链接崩溃日志服务。 -->
-    <Compile Include="..\Core\Services\CrashLogService.cs" Link="Core\Services\CrashLogService.cs" />
-    <!-- WorkBuddy, 2026-11-16：批次 27（P4-4）——测试工程链接同一套路径与版本计算服务。 -->
-    <Compile Include="..\Core\Services\ApplicationInfoService.cs" Link="Core\Services\ApplicationInfoService.cs" />
-    <!-- WorkBuddy, 2026-11-16：0.8.12——关机服务与 Windows 7-Zip 自动安装服务。 -->
-    <Compile Include="..\Core\Services\SystemPowerService.cs" Link="Core\Services\SystemPowerService.cs" />
-    <Compile Include="..\Core\Services\SevenZipProvisioner.cs" Link="Core\Services\SevenZipProvisioner.cs" />
-    <!-- WorkBuddy, 2026-11-15：批次 18（P4-2）——测试工程显式链接并发推荐服务。 -->
-    <Compile Include="..\Core\Services\ConcurrencyAdvisor.cs" Link="Core\Services\ConcurrencyAdvisor.cs" />
-    <Compile Include="..\Core\Services\Pipeline\IBatchItemAdapter.cs" Link="Core\Services\Pipeline\IBatchItemAdapter.cs" />
-    <Compile Include="..\Core\Services\Pipeline\PreparedBatchItem.cs" Link="Core\Services\Pipeline\PreparedBatchItem.cs" />
-    <Compile Include="..\Core\Services\Pipeline\BatchExecutionPipeline.cs" Link="Core\Services\Pipeline\BatchExecutionPipeline.cs" />
-    <Compile Include="..\Core\Services\Pipeline\CompressionItemAdapter.cs" Link="Core\Services\Pipeline\CompressionItemAdapter.cs" />
-    <Compile Include="..\Core\Services\Pipeline\DecompressionItemAdapter.cs" Link="Core\Services\Pipeline\DecompressionItemAdapter.cs" />
-    <Compile Include="..\Core\Models\OperationModels.cs" Link="Core\Models\OperationModels.cs" />
-    <Compile Include="..\Core\Models\ArchiveDefaults.cs" Link="Core\Models\ArchiveDefaults.cs" />
-    <Compile Include="..\Core\Models\ArchiveFormatCatalog.cs" Link="Core\Models\ArchiveFormatCatalog.cs" />
-    <Compile Include="..\Core\Interfaces\ISystemIntegration.cs" Link="Core\Interfaces\ISystemIntegration.cs" />
-    <Compile Include="..\Localization\LanguageStrings.cs" Link="Localization\LanguageStrings.cs" />
-    <Compile Include="..\Localization\LocalizationService.cs" Link="Localization\LocalizationService.cs" />
-    <!-- WorkBuddy, 2026-11-16：批次 24（P2）——测试也要走同一套 JSON 资源加载。 -->
-    <Compile Include="..\Localization\LocalizationLoader.cs" Link="Localization\LocalizationLoader.cs" />
+    <Compile Include="..\ViewModels\TabVisibility.cs" Link="ViewModels\TabVisibility.cs" />
+    <Compile Include="..\ViewModels\OperationCompletionSignal.cs" Link="ViewModels\OperationCompletionSignal.cs" />
+    <Compile Include="..\ViewModels\DeleteSourceConfirmationGuard.cs" Link="ViewModels\DeleteSourceConfirmationGuard.cs" />
+    <Compile Include="..\ViewModels\LogSearchFilter.cs" Link="ViewModels\LogSearchFilter.cs" />
+    <Compile Include="..\ViewModels\FailedItemRetryList.cs" Link="ViewModels\FailedItemRetryList.cs" />
+    <Compile Include="..\ViewModels\LogBuffer.cs" Link="ViewModels\LogBuffer.cs" />
     <EmbeddedResource Include="..\Localization\Resources\*.json">
       <Link>Localization\Resources\%(Filename)%(Extension)</Link>
     </EmbeddedResource>
