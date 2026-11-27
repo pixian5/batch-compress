@@ -484,4 +484,10 @@ public class LanguageStrings : INotifyPropertyChanged
     public string ConfirmResetPreferencesTitle { get; set; } = "确认重置偏好";
     public string ConfirmResetPreferencesBody { get; set; } = "确定将语言、并发度以及压缩/解压配置恢复为默认设置并清除已保存偏好吗？";
     public string PreferencesResetLog { get; set; } = "已恢复默认偏好设置并清除本地偏好文件。";
+
+    // Gemini 4 Hydrogen, 2026-11-27：批次 42——复制等效命令行与已有文件策略悬停提示。
+    public string CopyCliCommand { get; set; } = "复制 CLI";
+    public string TooltipCopyCliCommand { get; set; } = "将当前页签配置生成等价命令行参数并复制到剪贴板（绝不包含自定义明文密码）";
+    public string CliCommandCopiedLog { get; set; } = "已复制等价命令行到剪贴板：{0}";
+    public string TooltipExistingFiles { get; set; } = "目标已存在时的处理策略：跳过、仅更新较新文件或覆盖目标已有文件";
 }

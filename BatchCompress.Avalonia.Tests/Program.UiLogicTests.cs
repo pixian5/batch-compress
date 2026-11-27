@@ -255,4 +255,139 @@ internal static partial class Program
 
         return Task.CompletedTask;
     }
+
+    // Gemini 4 Hydrogen, 2026-11-27：批次 42——等价命令行生成器（安全脱敏、CLI 解析闭环及界面按钮与悬停提示接线守护）。
+    private static Task TestCliCommandBuilder()
+    {
+        var work = Path.Combine(Path.GetTempPath(), "bc-cli-builder-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(work);
+        try
+        {
+            var srcDir = Path.Combine(work, "source folder");
+            var outDir = Path.Combine(work, "output folder");
+            var commentFile = Path.Combine(work, "note.txt");
+            var bookFile = Path.Combine(work, "passwords.txt");
+            var enclosureDir = Path.Combine(work, "enc dir");
+            Directory.CreateDirectory(srcDir);
+            Directory.CreateDirectory(enclosureDir);
+            File.WriteAllText(commentFile, "comment");
+            File.WriteAllText(bookFile, "a.rar\npw");
+
+            // 1. 压缩目录模式：生成参数经 CommandLineHandler.ParseArguments 解析必须完全通过并等价还原。
+            var compressArgs = CliCommandBuilder.BuildArguments(new CliCommandBuildRequest
+            {
+                IsCompression = true,
+                SourceMode = 1,
+                SaveFilePath = srcDir,
+                OutputPath = outDir,
+                Extension = "7z",
+                UseRandomPassword = true,
+                PasswordNameMode = 1,
+                CompressionLevel = 5,
+                SolidArchive = false,
+                EnableVolume = true,
+                VolumeSize = "2",
+                VolumeUnit = 1,
+                RecoveryRecordPercent = 0,
+                ExistingFileMode = 0,
+                TestArchive = true,
+                EnableComment = true,
+                CommentFilePath = commentFile,
+                SkipAlreadyProcessed = false,
+                MaxSizeGB = 120,
+                MaxConcurrency = 4,
+                AddEnclosures = true,
+                EnclosureDirectories = [enclosureDir],
+                Language = "en"
+            });
+
+            var parsedCompress = BatchCompress.Avalonia.CommandLineHandler.ParseArguments(compressArgs.ToArray());
+            Assert(parsedCompress.Success,
+                $"压缩 CLI 生成参数必须合法：{string.Join(" | ", parsedCompress.Errors)}");
+            Assert(parsedCompress.Options.Compress, "应解析为压缩模式");
+            AssertEqual(srcDir, parsedCompress.Options.SourcePath);
+            AssertEqual(outDir, parsedCompress.Options.OutputPath);
+            AssertEqual("7z", parsedCompress.Options.Extension);
+            AssertEqual("base", parsedCompress.Options.PasswordName);
+            AssertEqual(5, parsedCompress.Options.CompressionLevel);
+            Assert(!parsedCompress.Options.Solid, "SolidArchive=false 时应生成 --no-solid");
+            AssertEqual("2", parsedCompress.Options.VolumeSize);
+            AssertEqual("m", parsedCompress.Options.VolumeUnit);
+            AssertEqual(0, parsedCompress.Options.RecoveryRecord);
+            AssertEqual("skip", parsedCompress.Options.ExistingFileMode);
+            Assert(parsedCompress.Options.TestArchive, "TestArchive=true 时应生成 --test");
+            AssertEqual(commentFile, parsedCompress.Options.CommentFile);
+            Assert(!parsedCompress.Options.SkipProcessed, "SkipAlreadyProcessed=false 时应生成 --no-skip-processed");
+            AssertEqual(120d, parsedCompress.Options.MaxSizeGB);
+            AssertEqual(4, parsedCompress.Options.MaxConcurrency);
+            AssertEqual("en", parsedCompress.Options.Language);
+            AssertEqual(1, parsedCompress.Options.EnclosurePaths.Length);
+            AssertEqual(enclosureDir, parsedCompress.Options.EnclosurePaths[0]);
+
+            var formatted = CliCommandBuilder.FormatCommand(new CliCommandBuildRequest
+            {
+                IsCompression = true,
+                SourceMode = 1,
+                SaveFilePath = srcDir,
+                OutputPath = outDir
+            });
+            Assert(formatted.Contains($"\"{srcDir}\"", StringComparison.Ordinal),
+                "含空格路径格式化时必须加引号");
+
+            // 2. 解压密码本 + 自定义密码安全模式 + 严格解压：明文自定义密码绝不可出现，改用 --password-stdin。
+            var extractReq = new CliCommandBuildRequest
+            {
+                IsCompression = false,
+                SourceMode = 0,
+                SaveFilePath = srcDir,
+                SourcePath = bookFile,
+                OutputPath = outDir,
+                Extension = "rar",
+                UseRandomPassword = false,
+                HasCustomPassword = true,
+                StrictExtract = true,
+                MoveSourceAfter = true
+            };
+            var extractArgs = CliCommandBuilder.BuildArguments(extractReq);
+            var parsedExtract = BatchCompress.Avalonia.CommandLineHandler.ParseArguments(extractArgs.ToArray());
+            Assert(parsedExtract.Success,
+                $"解压 CLI 生成参数必须合法：{string.Join(" | ", parsedExtract.Errors)}");
+            Assert(parsedExtract.Options.Decompress, "应解析为解压模式");
+            Assert(!parsedExtract.Options.UseRandomPassword, "UseRandomPassword=false 应禁用文件名密码");
+            Assert(parsedExtract.Options.ReadPasswordFromStandardInput, "自定义密码应转为 --password-stdin 避免泄露");
+            Assert(parsedExtract.Options.Password is null, "生成结果不得包含明文密码");
+            Assert(parsedExtract.Options.StrictExtract, "StrictExtract=true 应包含 --strict-extract");
+            Assert(parsedExtract.Options.MoveSource, "MoveSourceAfter=true 应包含 --move-source");
+
+            // 3. 压缩 TXT 清单模式应映射为 --input（绝不能生成仅限解压的 --text-file）。
+            var txtCompressArgs = CliCommandBuilder.BuildArguments(new CliCommandBuildRequest
+            {
+                IsCompression = true,
+                SourceMode = 0,
+                OutputPath = outDir,
+                SourceListItems = [commentFile, bookFile]
+            });
+            var parsedTxtCompress = BatchCompress.Avalonia.CommandLineHandler.ParseArguments(txtCompressArgs.ToArray());
+            Assert(parsedTxtCompress.Success,
+                $"压缩 TXT 模式生成参数必须合法：{string.Join(" | ", parsedTxtCompress.Errors)}");
+            AssertEqual(2, parsedTxtCompress.Options.InputPaths.Length);
+
+            // 4. 界面接线与 Tooltip 补齐守护。
+            var root = FindRepositoryRoot();
+            var axaml = File.ReadAllText(Path.Combine(root, "Views", "MainWindow.axaml"));
+            Assert(axaml.Contains("CopyCliCommandCommand", StringComparison.Ordinal), "MainWindow.axaml 缺少 CopyCliCommandCommand");
+            Assert(axaml.Contains("L.CopyCliCommand", StringComparison.Ordinal), "MainWindow.axaml 缺少 L.CopyCliCommand");
+            Assert(axaml.Contains("L.TooltipCopyCliCommand", StringComparison.Ordinal), "MainWindow.axaml 缺少 L.TooltipCopyCliCommand");
+            Assert(axaml.Contains("L.TooltipExistingFiles", StringComparison.Ordinal), "MainWindow.axaml 缺少 L.TooltipExistingFiles");
+        }
+        finally
+        {
+            if (Directory.Exists(work))
+            {
+                Directory.Delete(work, recursive: true);
+            }
+        }
+
+        return Task.CompletedTask;
+    }
 }

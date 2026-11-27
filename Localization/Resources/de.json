@@ -377,6 +377,10 @@
     "TooltipResetPreferences": "Sprache, Parallelität und Komprimierungs-/Entpack-Optionen auf Standard zurücksetzen (Anhänge und Fensterposition bleiben erhalten)",
     "ConfirmResetPreferencesTitle": "Einstellungen zurücksetzen",
     "ConfirmResetPreferencesBody": "Sprache, Parallelität und alle Komprimierungs-/Entpack-Optionen auf die Standardwerte zurücksetzen und die gespeicherte Konfigurationsdatei löschen?",
-    "PreferencesResetLog": "Standardeinstellungen wiederhergestellt und gespeicherte Konfigurationsdatei entfernt."
+    "PreferencesResetLog": "Standardeinstellungen wiederhergestellt und gespeicherte Konfigurationsdatei entfernt.",
+    "CopyCliCommand": "CLI kopieren",
+    "TooltipCopyCliCommand": "Äquivalenten CLI-Befehl für den aktuellen Tab erzeugen und in die Zwischenablage kopieren (niemals Klartext-Passwörter)",
+    "CliCommandCopiedLog": "Äquivalenter CLI-Befehl in Zwischenablage kopiert: {0}",
+    "TooltipExistingFiles": "Verhalten bei vorhandenen Zieldateien: überspringen, nur neuere aktualisieren oder überschreiben"
   }
 }

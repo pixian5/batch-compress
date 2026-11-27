@@ -377,6 +377,10 @@
     "TooltipResetPreferences": "将语言、并发度及压缩/解压页常用参数恢复为默认值（不影响附件配置和窗口位置）",
     "ConfirmResetPreferencesTitle": "确认重置偏好",
     "ConfirmResetPreferencesBody": "确定将语言、并发度以及压缩/解压配置恢复为默认设置并清除已保存偏好吗？",
-    "PreferencesResetLog": "已恢复默认偏好设置并清除本地偏好文件。"
+    "PreferencesResetLog": "已恢复默认偏好设置并清除本地偏好文件。",
+    "CopyCliCommand": "复制 CLI",
+    "TooltipCopyCliCommand": "将当前页签配置生成等价命令行参数并复制到剪贴板（绝不包含自定义明文密码）",
+    "CliCommandCopiedLog": "已复制等价命令行到剪贴板：{0}",
+    "TooltipExistingFiles": "目标已存在时的处理策略：跳过、仅更新较新文件或覆盖目标已有文件"
   }
 }

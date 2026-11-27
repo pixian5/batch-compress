@@ -421,4 +421,56 @@ public partial class MainWindowViewModel
             _systemIntegration.ShowNotification(L.ExportDiagnostics, error);
         }
     }
+
+    // Gemini 4 Hydrogen, 2026-11-27：批次 42（v0.8.31）——生成当前配置等价 CLI 命令并复制到剪贴板（绝不含自定义明文密码）。
+    [RelayCommand]
+    private async Task CopyCliCommandAsync()
+    {
+        var isCompression = CurrentOperationTab == 0;
+        var sourceItems = isCompression && SourceMode == 0
+            ? SourceCollector.CollectCompressionSourcesFromText(SourceFileList)
+            : SourceCollector.SplitLines(SourceFileList);
+        var enclosures = EnclosureList
+            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+        var command = CliCommandBuilder.FormatCommand(new CliCommandBuildRequest
+        {
+            IsCompression = isCompression,
+            SourceMode = SourceMode,
+            SaveFilePath = SaveFilePath,
+            SourcePath = SourcePath,
+            OutputPath = OutputPath,
+            SourceListItems = sourceItems,
+            Extension = Extension,
+            UseRandomPassword = UseRandomPassword,
+            HasCustomPassword = !string.IsNullOrEmpty(CustomPassword),
+            PasswordNameMode = PasswordNameMode,
+            CompressionLevel = CompressionLevel,
+            SolidArchive = SolidArchive,
+            EnableVolume = EnableVolume,
+            VolumeSize = VolumeSize,
+            VolumeUnit = VolumeUnit,
+            RecoveryRecordPercent = RecoveryRecordPercent,
+            ExistingFileMode = ExistingFileMode,
+            LockArchive = LockArchive,
+            QuickOpen = QuickOpen,
+            TestArchive = TestArchive,
+            EnableComment = EnableComment,
+            CommentFilePath = CommentFilePath,
+            TempDirectory = TempDirectory,
+            SkipAlreadyProcessed = SkipAlreadyProcessed,
+            DeleteSourceAfter = DeleteSourceAfter,
+            MoveSourceAfter = MoveSourceAfter,
+            StrictExtract = StrictExtract,
+            MaxSizeGB = MaxSizeGB,
+            ShutdownAfterComplete = ShutdownAfterComplete,
+            MaxConcurrency = MaxConcurrency,
+            AddEnclosures = AddEnclosures,
+            EnclosureDirectories = enclosures,
+            Language = SelectedLanguage
+        });
+
+        await _systemIntegration.WriteClipboardTextAsync(command);
+        AppendCommandLog(string.Format(L.CliCommandCopiedLog, command) + "\n");
+    }
 }

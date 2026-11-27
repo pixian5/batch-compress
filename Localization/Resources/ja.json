@@ -377,6 +377,10 @@
     "TooltipResetPreferences": "言語・並列度および圧縮/解凍の通常設定を初期値に戻します（添付設定とウィンドウ位置は保持）",
     "ConfirmResetPreferencesTitle": "設定リセットの確認",
     "ConfirmResetPreferencesBody": "言語、並列度、および圧縮/解凍設定を初期値に戻し、保存済み設定を削除しますか？",
-    "PreferencesResetLog": "既定の設定に戻し、保存済み設定ファイルを削除しました。"
+    "PreferencesResetLog": "既定の設定に戻し、保存済み設定ファイルを削除しました。",
+    "CopyCliCommand": "CLI コピー",
+    "TooltipCopyCliCommand": "現在のタブ設定に相当する CLI コマンドを生成してクリップボードにコピーします（カスタムパスワードは含まれません）",
+    "CliCommandCopiedLog": "等価の CLI コマンドをクリップボードにコピーしました：{0}",
+    "TooltipExistingFiles": "出力先に既存ファイルがある場合の動作：スキップ、新しいファイルのみ更新、または上書き"
   }
 }

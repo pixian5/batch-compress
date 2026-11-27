@@ -165,7 +165,9 @@ internal static partial class Program
             // Gemini 4 Neon, 2026-11-27：0.8.28——按卷检测大小写敏感能力。
             ("按卷检测大小写敏感能力", TestVolumeCaseSensitivityDetection),
             // Gemini 4 Neon, 2026-11-27：0.8.29——安全 GUI 用户偏好持久化。
-            ("用户偏好安全持久化", TestUserPreferencesService)
+            ("用户偏好安全持久化", TestUserPreferencesService),
+            // Gemini 4 Hydrogen, 2026-11-27：0.8.31——等价命令行生成器与脱敏校验。
+            ("等价命令行生成与脱敏", TestCliCommandBuilder)
         };
 
         // GLM-5.3, 2026-11-03：跑完全部测试后统一输出失败汇总，CI 中一次可见所有失败项；

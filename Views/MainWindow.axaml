@@ -130,16 +130,16 @@
                                 <!-- Row 2 -->
                                 <CheckBox Grid.Row="2" Grid.Column="0" Content="{Binding L.Volume}" IsChecked="{Binding EnableVolume}" Margin="0,0,10,3" ToolTip.Tip="{Binding L.TooltipVolume}"/>
                                 <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="5" Margin="0,0,0,3">
-                                    <TextBox Text="{Binding VolumeSize}" Width="60" IsEnabled="{Binding EnableVolume}"/>
-                                    <ComboBox SelectedIndex="{Binding VolumeUnit}" ItemsSource="{Binding VolumeUnitOptions}" Width="80" IsEnabled="{Binding EnableVolume}"/>
+                                    <TextBox Text="{Binding VolumeSize}" Width="60" IsEnabled="{Binding EnableVolume}" ToolTip.Tip="{Binding L.TooltipVolume}"/>
+                                    <ComboBox SelectedIndex="{Binding VolumeUnit}" ItemsSource="{Binding VolumeUnitOptions}" Width="80" IsEnabled="{Binding EnableVolume}" ToolTip.Tip="{Binding L.TooltipVolume}"/>
                                 </StackPanel>
 
-                                <ComboBox Grid.Row="3" Grid.Column="2" SelectedIndex="{Binding ExistingFileMode}" ItemsSource="{Binding ExistingFileModeOptions}" Width="160" HorizontalAlignment="Left" Margin="20,0,0,3"/>
+                                <ComboBox Grid.Row="3" Grid.Column="2" SelectedIndex="{Binding ExistingFileMode}" ItemsSource="{Binding ExistingFileModeOptions}" Width="160" HorizontalAlignment="Left" Margin="20,0,0,3" ToolTip.Tip="{Binding L.TooltipExistingFiles}"/>
 
                                 <!-- Row 3 -->
                                 <CheckBox Grid.Row="3" Grid.Column="0" Content="{Binding L.EnableComment}" IsChecked="{Binding EnableComment}" Margin="0,0,10,3" ToolTip.Tip="{Binding L.TooltipEnableComment}"/>
                                 <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding CommentFilePath}" Width="300"
-                                         IsEnabled="{Binding EnableComment}" HorizontalAlignment="Left" Margin="0,0,0,3"/>
+                                         IsEnabled="{Binding EnableComment}" HorizontalAlignment="Left" Margin="0,0,0,3" ToolTip.Tip="{Binding L.TooltipEnableComment}"/>
 
                                 <CheckBox Grid.Row="3" Grid.Column="3" Content="{Binding L.SkipProcessed}" IsChecked="{Binding SkipAlreadyProcessed}" Margin="20,0,0,3" ToolTip.Tip="{Binding L.TooltipSkipProcessedCompression}"/>
 
@@ -212,7 +212,7 @@
                                     <TextBox Text="{Binding CustomPassword}" Width="150" HorizontalAlignment="Left"
                                              PlaceholderText="{Binding L.CustomPasswordWatermark}" IsVisible="{Binding !UseRandomPassword}" ToolTip.Tip="{Binding L.TooltipCustomPasswordDecompression}"/>
                                     <TextBlock Text="{Binding L.PasswordBasisLabel}" VerticalAlignment="Center"/>
-                                    <ComboBox SelectedIndex="{Binding PasswordNameMode}" ItemsSource="{Binding PasswordNameModeOptions}" Width="120"/>
+                                    <ComboBox SelectedIndex="{Binding PasswordNameMode}" ItemsSource="{Binding PasswordNameModeOptions}" Width="120" ToolTip.Tip="{Binding L.TooltipPasswordNameMode}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="2" IsVisible="{Binding PasswordQueryResult, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}">
@@ -227,7 +227,7 @@
                             <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Extension}" Width="100" Margin="0,0,0,6" ToolTip.Tip="{Binding L.TooltipExtensionDecompression}"/>
 
                             <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding L.ExistingFilesLabel}" VerticalAlignment="Center" Margin="0,0,10,6"/>
-                            <ComboBox Grid.Row="0" Grid.Column="4" SelectedIndex="{Binding ExistingFileMode}" ItemsSource="{Binding ExistingFileModeOptions}" Width="160" Margin="0,0,0,6"/>
+                            <ComboBox Grid.Row="0" Grid.Column="4" SelectedIndex="{Binding ExistingFileMode}" ItemsSource="{Binding ExistingFileModeOptions}" Width="160" Margin="0,0,0,6" ToolTip.Tip="{Binding L.TooltipExistingFiles}"/>
 
                             <CheckBox Grid.Row="0" Grid.Column="6" Content="{Binding L.SkipProcessed}" IsChecked="{Binding SkipAlreadyProcessed}" Margin="0,0,0,6" ToolTip.Tip="{Binding L.TooltipSkipProcessedDecompression}"/>
 
@@ -252,8 +252,8 @@
                                     <CheckBox Content="{Binding L.DeleteSource}" IsChecked="{Binding DeleteSourceAfter}" ToolTip.Tip="{Binding L.TooltipDeleteSourceDecompression}"/>
                                     <CheckBox Content="{Binding L.MoveSource}" IsChecked="{Binding MoveSourceAfter}" ToolTip.Tip="{Binding L.TooltipMoveSourceDecompression}"/>
                                     <CheckBox Content="{Binding L.StrictExtract}" IsChecked="{Binding StrictExtract}" ToolTip.Tip="{Binding L.TooltipStrictExtract}"/>
-                                    <CheckBox Content="{Binding L.ShutdownAfterComplete}" IsChecked="{Binding ShutdownAfterComplete}"/>
-                                    <Button Content="{Binding L.CancelShutdown}" Command="{Binding CancelScheduledShutdownCommand}" IsVisible="{Binding IsShutdownScheduled}"/>
+                                    <CheckBox Content="{Binding L.ShutdownAfterComplete}" IsChecked="{Binding ShutdownAfterComplete}" ToolTip.Tip="{Binding L.TooltipShutdown}"/>
+                                    <Button Content="{Binding L.CancelShutdown}" Command="{Binding CancelScheduledShutdownCommand}" IsVisible="{Binding IsShutdownScheduled}" ToolTip.Tip="{Binding L.TooltipCancelShutdown}"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -292,6 +292,8 @@
                             <Button Content="{Binding L.ExportBatchReport}" Command="{Binding ExportBatchReportCommand}" Height="32" ToolTip.Tip="{Binding L.TooltipExportBatchReport}" Margin="0,2,10,8"/>
                             <!-- Gemini 4 Neon, 2026-11-27：批次 38——一键重新载入上次批处理失败的条目。 -->
                             <Button Content="{Binding L.LoadFailedItems}" Command="{Binding LoadFailedItemsCommand}" IsEnabled="{Binding !IsOperating}" Height="32" ToolTip.Tip="{Binding L.TooltipLoadFailedItems}" Margin="0,2,10,8"/>
+                            <!-- Gemini 4 Hydrogen, 2026-11-27：批次 42——复制等价命令行到剪贴板（不含自定义明文密码）。 -->
+                            <Button Content="{Binding L.CopyCliCommand}" Command="{Binding CopyCliCommandCommand}" Height="32" ToolTip.Tip="{Binding L.TooltipCopyCliCommand}" Margin="0,2,10,8"/>
                             <Button Content="{Binding L.OpenOutput}" Command="{Binding OpenOutputFolderCommand}" Width="90" Height="32" ToolTip.Tip="{Binding L.TooltipOpenOutput}" Margin="0,2,10,8"/>
                             <Button Content="{Binding L.OpenSource}" Command="{Binding OpenSourceFolderCommand}" Width="90" Height="32" ToolTip.Tip="{Binding L.TooltipOpenSource}" Margin="0,2,10,8"/>
                             <Button Content="{Binding L.Help}" Command="{Binding ShowHelpCommand}" Width="70" Height="32" ToolTip.Tip="{Binding L.TooltipHelp}" Margin="0,2,10,8"/>

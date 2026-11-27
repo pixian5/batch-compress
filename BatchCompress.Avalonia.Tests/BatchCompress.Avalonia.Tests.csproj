@@ -60,6 +60,8 @@
     <Compile Include="..\Core\Services\WindowStateService.cs" Link="Core\Services\WindowStateService.cs" />
     <!-- Gemini 4 Neon, 2026-11-27：批次 40——用户偏好安全持久化服务。 -->
     <Compile Include="..\Core\Services\UserPreferencesService.cs" Link="Core\Services\UserPreferencesService.cs" />
+    <!-- Gemini 4 Hydrogen, 2026-11-27：批次 42——等价命令行生成器。 -->
+    <Compile Include="..\Core\Services\CliCommandBuilder.cs" Link="Core\Services\CliCommandBuilder.cs" />
     <Compile Include="..\ViewModels\LogBuffer.cs" Link="ViewModels\LogBuffer.cs" />
     <Compile Include="Program.EngineTests.cs" />
     <Compile Include="Program.PipelineTests.cs" />

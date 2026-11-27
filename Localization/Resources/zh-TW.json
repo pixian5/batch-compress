@@ -377,6 +377,10 @@
     "TooltipResetPreferences": "將語言、並行度及壓縮/解壓頁常用參數恢復為預設值（不影響附件設定和視窗位置）",
     "ConfirmResetPreferencesTitle": "確認重設偏好",
     "ConfirmResetPreferencesBody": "確定將語言、並行度以及壓縮/解壓設定恢復為預設並清除已儲存偏好嗎？",
-    "PreferencesResetLog": "已恢復預設偏好設定並清除本機偏好檔案。"
+    "PreferencesResetLog": "已恢復預設偏好設定並清除本機偏好檔案。",
+    "CopyCliCommand": "複製 CLI",
+    "TooltipCopyCliCommand": "將目前分頁設定產生等價命令列參數並複製到剪貼簿（絕不包含自訂明文密碼）",
+    "CliCommandCopiedLog": "已複製等價命令列到剪貼簿：{0}",
+    "TooltipExistingFiles": "目標已存在時的處理策略：略過、僅更新較新檔案或覆寫目標已有檔案"
   }
 }
