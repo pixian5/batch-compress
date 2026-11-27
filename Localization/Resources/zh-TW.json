@@ -381,6 +381,17 @@
     "CopyCliCommand": "複製 CLI",
     "TooltipCopyCliCommand": "將目前分頁設定產生等價命令列參數並複製到剪貼簿（絕不包含自訂明文密碼）",
     "CliCommandCopiedLog": "已複製等價命令列到剪貼簿：{0}",
-    "TooltipExistingFiles": "目標已存在時的處理策略：略過、僅更新較新檔案或覆寫目標已有檔案"
+    "TooltipExistingFiles": "目標已存在時的處理策略：略過、僅更新較新檔案或覆寫目標已有檔案",
+    "PreflightPreview": "預檢",
+    "TooltipPreflightPreview": "僅檢查待處理來源、輸出衝突與選項相容性，不建立目錄或寫入任何檔案",
+    "PreflightTitle": "預檢結果",
+    "PreflightPassedHeader": "[預檢通過] 可安全執行（未建立輸出目錄，未修改檔案）",
+    "PreflightBlockedHeader": "[預檢發現問題] 請先處理以下攔截項或衝突再執行",
+    "PreflightNoItemsHeader": "[預檢提示] 目前清單沒有可執行項目",
+    "PreflightSummaryStats": "就緒={0}，略過={1}，缺失={2}，阻斷/異常={3}（目前並行={4}，硬體推薦={5}）",
+    "PreflightMissingHeader": "缺失項目（共 {0} 項）：",
+    "PreflightIssueHeader": "發現 {0} 項問題：",
+    "ShowPassword": "顯示密碼",
+    "TooltipShowCustomPassword": "切換自訂密碼的明文顯示或遮罩隱藏"
   }
 }

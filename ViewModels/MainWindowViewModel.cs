@@ -327,6 +327,10 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private string _customPassword = string.Empty;
 
+    // Gemini 4 Hydrogen, 2026-11-27：批次 44（v0.8.34）——自定义密码掩码/显隐控制（不持久化）。
+    [ObservableProperty]
+    private bool _showCustomPassword;
+
     [ObservableProperty]
     private int _passwordNameMode;
 
@@ -720,6 +724,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public Func<Task<bool>>? ConfirmShutdownCancellationRequested { get; set; }
     public Func<Task<bool>>? ConfirmDeleteSourceRequested { get; set; }
     public Func<Task<bool>>? ConfirmResetPreferencesRequested { get; set; }
+    public Func<string, string, Task>? ShowPreflightDialogRequested { get; set; }
     public Action? FocusLogSearchRequested { get; set; }
 
 

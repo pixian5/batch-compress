@@ -169,7 +169,9 @@ internal static partial class Program
             // Gemini 4 Hydrogen, 2026-11-27：0.8.31——等价命令行生成器与脱敏校验。
             ("等价命令行生成与脱敏", TestCliCommandBuilder),
             // Gemini 4 Hydrogen, 2026-11-27：0.8.32——全仓路径比较按卷大小写敏感一致性。
-            ("全仓路径比较按卷一致性", TestCrossVolumePathIdentityConsistency)
+            ("全仓路径比较按卷一致性", TestCrossVolumePathIdentityConsistency),
+            // Gemini 4 Hydrogen, 2026-11-27：0.8.34——GUI 预检试运行与自定义密码掩码保护。
+            ("界面预检与密码掩码保护", TestGuiPreflightServiceAndPasswordMasking)
         };
 
         // GLM-5.3, 2026-11-03：跑完全部测试后统一输出失败汇总，CI 中一次可见所有失败项；

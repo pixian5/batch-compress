@@ -381,6 +381,17 @@
     "CopyCliCommand": "CLI kopieren",
     "TooltipCopyCliCommand": "Äquivalenten CLI-Befehl für den aktuellen Tab erzeugen und in die Zwischenablage kopieren (niemals Klartext-Passwörter)",
     "CliCommandCopiedLog": "Äquivalenter CLI-Befehl in Zwischenablage kopiert: {0}",
-    "TooltipExistingFiles": "Verhalten bei vorhandenen Zieldateien: überspringen, nur neuere aktualisieren oder überschreiben"
+    "TooltipExistingFiles": "Verhalten bei vorhandenen Zieldateien: überspringen, nur neuere aktualisieren oder überschreiben",
+    "PreflightPreview": "Vorabtest",
+    "TooltipPreflightPreview": "Prüft Quellen, Zielkonflikte und Optionskompatibilität ohne Verzeichnisse oder Dateien anzulegen",
+    "PreflightTitle": "Ergebnis des Vorabtests",
+    "PreflightPassedHeader": "[Vorabtest bestanden] Ausführungsbereit (kein Zielordner erstellt, keine Dateien geändert)",
+    "PreflightBlockedHeader": "[Vorabtest-Probleme] Bitte beheben Sie folgende Konflikte oder Fehler vor dem Start",
+    "PreflightNoItemsHeader": "[Vorabtest-Hinweis] Keine ausführbaren Einträge in der aktuellen Liste",
+    "PreflightSummaryStats": "Bereit={0}, Übersprungen={1}, Fehlend={2}, Blockiert/Probleme={3} (Parallelität={4}, Empfohlen={5})",
+    "PreflightMissingHeader": "Fehlende Einträge ({0} gesamt):",
+    "PreflightIssueHeader": "{0} Problem(e) gefunden:",
+    "ShowPassword": "Anzeigen",
+    "TooltipShowCustomPassword": "Klartextanzeige oder Maskierung des benutzerdefinierten Passworts umschalten"
   }
 }

@@ -394,4 +394,115 @@ internal static partial class Program
 
         return Task.CompletedTask;
     }
+
+    // Gemini 4 Hydrogen, 2026-11-27：批次 44——GUI 无副作用预检试运行与自定义密码掩码接线守护。
+    private static Task TestGuiPreflightServiceAndPasswordMasking()
+    {
+        var work = Path.Combine(Path.GetTempPath(), "bc-gui-preflight-" + Guid.NewGuid().ToString("N"));
+        var srcDir = Path.Combine(work, "src");
+        var nonExistentOut = Path.Combine(work, "never-created-out");
+        Directory.CreateDirectory(srcDir);
+
+        try
+        {
+            var readyFile = Path.Combine(srcDir, "ready.txt");
+            var skippedProcessed = Path.Combine(srcDir, "done【已压缩】.txt");
+            var missingFile = Path.Combine(srcDir, "missing.txt");
+            var subA = Path.Combine(srcDir, "subA");
+            var subB = Path.Combine(srcDir, "subB");
+            Directory.CreateDirectory(subA);
+            Directory.CreateDirectory(subB);
+            var collisionFileA = Path.Combine(subA, "same.txt");
+            var collisionFileB = Path.Combine(subB, "same.txt");
+            File.WriteAllText(readyFile, "ok");
+            File.WriteAllText(skippedProcessed, "done");
+            File.WriteAllText(collisionFileA, "collideA");
+            File.WriteAllText(collisionFileB, "collideB");
+
+            // 1. 压缩预检：不得创建输出目录，并准确报告就绪/跳过/缺失与碰撞/选项冲突/不支持格式问题。
+            var compBlocked = GuiPreflightService.InspectCompression(
+                [readyFile, skippedProcessed, missingFile, collisionFileA, collisionFileB],
+                new BatchOperationOptions
+                {
+                    OutputPath = nonExistentOut,
+                    Extension = "rar",
+                    SkipAlreadyProcessed = true,
+                    MaxConcurrency = 2
+                },
+                recommendedConcurrency: 4,
+                hasUpdateLockConflict: true);
+            Assert(!compBlocked.CanExecute, "存在输出碰撞或更新/锁定冲突时 CanExecute 必须为 false");
+            Assert(!Directory.Exists(nonExistentOut), "预检绝不可创建输出目录");
+            AssertEqual(1, compBlocked.ReadyCount);
+            AssertEqual(1, compBlocked.SkippedCount);
+            AssertEqual(1, compBlocked.MissingCount);
+            Assert(compBlocked.IssueCount >= 2, $"应检出冲突，实际 IssueCount={compBlocked.IssueCount}");
+
+            // 不支持的压缩格式（如 iso）也必须给出明确阻断提示。
+            var isoBlocked = GuiPreflightService.InspectCompression(
+                [readyFile],
+                new BatchOperationOptions { OutputPath = nonExistentOut, Extension = "iso" },
+                recommendedConcurrency: 4,
+                hasUpdateLockConflict: false);
+            Assert(!isoBlocked.CanExecute, "iso 格式不可创建，预检必须拦截");
+            Assert(!Directory.Exists(nonExistentOut), "格式阻断预检也绝不可创建输出目录");
+
+            // 正常场景可通过预检，且仍不创建输出目录。
+            var compPass = GuiPreflightService.InspectCompression(
+                [readyFile],
+                new BatchOperationOptions { OutputPath = nonExistentOut, Extension = "7z" },
+                recommendedConcurrency: 4,
+                hasUpdateLockConflict: false);
+            Assert(compPass.CanExecute, "正常单一文件应通过预检");
+            AssertEqual(1, compPass.ReadyCount);
+            AssertEqual(0, compPass.IssueCount);
+            Assert(!Directory.Exists(nonExistentOut), "通过的预检也绝不可创建输出目录");
+
+            // 2. 解压预检：校验缺失项、重复折叠、跳过已解压与空输出目录警告。
+            var archive1 = Path.Combine(srcDir, "pkg.7z");
+            var archiveProcessed = Path.Combine(srcDir, "done【已解压】.7z");
+            File.WriteAllText(archive1, "7z-stub");
+            File.WriteAllText(archiveProcessed, "done-stub");
+
+            var decPass = GuiPreflightService.InspectDecompression(
+                [
+                    new FileEntry { FilePath = archive1 },
+                    new FileEntry { FilePath = archive1 }, // 重复折叠跳过
+                    new FileEntry { FilePath = archiveProcessed }, // 【已解压】跳过
+                    new FileEntry { FilePath = Path.Combine(srcDir, "not-here.7z") }
+                ],
+                new BatchOperationOptions { OutputPath = nonExistentOut, Extension = "7z", SkipAlreadyProcessed = true },
+                recommendedConcurrency: 4);
+            Assert(decPass.CanExecute, "有至少 1 个合法归档且输出目录非空时解压预检应可执行");
+            AssertEqual(1, decPass.ReadyCount);
+            AssertEqual(2, decPass.SkippedCount);
+            AssertEqual(1, decPass.MissingCount);
+            Assert(!Directory.Exists(nonExistentOut), "解压预检也绝不可创建输出目录");
+
+            // 3. 界面接线与自定义密码掩码守护。
+            var root = FindRepositoryRoot();
+            var axaml = File.ReadAllText(Path.Combine(root, "Views", "MainWindow.axaml"));
+            Assert(axaml.Contains("PreflightPreviewCommand", StringComparison.Ordinal),
+                "MainWindow.axaml 缺少 PreflightPreviewCommand 按钮");
+            Assert(axaml.Contains("PasswordChar=\"●\"", StringComparison.Ordinal),
+                "CustomPassword 输入框缺少 PasswordChar 掩码保护");
+            Assert(axaml.Contains("RevealPassword=\"{Binding ShowCustomPassword}\"", StringComparison.Ordinal),
+                "CustomPassword 输入框未绑定 RevealPassword");
+            Assert(axaml.Contains("L.ShowPassword", StringComparison.Ordinal),
+                "MainWindow.axaml 缺少显示密码切换按钮");
+
+            var codeBehind = File.ReadAllText(Path.Combine(root, "Views", "MainWindow.axaml.cs"));
+            Assert(codeBehind.Contains("ShowPreflightDialogRequested = ShowScrollableTextDialogAsync", StringComparison.Ordinal),
+                "MainWindow.axaml.cs 未接线 ShowPreflightDialogRequested");
+        }
+        finally
+        {
+            if (Directory.Exists(work))
+            {
+                Directory.Delete(work, recursive: true);
+            }
+        }
+
+        return Task.CompletedTask;
+    }
 }

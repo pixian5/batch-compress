@@ -381,6 +381,17 @@
     "CopyCliCommand": "CLI コピー",
     "TooltipCopyCliCommand": "現在のタブ設定に相当する CLI コマンドを生成してクリップボードにコピーします（カスタムパスワードは含まれません）",
     "CliCommandCopiedLog": "等価の CLI コマンドをクリップボードにコピーしました：{0}",
-    "TooltipExistingFiles": "出力先に既存ファイルがある場合の動作：スキップ、新しいファイルのみ更新、または上書き"
+    "TooltipExistingFiles": "出力先に既存ファイルがある場合の動作：スキップ、新しいファイルのみ更新、または上書き",
+    "PreflightPreview": "事前チェック",
+    "TooltipPreflightPreview": "出力ディレクトリの作成やファイル書き込みを行わず、ソース・出力衝突・設定競合のみを検査します",
+    "PreflightTitle": "事前チェック結果",
+    "PreflightPassedHeader": "[事前チェック通過] 実行可能（出力フォルダ未作成・ファイル未変更）",
+    "PreflightBlockedHeader": "[事前チェック警告] 実行前に以下の競合やエラーを解消してください",
+    "PreflightNoItemsHeader": "[事前チェック通知] 現在のリストに実行可能な項目がありません",
+    "PreflightSummaryStats": "準備完了={0}、スキップ={1}、不明={2}、ブロック/異常={3}（現在の並列度={4}、推奨={5}）",
+    "PreflightMissingHeader": "不明な項目（計 {0} 件）：",
+    "PreflightIssueHeader": "{0} 件の問題を検出：",
+    "ShowPassword": "表示",
+    "TooltipShowCustomPassword": "カスタムパスワードの表示とマスクを切り替え"
   }
 }

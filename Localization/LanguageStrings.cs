@@ -490,4 +490,17 @@ public class LanguageStrings : INotifyPropertyChanged
     public string TooltipCopyCliCommand { get; set; } = "将当前页签配置生成等价命令行参数并复制到剪贴板（绝不包含自定义明文密码）";
     public string CliCommandCopiedLog { get; set; } = "已复制等价命令行到剪贴板：{0}";
     public string TooltipExistingFiles { get; set; } = "目标已存在时的处理策略：跳过、仅更新较新文件或覆盖目标已有文件";
+
+    // Gemini 4 Hydrogen, 2026-11-27：批次 44——GUI 无副作用预检试运行与自定义密码掩码显示切换。
+    public string PreflightPreview { get; set; } = "预检";
+    public string TooltipPreflightPreview { get; set; } = "仅检查待处理来源、输出冲突与选项兼容性，不创建目录或写入任何文件";
+    public string PreflightTitle { get; set; } = "预检结果";
+    public string PreflightPassedHeader { get; set; } = "[预检通过] 可安全执行（未创建输出目录，未修改文件）";
+    public string PreflightBlockedHeader { get; set; } = "[预检发现问题] 请先处理以下拦截项或冲突再执行";
+    public string PreflightNoItemsHeader { get; set; } = "[预检提示] 当前列表没有可执行条目";
+    public string PreflightSummaryStats { get; set; } = "就绪={0}，跳过={1}，缺失={2}，阻断/异常={3}（当前并发={4}，硬件推荐={5}）";
+    public string PreflightMissingHeader { get; set; } = "缺失条目（共 {0} 项）：";
+    public string PreflightIssueHeader { get; set; } = "发现 {0} 项问题：";
+    public string ShowPassword { get; set; } = "显示密码";
+    public string TooltipShowCustomPassword { get; set; } = "切换自定义密码的明文显示或掩码隐藏";
 }

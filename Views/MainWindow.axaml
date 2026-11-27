@@ -99,8 +99,12 @@
                                         <TextBox Text="{Binding PasswordQueryFileName}" Width="200" ToolTip.Tip="{Binding L.TooltipPasswordQueryFileName}"/>
                                         <Button Content="{Binding L.QueryPassword}" Command="{Binding QueryPasswordCommand}" Width="80" ToolTip.Tip="{Binding L.TooltipQueryPasswordCompression}"/>
                                         <CheckBox Content="{Binding L.RandomPassword}" IsChecked="{Binding UseRandomPassword}" Margin="0,0,0,0" ToolTip.Tip="{Binding L.TooltipRandomPasswordCompression}"/>
-                                        <TextBox Text="{Binding CustomPassword}" Width="150" HorizontalAlignment="Left"
+                                        <TextBox Text="{Binding CustomPassword}" Width="130" HorizontalAlignment="Left"
+                                                 PasswordChar="●" RevealPassword="{Binding ShowCustomPassword}"
                                                  PlaceholderText="{Binding L.CustomPasswordWatermark}" IsVisible="{Binding !UseRandomPassword}" Margin="0,0,0,0" ToolTip.Tip="{Binding L.TooltipCustomPasswordCompression}"/>
+                                        <CheckBox Content="{Binding L.ShowPassword}" IsChecked="{Binding ShowCustomPassword}"
+                                                  IsVisible="{Binding !UseRandomPassword}" VerticalAlignment="Center"
+                                                  ToolTip.Tip="{Binding L.TooltipShowCustomPassword}"/>
                                         <TextBlock Text="{Binding L.PasswordBasisLabel}" VerticalAlignment="Center"/>
                                         <ComboBox SelectedIndex="{Binding PasswordNameMode}" ItemsSource="{Binding PasswordNameModeOptions}" Width="120" ToolTip.Tip="{Binding L.TooltipPasswordNameMode}"/>
                                     </StackPanel>
@@ -209,8 +213,12 @@
                                     <TextBox Text="{Binding PasswordQueryFileName}" Width="200" ToolTip.Tip="{Binding L.TooltipPasswordQueryFileNameDecompression}"/>
                                     <Button Content="{Binding L.QueryPassword}" Command="{Binding QueryPasswordCommand}" Width="80" ToolTip.Tip="{Binding L.TooltipQueryPasswordDecompression}"/>
                                     <CheckBox Content="{Binding L.RandomPassword}" IsChecked="{Binding UseRandomPassword}" ToolTip.Tip="{Binding L.TooltipRandomPasswordDecompression}"/>
-                                    <TextBox Text="{Binding CustomPassword}" Width="150" HorizontalAlignment="Left"
+                                    <TextBox Text="{Binding CustomPassword}" Width="130" HorizontalAlignment="Left"
+                                             PasswordChar="●" RevealPassword="{Binding ShowCustomPassword}"
                                              PlaceholderText="{Binding L.CustomPasswordWatermark}" IsVisible="{Binding !UseRandomPassword}" ToolTip.Tip="{Binding L.TooltipCustomPasswordDecompression}"/>
+                                    <CheckBox Content="{Binding L.ShowPassword}" IsChecked="{Binding ShowCustomPassword}"
+                                              IsVisible="{Binding !UseRandomPassword}" VerticalAlignment="Center"
+                                              ToolTip.Tip="{Binding L.TooltipShowCustomPassword}"/>
                                     <TextBlock Text="{Binding L.PasswordBasisLabel}" VerticalAlignment="Center"/>
                                     <ComboBox SelectedIndex="{Binding PasswordNameMode}" ItemsSource="{Binding PasswordNameModeOptions}" Width="120" ToolTip.Tip="{Binding L.TooltipPasswordNameMode}"/>
                                 </StackPanel>
@@ -281,6 +289,8 @@
                             <Button Content="{Binding L.Cancel}" Command="{Binding CancelOperationCommand}" Width="100" Height="36" CornerRadius="18"
                                     IsEnabled="{Binding IsOperating}" Background="#dc3545" Foreground="White"
                                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="{Binding L.TooltipCancelOperation}" Margin="0,0,18,8"/>
+                            <!-- Gemini 4 Hydrogen, 2026-11-27：批次 44——无副作用预检试运行。 -->
+                            <Button Content="{Binding L.PreflightPreview}" Command="{Binding PreflightPreviewCommand}" IsEnabled="{Binding !IsOperating}" Width="84" Height="32" ToolTip.Tip="{Binding L.TooltipPreflightPreview}" Margin="0,2,10,8"/>
                             <Button Content="{Binding L.RefreshList}" Command="{Binding RefreshFileListCommand}" Width="90" Height="32" ToolTip.Tip="{Binding L.TooltipRefreshList}" Margin="0,2,10,8"/>
                             <Button Content="{Binding L.ClearLogs}" Command="{Binding ClearLogsCommand}" Width="90" Height="32" ToolTip.Tip="{Binding L.TooltipClearLogs}" Margin="0,2,10,8"/>
                             <Button Content="{Binding L.ClearSource}" Command="{Binding ClearSourceListCommand}" Width="76" Height="32" ToolTip.Tip="{Binding L.ClearSourceTooltip}" Margin="0,2,10,8"/>

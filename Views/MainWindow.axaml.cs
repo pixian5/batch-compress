@@ -522,6 +522,7 @@ public partial class MainWindow : Window
             viewModel.ConfirmShutdownCancellationRequested = ConfirmShutdownCancellationAsync;
             viewModel.ConfirmDeleteSourceRequested = ConfirmDeleteSourceAsync;
             viewModel.ConfirmResetPreferencesRequested = ConfirmResetPreferencesAsync;
+            viewModel.ShowPreflightDialogRequested = ShowScrollableTextDialogAsync;
             viewModel.FocusLogSearchRequested = FocusCurrentLogSearchBox;
         }
     }
@@ -594,13 +595,18 @@ public partial class MainWindow : Window
         viewModel.EnclosureList = string.Join(Environment.NewLine, existing);
     }
 
-    private async Task ShowHelpAsync()
+    private Task ShowHelpAsync()
     {
         // GPT-5, 2026-09-30：帮助对话框标题与正文改用本地化词条。
         // Gemini 4 Hydrogen, 2026-11-27：改用可滚动自适应高度对话框，避免五语言帮助正文被截断。
+        return ShowScrollableTextDialogAsync(L.Help, L.HelpBody);
+    }
+
+    private async Task ShowScrollableTextDialogAsync(string title, string body)
+    {
         var dialog = new Window
         {
-            Title = L.Help,
+            Title = title,
             Width = 580,
             MaxHeight = 520,
             SizeToContent = SizeToContent.Height,
@@ -629,7 +635,7 @@ public partial class MainWindow : Window
                     VerticalScrollBarVisibility = global::Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
                     Content = new TextBlock
                     {
-                        Text = L.HelpBody,
+                        Text = body,
                         FontSize = 14,
                         TextWrapping = TextWrapping.Wrap,
                         Margin = new Thickness(0, 0, 8, 0)

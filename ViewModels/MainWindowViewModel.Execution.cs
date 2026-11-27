@@ -473,4 +473,51 @@ public partial class MainWindowViewModel
         await _systemIntegration.WriteClipboardTextAsync(command);
         AppendCommandLog(string.Format(L.CliCommandCopiedLog, command) + "\n");
     }
+
+    // Gemini 4 Hydrogen, 2026-11-27：批次 44（v0.8.34）——无副作用 GUI 预检试运行（不创建输出目录、不启动引擎、不下载工具）。
+    [RelayCommand]
+    private async Task PreflightPreviewAsync()
+    {
+        if (IsOperating)
+        {
+            return;
+        }
+
+        var isCompression = CurrentOperationTab == 0;
+        if (string.IsNullOrWhiteSpace(SourceFileList))
+        {
+            await RefreshFileListAsync();
+        }
+
+        var options = BuildBatchOperationOptions();
+        var recommended = RecommendedConcurrency;
+        var hasConflict = isCompression && ExistingFileMode == 1 && LockArchive;
+        var currentSourceText = SourceFileList;
+        var isPasswordBook = !isCompression && SourceMode == 0;
+        var extension = Extension;
+
+        var summary = await Task.Run(() =>
+        {
+            if (isCompression)
+            {
+                var compressionPaths = SourceCollector.CollectCompressionSourcesFromText(currentSourceText);
+                return GuiPreflightService.InspectCompression(
+                    compressionPaths, options, recommended, hasConflict);
+            }
+
+            var entries = isPasswordBook
+                ? SourceCollector.CollectPasswordBookEntries(currentSourceText)
+                : SourceCollector.CollectDecompressionFilesFromText(currentSourceText, extension);
+            return GuiPreflightService.InspectDecompression(entries, options, recommended);
+        });
+
+        AppendCommandLog($"[{L.PreflightTitle}]\n{summary.SummaryText}\n");
+        var firstLine = summary.SummaryText.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? L.PreflightTitle;
+        _systemIntegration.ShowNotification(L.PreflightTitle, firstLine.TrimEnd('\r'));
+
+        if (ShowPreflightDialogRequested != null)
+        {
+            await ShowPreflightDialogRequested(L.PreflightTitle, summary.SummaryText);
+        }
+    }
 }

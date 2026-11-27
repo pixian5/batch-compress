@@ -381,6 +381,17 @@
     "CopyCliCommand": "Copy CLI",
     "TooltipCopyCliCommand": "Generate and copy the equivalent CLI command for the current tab options (never includes plaintext custom passwords)",
     "CliCommandCopiedLog": "Copied equivalent CLI command to clipboard: {0}",
-    "TooltipExistingFiles": "Behavior when destination exists: skip, update only newer files, or overwrite existing files"
+    "TooltipExistingFiles": "Behavior when destination exists: skip, update only newer files, or overwrite existing files",
+    "PreflightPreview": "Preflight",
+    "TooltipPreflightPreview": "Check sources, output collisions, and option conflicts without creating directories or writing files",
+    "PreflightTitle": "Preflight Check",
+    "PreflightPassedHeader": "[Preflight Passed] Safe to run (no output directory created, no files modified)",
+    "PreflightBlockedHeader": "[Preflight Issues] Resolve the conflicts or errors below before running",
+    "PreflightNoItemsHeader": "[Preflight Notice] No runnable items found in the current list",
+    "PreflightSummaryStats": "Ready={0}, Skipped={1}, Missing={2}, Blocked/Issues={3} (Concurrency={4}, Recommended={5})",
+    "PreflightMissingHeader": "Missing items ({0} total):",
+    "PreflightIssueHeader": "Found {0} issue(s):",
+    "ShowPassword": "Show",
+    "TooltipShowCustomPassword": "Toggle masking or revealing the custom password input"
   }
 }
